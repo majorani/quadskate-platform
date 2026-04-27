@@ -37,7 +37,7 @@ export default async function HomePage() {
               <span style={{ color: '#e8e8e8' }}>PLATFORM.</span>
             </h1>
             <p style={{ color: '#666', fontSize: 16, maxWidth: 480, lineHeight: 1.7, marginBottom: 40 }}>
-              Resultados en tiempo real, evaluación por tres jueces, transparencia total. La plataforma oficial de competencias de quad skate.
+              Gestiona tu evento en un solo lugar.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <a href="/eventos" style={{
@@ -52,7 +52,7 @@ export default async function HomePage() {
                 color: '#e8e8e8', fontWeight: 700, fontSize: 11, textDecoration: 'none',
                 letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block',
               }}>
-                Crear cuenta
+                Iniciar sesion
               </a>
             </div>
           </div>
@@ -101,7 +101,7 @@ export default async function HomePage() {
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 40, textTransform: 'uppercase' }}>Por qué QuadSkate Platform</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 1, background: '#2a2a2a' }}>
               {[
-                ['01', 'Resultados en vivo', 'Puntajes actualizados en tiempo real durante la competencia.'],
+                ['01', 'Portal de eventos', 'Es un lugar más accesible para visibilizar tu evento'],
                 ['02', '3 jueces, 1 resultado', 'Sistema promediado entre jueces para máxima imparcialidad.'],
                 ['03', 'App para jueces', 'Interfaz optimizada para puntuar desde el celular en vivo.'],
                 ['04', 'Notificaciones', 'Te avisamos cuando te invitan como jurado o participante.'],
@@ -119,7 +119,7 @@ export default async function HomePage() {
         {/* FOOTER */}
         <div style={{ borderTop: '1px solid #2a2a2a', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ fontSize: 11, color: '#333', letterSpacing: 2, textTransform: 'uppercase' }}>
-            © 2025 QuadSkate Platform · Industria Argentina
+            © 2025 QuadSkate Platform · Argentina
           </div>
           <div style={{ fontSize: 11, color: '#333', letterSpacing: 2, textTransform: 'uppercase' }}>
             Powered by Majorani

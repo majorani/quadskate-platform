@@ -71,8 +71,8 @@ export default function Nav() {
         {/* Logo */}
         <button onClick={() => go('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8' }}>QUAD</span>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C' }}>SKATE</span>
-          <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: 2, color: '#444', marginLeft: 2 }}>PLATFORM</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C' }}>CIRCUIT</span>
+          <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: 2, color: '#444', marginLeft: 2 }}>BY MAJORANI</span>
         </button>
 
         {/* Desktop links */}

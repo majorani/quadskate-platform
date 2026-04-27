@@ -30,7 +30,7 @@ export default async function EventosPage() {
 
         {events.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#334155' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🛼</div>
+            {/* <div style={{ fontSize: 48, marginBottom: 16 }}>🛼</div> */}
             <div style={{ fontSize: 16 }}>No hay eventos publicados todavía</div>
           </div>
         ) : (
