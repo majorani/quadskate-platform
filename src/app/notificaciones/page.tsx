@@ -20,27 +20,21 @@ export default function NotificacionesPage() {
 
   async function loadNotifs(userId: string) {
     const { data } = await supabase
-      .from('notifications')
-      .select('*')
+      .from('notifications').select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50)
     setNotifs(data ?? [])
     setLoading(false)
-
-    // Marcar todas como leídas
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('user_id', userId)
-      .eq('read', false)
+    await supabase.from('notifications').update({ read: true })
+      .eq('user_id', userId).eq('read', false)
   }
 
   function typeIcon(type: string) {
-    if (type === 'judge_invite') return '⚖️'
+    if (type === 'judge_invite') return '⚖'
     if (type === 'participant_added') return '🛼'
     if (type === 'event_published') return '📢'
-    return '🔔'
+    return '·'
   }
 
   function timeAgo(date: string) {
@@ -55,60 +49,55 @@ export default function NotificacionesPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
       <Nav />
-      <main style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 28 }}>Notificaciones</h1>
 
-        {loading && <div style={{ color: '#475569', textAlign: 'center', padding: 40 }}>Cargando...</div>}
+      {/* Header */}
+      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Centro de</div>
+          <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Notificaciones</div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 24px' }}>
+
+        {loading && <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>}
 
         {!loading && notifs.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#334155' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🔔</div>
-            <div style={{ fontSize: 16 }}>Sin notificaciones por ahora</div>
+          <div style={{ borderTop: '1px solid #2a2a2a', padding: '60px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#333', letterSpacing: 3, textTransform: 'uppercase' }}>Sin notificaciones por ahora</div>
           </div>
         )}
 
-        {notifs.map(n => (
-          <div
-            key={n.id}
-            onClick={() => n.link && router.push(n.link)}
-            style={{
-              background: n.read ? '#1e293b' : '#1e1b4b',
-              border: '1px solid ' + (n.read ? '#334155' : '#4338ca'),
-              borderRadius: 14,
-              padding: '16px 18px',
-              marginBottom: 10,
-              display: 'flex',
-              gap: 14,
-              alignItems: 'flex-start',
-              cursor: n.link ? 'pointer' : 'default',
-              transition: 'transform .15s',
-            }}
-            onMouseEnter={e => { if (n.link) (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
-          >
-            <div style={{ fontSize: 26, flexShrink: 0 }}>{typeIcon(n.type)}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#e2e8f0' }}>{n.title}</div>
-                <div style={{ fontSize: 11, color: '#475569', flexShrink: 0 }}>{timeAgo(n.created_at)}</div>
-              </div>
-              {n.body && (
-                <div style={{ color: '#94a3b8', fontSize: 13, marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>
-              )}
-              {n.link && (
-                <div style={{ color: '#818cf8', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
-                  Ver evento →
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+          {notifs.map(n => (
+            <div
+              key={n.id}
+              onClick={() => n.link && router.push(n.link)}
+              style={{
+                background: n.read ? '#0a0a0a' : '#111',
+                padding: '20px 24px',
+                display: 'flex',
+                gap: 16,
+                alignItems: 'flex-start',
+                cursor: n.link ? 'pointer' : 'default',
+                borderLeft: n.read ? '2px solid transparent' : '2px solid #C9A84C',
+              }}
+            >
+              <div style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{typeIcon(n.type)}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>{n.title}</div>
+                  <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>{timeAgo(n.created_at)}</div>
                 </div>
-              )}
+                {n.body && <div style={{ color: '#666', fontSize: 13, lineHeight: 1.6 }}>{n.body}</div>}
+                {n.link && <div style={{ color: '#C9A84C', fontSize: 11, fontWeight: 700, marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>Ver evento →</div>}
+              </div>
             </div>
-            {!n.read && (
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4f46e5', flexShrink: 0, marginTop: 6 }} />
-            )}
-          </div>
-        ))}
-      </main>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

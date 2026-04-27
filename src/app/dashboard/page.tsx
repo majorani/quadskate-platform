@@ -8,9 +8,10 @@ import type { User } from '@supabase/supabase-js'
 import type { Event } from '@/lib/supabase'
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#0f172a', border: '1px solid #334155',
-  borderRadius: 9, padding: '11px 13px', color: '#e2e8f0', fontSize: 14,
-  outline: 'none', boxSizing: 'border-box', marginBottom: 10
+  width: '100%', background: '#111', border: '1px solid #2a2a2a',
+  padding: '12px 14px', color: '#e8e8e8', fontSize: 14,
+  outline: 'none', boxSizing: 'border-box', marginBottom: 10,
+  fontFamily: 'inherit',
 }
 
 export default function DashboardPage() {
@@ -37,8 +38,7 @@ export default function DashboardPage() {
   async function loadEvents(userId: string) {
     setLoading(true)
     const { data } = await supabase
-      .from('events')
-      .select('*')
+      .from('events').select('*')
       .eq('owner_id', userId)
       .order('created_at', { ascending: false })
     setEvents(data ?? [])
@@ -49,9 +49,7 @@ export default function DashboardPage() {
     if (!form.name.trim() || !user) return
     setSaving(true)
     const { data, error } = await supabase.from('events').insert({
-      ...form,
-      owner_id: user.id,
-      status: 'draft'
+      ...form, owner_id: user.id, status: 'draft'
     }).select().single()
     setSaving(false)
     if (error) { showToast('❌ Error al crear evento'); return }
@@ -67,92 +65,108 @@ export default function DashboardPage() {
   }
 
   const statusColor: Record<string, string> = {
-    draft: '#64748b', published: '#4f46e5', active: '#22c55e', finished: '#94a3b8'
+    draft: '#444', published: '#C9A84C', active: '#4CAF50', finished: '#444'
   }
   const statusLabel: Record<string, string> = {
     draft: 'Borrador', published: 'Publicado', active: 'En vivo', finished: 'Finalizado'
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
       <Nav />
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#dc2626' : '#22c55e', color: '#fff', padding: '11px 28px', borderRadius: 999, fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px #0005', pointerEvents: 'none' }}>
+        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
           {toast}
         </div>
       )}
 
-      <main style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+      {/* Header */}
+      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>MI PANEL</div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '6px 0 0' }}>
-              Hola, {user?.user_metadata?.full_name?.split(' ')[0] ?? 'organizador'} 👋
-            </h1>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Mi panel</div>
+            <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>
+              {user?.user_metadata?.full_name?.split(' ')[0] ?? 'Organizador'}
+            </div>
           </div>
-          <button onClick={() => setShowCreate(!showCreate)} style={{ background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 10, padding: '12px 20px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={() => setShowCreate(!showCreate)} style={{
+            background: '#C9A84C', border: 'none', padding: '12px 24px',
+            color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer',
+            letterSpacing: 3, textTransform: 'uppercase',
+          }}>
             + Crear evento
           </button>
         </div>
+      </div>
+
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
 
         {/* Formulario crear evento */}
         {showCreate && (
-          <div style={{ background: '#1e1b4b', border: '1px solid #4338ca', borderRadius: 16, padding: 24, marginBottom: 28 }}>
-            <div style={{ color: '#818cf8', fontWeight: 700, fontSize: 12, letterSpacing: 1, marginBottom: 16 }}>NUEVO EVENTO</div>
+          <div style={{ borderTop: '2px solid #C9A84C', padding: '28px 0', marginBottom: 40 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Nuevo evento</div>
             <input placeholder="Nombre del evento *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <input placeholder="Ciudad" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
               <input placeholder="País (ej: AR)" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
             </div>
             <div style={{ marginBottom: 10 }} />
-            <input placeholder="Nombre del lugar (ej: Skatepark Palermo)" value={form.location_name} onChange={e => setForm(f => ({ ...f, location_name: e.target.value }))} style={inp} />
+            <input placeholder="Nombre del lugar" value={form.location_name} onChange={e => setForm(f => ({ ...f, location_name: e.target.value }))} style={inp} />
             <input placeholder="Dirección" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inp} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
               <input type="time" value={form.event_time} onChange={e => setForm(f => ({ ...f, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
             </div>
             <div style={{ marginBottom: 10 }} />
-            <textarea placeholder="Descripción del evento (opcional)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              style={{ ...inp, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} />
+            <textarea placeholder="Descripción del evento" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
             <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button onClick={createEvent} disabled={saving} style={{ flex: 1, background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 9, padding: '12px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={createEvent} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Creando...' : 'Crear evento'}
               </button>
-              <button onClick={() => setShowCreate(false)} style={{ flex: 1, background: '#0f172a', border: '1px solid #334155', borderRadius: 9, padding: '12px', color: '#94a3b8', fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => setShowCreate(false)} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 28px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
                 Cancelar
               </button>
             </div>
           </div>
         )}
 
-        {/* Lista de eventos */}
-        <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 14 }}>MIS EVENTOS</div>
-        {loading && <div style={{ color: '#475569', padding: 20 }}>Cargando...</div>}
+        {/* Lista eventos */}
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Mis eventos</div>
+
+        {loading && <div style={{ color: '#444', padding: 20, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>}
+
         {!loading && events.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#334155' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-            <div>No creaste ningún evento todavía</div>
+          <div style={{ borderTop: '1px solid #2a2a2a', padding: '48px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#333', letterSpacing: 3, textTransform: 'uppercase' }}>No creaste ningún evento todavía</div>
           </div>
         )}
-        {events.map(ev => (
-          <div key={ev.id} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 14, padding: '16px 20px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{ev.name}</div>
-              <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
-                {ev.event_date ? new Date(ev.event_date).toLocaleDateString('es-AR') : 'Sin fecha'}
-                {ev.city ? ' · ' + ev.city : ''}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+          {events.map(ev => (
+            <div key={ev.id} style={{ background: '#0a0a0a', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 6 }}>{ev.name}</div>
+                <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {ev.event_date ? new Date(ev.event_date).toLocaleDateString('es-AR') : 'Sin fecha'}
+                  {ev.city ? ' · ' + ev.city : ''}
+                </div>
               </div>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: statusColor[ev.status], textTransform: 'uppercase' }}>
+                {statusLabel[ev.status]}
+              </span>
+              <button onClick={() => router.push('/dashboard/' + ev.id)} style={{
+                background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px',
+                color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                letterSpacing: 2, textTransform: 'uppercase',
+              }}>
+                Gestionar →
+              </button>
             </div>
-            <span style={{ background: (statusColor[ev.status] ?? '#64748b') + '22', color: statusColor[ev.status] ?? '#64748b', border: '1px solid ' + (statusColor[ev.status] ?? '#64748b') + '44', borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
-              {statusLabel[ev.status] ?? ev.status}
-            </span>
-            <button onClick={() => router.push('/dashboard/' + ev.id)} style={{ background: '#ffffff10', border: 'none', borderRadius: 8, padding: '8px 16px', color: '#94a3b8', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-              Gestionar →
-            </button>
-          </div>
-        ))}
-      </main>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

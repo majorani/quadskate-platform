@@ -8,9 +8,10 @@ import type { User } from '@supabase/supabase-js'
 import type { Event, Category, Participant } from '@/lib/supabase'
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#0f172a', border: '1px solid #334155',
-  borderRadius: 9, padding: '11px 13px', color: '#e2e8f0', fontSize: 14,
-  outline: 'none', boxSizing: 'border-box', marginBottom: 10
+  width: '100%', background: '#111', border: '1px solid #2a2a2a',
+  padding: '12px 14px', color: '#e8e8e8', fontSize: 14,
+  outline: 'none', boxSizing: 'border-box', marginBottom: 10,
+  fontFamily: 'inherit',
 }
 
 function uid() { return Math.random().toString(36).slice(2, 10) }
@@ -45,10 +46,8 @@ export default function ManageEventPage() {
       supabase.from('participants').select('*').eq('event_id', eventId),
       supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId),
     ])
-    setEv(evRes.data)
-    setCats(catsRes.data ?? [])
-    setParts(partsRes.data ?? [])
-    setJudges(judgesRes.data ?? [])
+    setEv(evRes.data); setCats(catsRes.data ?? [])
+    setParts(partsRes.data ?? []); setJudges(judgesRes.data ?? [])
     setLoading(false)
   }
 
@@ -65,16 +64,16 @@ export default function ManageEventPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
       <Nav />
-      <div style={{ textAlign: 'center', padding: 80, color: '#475569' }}>Cargando...</div>
+      <div style={{ padding: 80, textAlign: 'center', color: '#444', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>Cargando...</div>
     </div>
   )
 
   if (!ev) return (
-    <div style={{ minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
       <Nav />
-      <div style={{ textAlign: 'center', padding: 80, color: '#ef4444' }}>Evento no encontrado</div>
+      <div style={{ padding: 80, textAlign: 'center', color: '#ef4444' }}>Evento no encontrado</div>
     </div>
   )
 
@@ -86,50 +85,58 @@ export default function ManageEventPage() {
   ] as const
 
   const statusOptions = [
-    { value: 'draft', label: 'Borrador', color: '#64748b' },
-    { value: 'published', label: 'Publicar', color: '#4f46e5' },
-    { value: 'active', label: 'Activar (En vivo)', color: '#22c55e' },
-    { value: 'finished', label: 'Finalizar', color: '#94a3b8' },
+    { value: 'draft', label: 'Borrador', color: '#444' },
+    { value: 'published', label: 'Publicar', color: '#C9A84C' },
+    { value: 'active', label: 'Activar', color: '#4CAF50' },
+    { value: 'finished', label: 'Finalizar', color: '#666' },
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
       <Nav />
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#dc2626' : '#22c55e', color: '#fff', padding: '11px 28px', borderRadius: 999, fontWeight: 700, fontSize: 14, pointerEvents: 'none' }}>
+        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ background: '#1e1b4b', borderBottom: '1px solid #312e81', padding: '20px 20px 0' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 13, marginBottom: 12 }}>
+      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '32px 24px 0' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, fontWeight: 700 }}>
             ← Mis eventos
           </button>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
             <div>
-              <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>GESTIONAR EVENTO</div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: '6px 0 0' }}>{ev.name}</h1>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 8, textTransform: 'uppercase' }}>Gestionar evento</div>
+              <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{ev.name}</div>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', flexWrap: 'wrap' }}>
               {statusOptions.map(s => (
-                <button key={s.value} onClick={() => updateStatus(s.value)}
-                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12,
-                    background: ev.status === s.value ? s.color : '#1e293b',
-                    color: ev.status === s.value ? '#fff' : '#64748b' }}>
+                <button key={s.value} onClick={() => updateStatus(s.value)} style={{
+                  padding: '10px 16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10,
+                  letterSpacing: 2, textTransform: 'uppercase',
+                  background: ev.status === s.value ? s.color : '#0a0a0a',
+                  color: ev.status === s.value ? (s.value === 'published' ? '#000' : '#fff') : '#444',
+                }}>
                   {s.label}
                 </button>
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 0 }}>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #2a2a2a' }}>
             {tabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ padding: '10px 20px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
-                  background: 'transparent', color: tab === t.id ? '#fff' : '#64748b',
-                  borderBottom: tab === t.id ? '2px solid #818cf8' : '2px solid transparent' }}>
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                padding: '12px 20px', border: 'none', cursor: 'pointer', fontWeight: 700,
+                fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
+                background: 'transparent',
+                color: tab === t.id ? '#C9A84C' : '#444',
+                borderBottom: tab === t.id ? '2px solid #C9A84C' : '2px solid transparent',
+                marginBottom: -1,
+              }}>
                 {t.label}
               </button>
             ))}
@@ -137,10 +144,10 @@ export default function ManageEventPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 20px' }}>
-        {tab === 'info' && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} />}
-        {tab === 'cats' && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} />}
-        {tab === 'parts' && <PartsTab parts={parts} setParts={setParts} cats={cats} eventId={eventId} showToast={showToast} />}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
+        {tab === 'info'   && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} />}
+        {tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} />}
+        {tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} eventId={eventId} showToast={showToast} />}
         {tab === 'judges' && <JudgesTab judges={judges} setJudges={setJudges} eventId={eventId} showToast={showToast} />}
       </div>
     </div>
@@ -149,9 +156,12 @@ export default function ManageEventPage() {
 
 // ─── INFO TAB ─────────────────────────────────────────────────
 function InfoTab({ ev, setEv, eventId, showToast }: any) {
-  const [f, setF] = useState({ name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR', event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0,5) ?? '', location_name: ev.location_name ?? '', address: ev.address ?? '', description: ev.description ?? '' })
+  const [f, setF] = useState({
+    name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR',
+    event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0,5) ?? '',
+    location_name: ev.location_name ?? '', address: ev.address ?? '', description: ev.description ?? ''
+  })
   const [saving, setSaving] = useState(false)
-  const inp2: React.CSSProperties = { width: '100%', background: '#0f172a', border: '1px solid #334155', borderRadius: 9, padding: '11px 13px', color: '#e2e8f0', fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 10 }
 
   async function save() {
     setSaving(true)
@@ -164,22 +174,23 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
 
   return (
     <div>
-      <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>INFORMACIÓN DEL EVENTO</div>
-      <input placeholder="Nombre *" value={f.name} onChange={e => setF(x => ({ ...x, name: e.target.value }))} style={inp2} />
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Información del evento</div>
+      <input placeholder="Nombre *" value={f.name} onChange={e => setF(x => ({ ...x, name: e.target.value }))} style={inp} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <input placeholder="Ciudad" value={f.city} onChange={e => setF(x => ({ ...x, city: e.target.value }))} style={{ ...inp2, marginBottom: 0 }} />
-        <input placeholder="País" value={f.country} onChange={e => setF(x => ({ ...x, country: e.target.value }))} style={{ ...inp2, marginBottom: 0 }} />
+        <input placeholder="Ciudad" value={f.city} onChange={e => setF(x => ({ ...x, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
+        <input placeholder="País" value={f.country} onChange={e => setF(x => ({ ...x, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
-      <input placeholder="Nombre del lugar" value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp2} />
-      <input placeholder="Dirección" value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp2} />
+      <input placeholder="Nombre del lugar" value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp} />
+      <input placeholder="Dirección" value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp2, marginBottom: 0 }} />
-        <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp2, marginBottom: 0 }} />
+        <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
+        <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
-      <textarea placeholder="Descripción" value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))} style={{ ...inp2, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} />
-      <button onClick={save} disabled={saving} style={{ background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 9, padding: '12px 24px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+      <textarea placeholder="Descripción" value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))}
+        style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
+      <button onClick={save} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
         {saving ? 'Guardando...' : 'Guardar cambios'}
       </button>
     </div>
@@ -193,12 +204,14 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
   const [maxRuns, setMaxRuns] = useState(2)
   const [consolidation, setConsolidation] = useState('best_run')
   const [saving, setSaving] = useState(false)
+  const fmtL: Record<string,string> = { formal:'Torneo Formal', jam:'Jam', mixto:'Mixto' }
+  const consL: Record<string,string> = { best_run:'Mejor pasada', sum_runs:'Suma', best_trick:'Best Trick' }
 
   async function addCat() {
     if (!name.trim()) return
     setSaving(true)
-    const newCat = { event_id: eventId, name, format, max_runs: maxRuns, consolidation, weights: format === 'mixto' ? { intencion:15,dificultad:20,ejecucion:25,estilo:20,secuencia:20 } : { intencion:15,dificultad:30,ejecucion:30,estilo:10,secuencia:15 } }
-    const { data, error } = await supabase.from('categories').insert(newCat).select().single()
+    const weights = format === 'mixto' ? { intencion:15,dificultad:20,ejecucion:25,estilo:20,secuencia:20 } : { intencion:15,dificultad:30,ejecucion:30,estilo:10,secuencia:15 }
+    const { data, error } = await supabase.from('categories').insert({ event_id:eventId, name, format, max_runs:maxRuns, consolidation, weights }).select().single()
     setSaving(false)
     if (error) { showToast('❌ Error: ' + error.message); return }
     setCats((prev: any) => [...prev, data])
@@ -211,47 +224,47 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
     showToast('Categoría eliminada')
   }
 
-  const fmtL: Record<string, string> = { formal: 'Torneo Formal', jam: 'Jam', mixto: 'Mixto' }
-  const consL: Record<string, string> = { best_run: 'Mejor pasada', sum_runs: 'Suma', best_trick: 'Best Trick' }
+  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   return (
     <div>
-      <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>CATEGORÍAS</div>
-      {cats.map((cat: any) => (
-        <div key={cat.id} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: '14px 18px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700 }}>{cat.name}</div>
-            <div style={{ color: '#64748b', fontSize: 12, marginTop: 3 }}>{fmtL[cat.format]}{cat.format !== 'jam' ? ' · ' + cat.max_runs + ' pasadas · ' + consL[cat.consolidation] : ''}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Categorías</div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
+        {cats.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías</div>}
+        {cats.map((cat: any) => (
+          <div key={cat.id} style={{ background: '#0a0a0a', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: -0.3 }}>{cat.name}</div>
+              <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>
+                {fmtL[cat.format]}{cat.format !== 'jam' ? ' · ' + cat.max_runs + ' pasadas · ' + consL[cat.consolidation] : ''}
+              </div>
+            </div>
+            <button onClick={() => delCat(cat.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
           </div>
-          <button onClick={() => delCat(cat.id)} style={{ background: '#dc262622', border: '1px solid #dc262644', borderRadius: 8, padding: '6px 12px', color: '#ef4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>✕</button>
-        </div>
-      ))}
-      <div style={{ background: '#1e1b4b', border: '1px solid #4338ca', borderRadius: 14, padding: 20, marginTop: 16 }}>
-        <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>NUEVA CATEGORÍA</div>
-        <input placeholder="Nombre de la categoría *" value={name} onChange={e => setName(e.target.value)} style={{ ...inp, marginBottom: 12 }} />
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>FORMATO</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {['formal','jam','mixto'].map(f => <button key={f} onClick={() => setFormat(f)} style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: format === f ? '#4f46e5' : '#0f172a', color: format === f ? '#fff' : '#64748b' }}>{fmtL[f]}</button>)}
-          </div>
+        ))}
+      </div>
+
+      <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nueva categoría</div>
+        <input placeholder="Nombre *" value={name} onChange={e => setName(e.target.value)} style={inp} />
+        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Formato</div>
+        <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
+          {['formal','jam','mixto'].map(f => <button key={f} onClick={() => setFormat(f)} style={{ ...btnBase, flex: 1, background: format === f ? '#C9A84C' : '#0a0a0a', color: format === f ? '#000' : '#444' }}>{fmtL[f]}</button>)}
         </div>
         {format !== 'jam' && (
           <>
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>PASADAS MÁXIMAS</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[1,2,3].map(n => <button key={n} onClick={() => setMaxRuns(n)} style={{ width: 48, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, background: maxRuns === n ? '#4f46e5' : '#0f172a', color: maxRuns === n ? '#fff' : '#64748b' }}>{n}</button>)}
-              </div>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Pasadas máximas</div>
+            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
+              {[1,2,3].map(n => <button key={n} onClick={() => setMaxRuns(n)} style={{ ...btnBase, flex: 1, background: maxRuns === n ? '#C9A84C' : '#0a0a0a', color: maxRuns === n ? '#000' : '#444' }}>{n}</button>)}
             </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>CONSOLIDACIÓN</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[['best_run','Mejor pasada'],['sum_runs','Suma'],['best_trick','Best Trick']].map(([v,l]) => <button key={v} onClick={() => setConsolidation(v)} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12, background: consolidation === v ? '#4f46e5' : '#0f172a', color: consolidation === v ? '#fff' : '#64748b' }}>{l}</button>)}
-              </div>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Consolidación</div>
+            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
+              {[['best_run','Mejor pasada'],['sum_runs','Suma'],['best_trick','Best Trick']].map(([v,l]) => <button key={v} onClick={() => setConsolidation(v)} style={{ ...btnBase, flex: 1, background: consolidation === v ? '#C9A84C' : '#0a0a0a', color: consolidation === v ? '#000' : '#444' }}>{l}</button>)}
             </div>
           </>
         )}
-        <button onClick={addCat} disabled={saving} style={{ background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 9, padding: '12px 24px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+        <button onClick={addCat} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Creando...' : 'Agregar categoría'}
         </button>
       </div>
@@ -264,11 +277,12 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   const [name, setName] = useState('')
   const [catId, setCatId] = useState(cats[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
+  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function addPart() {
     if (!name.trim() || !catId) return
     setSaving(true)
-    const { data, error } = await supabase.from('participants').insert({ event_id: eventId, category_id: catId, display_name: name.trim() }).select().single()
+    const { data, error } = await supabase.from('participants').insert({ event_id:eventId, category_id:catId, display_name:name.trim() }).select().single()
     setSaving(false)
     if (error) { showToast('❌ Error: ' + error.message); return }
     setParts((prev: any) => [...prev, data])
@@ -283,30 +297,32 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
 
   return (
     <div>
-      <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>PARTICIPANTES</div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Participantes</div>
       {cats.map((cat: any) => {
         const catParts = parts.filter((p: any) => p.category_id === cat.id)
         return (
-          <div key={cat.id} style={{ marginBottom: 24 }}>
-            <div style={{ color: '#818cf8', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{cat.name}</div>
-            {catParts.length === 0 && <div style={{ color: '#334155', fontSize: 13, marginBottom: 8 }}>Sin participantes</div>}
-            {catParts.map((p: any) => (
-              <div key={p.id} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 10, padding: '11px 16px', marginBottom: 7, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 600 }}>{p.display_name}</span>
-                <button onClick={() => delPart(p.id)} style={{ background: '#dc262622', border: '1px solid #dc262644', borderRadius: 7, padding: '5px 10px', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>✕</button>
-              </div>
-            ))}
+          <div key={cat.id} style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 10, color: '#C9A84C', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{cat.name}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+              {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
+              {catParts.map((p: any) => (
+                <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</span>
+                  <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
+                </div>
+              ))}
+            </div>
           </div>
         )
       })}
-      <div style={{ background: '#1e1b4b', border: '1px solid #4338ca', borderRadius: 14, padding: 20, marginTop: 8 }}>
-        <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>NUEVO PARTICIPANTE</div>
+      <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24, marginTop: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nuevo participante</div>
         <input placeholder="Nombre completo *" value={name} onChange={e => setName(e.target.value)} style={inp} />
-        <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>CATEGORÍA</div>
-        <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 14 }}>
+        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Categoría</div>
+        <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 16 }}>
           {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button onClick={addPart} disabled={saving} style={{ background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 9, padding: '12px 24px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+        <button onClick={addPart} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Agregando...' : 'Agregar participante'}
         </button>
       </div>
@@ -316,40 +332,20 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
 
 // ─── JUDGES TAB ───────────────────────────────────────────────
 function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
-  const [email, setEmail] = useState('')
+  const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function inviteJudge() {
-    if (!email.trim()) return
+    if (!search.trim()) return
     setSaving(true)
-    const { data: profile, error: pErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url')
-      .eq('username', email.trim())
-      .maybeSingle()
-
-    if (pErr || !profile) {
-      const { data: byEmail } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .ilike('full_name', '%' + email.trim() + '%')
-        .maybeSingle()
-
-      if (!byEmail) { showToast('❌ Usuario no encontrado'); setSaving(false); return }
-
-      const { data, error } = await supabase.from('judges').insert({ event_id: eventId, profile_id: byEmail.id, status: 'invited' }).select('*, profiles(full_name, avatar_url)').single()
-      setSaving(false)
-      if (error) { showToast('❌ Error: ' + error.message); return }
-      setJudges((prev: any) => [...prev, data])
-      setEmail(''); showToast('✅ Juez invitado')
-      return
-    }
-
-    const { data, error } = await supabase.from('judges').insert({ event_id: eventId, profile_id: profile.id, status: 'invited' }).select('*, profiles(full_name, avatar_url)').single()
+    const { data: profile } = await supabase.from('profiles').select('id, full_name, avatar_url').ilike('full_name', '%' + search.trim() + '%').maybeSingle()
+    if (!profile) { showToast('❌ Usuario no encontrado'); setSaving(false); return }
+    const { data, error } = await supabase.from('judges').insert({ event_id:eventId, profile_id:profile.id, status:'invited' }).select('*, profiles(full_name, avatar_url)').single()
     setSaving(false)
     if (error) { showToast('❌ Error: ' + error.message); return }
     setJudges((prev: any) => [...prev, data])
-    setEmail(''); showToast('✅ Juez invitado')
+    setSearch(''); showToast('✅ Juez invitado')
   }
 
   async function removeJudge(id: string) {
@@ -360,26 +356,28 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
 
   return (
     <div>
-      <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>JUECES</div>
-      {judges.length === 0 && <div style={{ color: '#334155', fontSize: 13, marginBottom: 16 }}>Sin jueces asignados</div>}
-      {judges.map((j: any) => (
-        <div key={j.id} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-            {j.profiles?.full_name?.[0] ?? '?'}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600 }}>{j.profiles?.full_name ?? 'Juez'}</div>
-            <div style={{ fontSize: 11, color: j.status === 'accepted' ? '#22c55e' : '#f59e0b' }}>
-              {j.status === 'accepted' ? 'Confirmado' : 'Invitado'}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Jueces</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
+        {judges.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin jueces asignados</div>}
+        {judges.map((j: any) => (
+          <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 32, height: 32, background: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+              {j.profiles?.full_name?.[0] ?? '?'}
             </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? 'Juez'}</div>
+              <div style={{ fontSize: 10, color: j.status === 'accepted' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                {j.status === 'accepted' ? 'Confirmado' : 'Invitado'}
+              </div>
+            </div>
+            <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
           </div>
-          <button onClick={() => removeJudge(j.id)} style={{ background: '#dc262622', border: '1px solid #dc262644', borderRadius: 8, padding: '6px 12px', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>✕</button>
-        </div>
-      ))}
-      <div style={{ background: '#1e1b4b', border: '1px solid #4338ca', borderRadius: 14, padding: 20, marginTop: 16 }}>
-        <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>INVITAR JUEZ</div>
-        <input placeholder="Nombre del juez (debe tener cuenta en la plataforma)" value={email} onChange={e => setEmail(e.target.value)} style={inp} />
-        <button onClick={inviteJudge} disabled={saving} style={{ background: 'linear-gradient(90deg,#4f46e5,#7c3aed)', border: 'none', borderRadius: 9, padding: '12px 24px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+        ))}
+      </div>
+      <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Invitar juez</div>
+        <input placeholder="Nombre del juez (debe tener cuenta)" value={search} onChange={e => setSearch(e.target.value)} style={inp} />
+        <button onClick={inviteJudge} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Invitando...' : 'Invitar juez'}
         </button>
       </div>
