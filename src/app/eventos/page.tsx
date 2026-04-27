@@ -20,7 +20,7 @@ export default async function EventosPage() {
   return (
     <>
       <Nav />
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px' }}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
         <h1 style={{ color: '#e2e8f0', fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
           Competencias
         </h1>

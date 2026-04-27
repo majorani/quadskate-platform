@@ -54,13 +54,13 @@ export default function NotificacionesPage() {
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Centro de</div>
           <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Notificaciones</div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
 
         {loading && <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>}
 
