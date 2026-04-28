@@ -61,6 +61,15 @@ export default function ManageEventPage() {
     if (error) { showToast('❌ Error'); return }
     setEv(prev => prev ? { ...prev, status: status as any } : prev)
     showToast('✅ Estado actualizado')
+
+    // Si se publica, notificar a todos los usuarios
+    if (status === 'published') {
+      await fetch('/api/events/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId }),
+      })
+    }
   }
 
   if (loading) return (
@@ -274,19 +283,30 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
 
 // ─── PARTS TAB ────────────────────────────────────────────────
 function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
-  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [catId, setCatId] = useState(cats[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function addPart() {
-    if (!name.trim() || !catId) return
+    if (!email.trim() || !catId) return
     setSaving(true)
-    const { data, error } = await supabase.from('participants').insert({ event_id:eventId, category_id:catId, display_name:name.trim() }).select().single()
+    const res = await fetch('/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), eventId, role: 'participant', categoryId: catId }),
+    })
+    const data = await res.json()
     setSaving(false)
-    if (error) { showToast('❌ Error: ' + error.message); return }
-    setParts((prev: any) => [...prev, data])
-    setName(''); showToast('✅ Participante agregado')
+    if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
+    showToast(data.hadAccount ? '✅ Notificación enviada al participante' : '✅ Email de invitación enviado')
+    setEmail('')
+    // Recargar participantes
+    const { data: partsData } = await supabase
+      .from('participants')
+      .select('*')
+      .eq('event_id', eventId)
+    if (partsData) setParts(partsData)
   }
 
   async function delPart(id: string) {
@@ -307,7 +327,7 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
               {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
               {catParts.map((p: any) => (
                 <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name ?? p.email ?? 'Participante'}</span>
                   <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
                 </div>
               ))}
@@ -317,11 +337,20 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
       })}
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24, marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nuevo participante</div>
-        <input placeholder="Nombre completo *" value={name} onChange={e => setName(e.target.value)} style={inp} />
+        <input
+          placeholder="Email del participante *"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          type="email"
+          style={inp}
+        />
         <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Categoría</div>
-        <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 16 }}>
+        <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 8 }}>
           {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>
+          Si ya tiene cuenta recibirá una notificación. Si no, le llegará un email para registrarse.
+        </div>
         <button onClick={addPart} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Agregando...' : 'Agregar participante'}
         </button>
@@ -332,20 +361,29 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
 
 // ─── JUDGES TAB ───────────────────────────────────────────────
 function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
-  const [search, setSearch] = useState('')
+  const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function inviteJudge() {
-    if (!search.trim()) return
+    if (!email.trim()) return
     setSaving(true)
-    const { data: profile } = await supabase.from('profiles').select('id, full_name, avatar_url').ilike('full_name', '%' + search.trim() + '%').maybeSingle()
-    if (!profile) { showToast('❌ Usuario no encontrado'); setSaving(false); return }
-    const { data, error } = await supabase.from('judges').insert({ event_id:eventId, profile_id:profile.id, status:'invited' }).select('*, profiles(full_name, avatar_url)').single()
+    const res = await fetch('/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), eventId, role: 'judge' }),
+    })
+    const data = await res.json()
     setSaving(false)
-    if (error) { showToast('❌ Error: ' + error.message); return }
-    setJudges((prev: any) => [...prev, data])
-    setSearch(''); showToast('✅ Juez invitado')
+    if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
+    showToast(data.hadAccount ? '✅ Notificación enviada al juez' : '✅ Email de invitación enviado')
+    setEmail('')
+    // Recargar jueces
+    const { data: judgesData } = await supabase
+      .from('judges')
+      .select('*, profiles(full_name, avatar_url)')
+      .eq('event_id', eventId)
+    if (judgesData) setJudges(judgesData)
   }
 
   async function removeJudge(id: string) {
@@ -365,9 +403,9 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
               {j.profiles?.full_name?.[0] ?? '?'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? 'Juez'}</div>
-              <div style={{ fontSize: 10, color: j.status === 'accepted' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                {j.status === 'accepted' ? 'Confirmado' : 'Invitado'}
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.email ?? 'Juez'}</div>
+              <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                {j.status === 'confirmed' ? 'Confirmado' : 'Invitado'}
               </div>
             </div>
             <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
@@ -376,7 +414,16 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
       </div>
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Invitar juez</div>
-        <input placeholder="Nombre del juez (debe tener cuenta)" value={search} onChange={e => setSearch(e.target.value)} style={inp} />
+        <input
+          placeholder="Email del juez *"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          type="email"
+          style={inp}
+        />
+        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>
+          Si ya tiene cuenta recibirá una notificación. Si no, le llegará un email para registrarse.
+        </div>
         <button onClick={inviteJudge} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Invitando...' : 'Invitar juez'}
         </button>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthPage() {
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
   const router = useRouter()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -13,6 +14,13 @@ export default function AuthPage() {
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const [ok, setOk] = useState(false)
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  const invite = params.get('invite')
+  if (invite) setInviteToken(invite)
+  const stored = localStorage.getItem('pendingInvitationToken')
+  if (stored) setInviteToken(stored)
+}, [])
 
   async function handleSubmit() {
     if (!email.trim() || !pass.trim()) return
@@ -25,12 +33,20 @@ export default function AuthPage() {
           options: { data: { full_name: name } }
         })
         if (error) { setErr(error.message); return }
+        if (inviteToken) {
+          localStorage.removeItem('pendingInvitationToken')
+        }
         setOk(true)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass })
         if (error) { setErr('Usuario o contraseña incorrectos'); return }
-        const redirectTo = new URLSearchParams(window.location.search).get('redirect')
-        router.push(redirectTo || '/dashboard')
+        if (inviteToken) {
+          localStorage.removeItem('pendingInvitationToken')
+          router.push(`/invitacion/${inviteToken}`)
+        } else {
+          const redirectTo = new URLSearchParams(window.location.search).get('redirect')
+          router.push(redirectTo || '/dashboard')
+        }
       }
     } finally { setLoading(false) }
   }
