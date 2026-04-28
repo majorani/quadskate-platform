@@ -29,7 +29,8 @@ export default function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass })
         if (error) { setErr('Usuario o contraseña incorrectos'); return }
-        router.push('/dashboard')
+        const redirectTo = new URLSearchParams(window.location.search).get('redirect')
+        router.push(redirectTo || '/dashboard')
       }
     } finally { setLoading(false) }
   }

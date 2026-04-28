@@ -373,7 +373,7 @@ export default function JuecesPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { router.push('/auth'); return }
+      if (!data.session) { router.push('/auth?redirect=/jueces/' + eventId); return }
       setUser(data.session.user)
       await loadData(data.session.user.id)
       setLoading(false)
