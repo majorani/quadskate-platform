@@ -33,7 +33,7 @@ export type Category = {
   id: string
   event_id: string
   name: string
-  format: 'formal' | 'jam' | 'mixto'
+  format: 'formal' | 'jam' | 'mixto' | 'best_trick'
   max_runs: number
   consolidation: string
   weights: Record<string, number>
