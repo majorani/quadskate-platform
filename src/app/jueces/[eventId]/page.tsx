@@ -381,6 +381,7 @@ export default function JuecesPage() {
   }, [])
 
   async function loadData(userId: string) {
+    console.log('eventId recibido:', eventId)
     const [evRes, catsRes, partsRes, scsRes] = await Promise.all([
       supabase.from('events').select('*').eq('id', eventId).single(),
       supabase.from('categories').select('*').eq('event_id', eventId),
