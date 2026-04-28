@@ -1,41 +1,27 @@
-import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Cliente admin con service role (solo server-side)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
+  // Verificar auth via header Authorization
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { email, eventId, role, categoryId } = await req.json()
 
   // Verificar que el evento pertenece al usuario
-  const { data: event } = await supabase
+  const { data: event } = await supabaseAdmin
     .from('events')
     .select('id, name')
     .eq('id', eventId)
@@ -64,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   if (invError) return NextResponse.json({ error: invError.message }, { status: 500 })
 
-  // Buscar si el email tiene cuenta en auth.users
+  // Buscar si el email tiene cuenta
   const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
   const authUser = users.find(u => u.email === email)
 
@@ -72,7 +58,6 @@ export async function POST(req: NextRequest) {
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/invitacion/${invitation.token}`
 
   if (authUser) {
-    // Tiene cuenta → notificación en app
     await supabaseAdmin.from('notifications').insert({
       user_id: authUser.id,
       title: `Invitación a ${event.name}`,
@@ -82,7 +67,6 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json({ success: true, hadAccount: true })
   } else {
-    // No tiene cuenta → email
     await resend.emails.send({
       from: 'Quad Skate Platform <onboarding@resend.dev>',
       to: email,

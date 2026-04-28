@@ -291,9 +291,14 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   async function addPart() {
     if (!email.trim() || !catId) return
     setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
     const res = await fetch('/api/invite', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ email: email.trim(), eventId, role: 'participant', categoryId: catId }),
     })
     const data = await res.json()
@@ -301,11 +306,7 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
     showToast(data.hadAccount ? '✅ Notificación enviada al participante' : '✅ Email de invitación enviado')
     setEmail('')
-    // Recargar participantes
-    const { data: partsData } = await supabase
-      .from('participants')
-      .select('*')
-      .eq('event_id', eventId)
+    const { data: partsData } = await supabase.from('participants').select('*').eq('event_id', eventId)
     if (partsData) setParts(partsData)
   }
 
@@ -368,9 +369,14 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
   async function inviteJudge() {
     if (!email.trim()) return
     setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
     const res = await fetch('/api/invite', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ email: email.trim(), eventId, role: 'judge' }),
     })
     const data = await res.json()
@@ -378,11 +384,7 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
     showToast(data.hadAccount ? '✅ Notificación enviada al juez' : '✅ Email de invitación enviado')
     setEmail('')
-    // Recargar jueces
-    const { data: judgesData } = await supabase
-      .from('judges')
-      .select('*, profiles(full_name, avatar_url)')
-      .eq('event_id', eventId)
+    const { data: judgesData } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
     if (judgesData) setJudges(judgesData)
   }
 

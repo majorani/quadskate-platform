@@ -15,32 +15,38 @@ export default function InvitacionPage() {
   const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount'>('loading')
   const [message, setMessage] = useState('')
 
-  useEffect(() => {
+    useEffect(() => {
     async function handleInvitation() {
-      const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user }, } = await supabase.auth.getUser()
 
-      if (!user) {
+        if (!user) {
         localStorage.setItem('pendingInvitationToken', token)
         setStatus('needsAccount')
         return
-      }
+        }
 
-      setStatus('accepting')
-      const res = await fetch(`/api/invite/accept/${token}`, { method: 'POST' })
-      const data = await res.json()
+        setStatus('accepting')
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/invite/accept/${token}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+        },
+        })
+        const data = await res.json()
 
-      if (data.success) {
+        if (data.success) {
         setStatus('success')
         setMessage(`¡Listo! Quedaste registrado como ${data.role === 'judge' ? 'juez' : 'participante'}.`)
         setTimeout(() => router.push(`/eventos/${data.eventId}`), 2500)
-      } else {
+        } else {
         setStatus('error')
         setMessage(data.error || 'La invitación es inválida o ya fue usada.')
-      }
+        }
     }
 
     handleInvitation()
-  }, [token])
+    }, [token])
 
   const containerStyle: React.CSSProperties = {
     minHeight: '100vh',

@@ -1,6 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 const supabaseAdmin = createClient(
@@ -14,24 +12,11 @@ export async function POST(
 ) {
   const { token } = await params
 
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const accessToken = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken)
+  if (authError || !user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { data: invitation, error } = await supabaseAdmin
     .from('invitations')
@@ -52,13 +37,13 @@ export async function POST(
   if (invitation.role === 'judge') {
     await supabaseAdmin.from('judges').insert({
       event_id: invitation.event_id,
-      user_id: user.id,
+      profile_id: user.id,
       status: 'confirmed',
     })
   } else {
     await supabaseAdmin.from('participants').insert({
       event_id: invitation.event_id,
-      user_id: user.id,
+      profile_id: user.id,
       category_id: invitation.category_id,
       status: 'confirmed',
     })
