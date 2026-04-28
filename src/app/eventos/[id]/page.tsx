@@ -82,7 +82,7 @@ export default async function EventoDetailPage({ params }: { params: { id: strin
   const color = STATUS_COLOR[ev.status] ?? '#64748b'
   const label = STATUS_LABEL[ev.status] ?? ev.status
   const isActive = ev.status === 'active' || ev.status === 'finished'
-  const juecesUrl = '/eventos/' + params.id + '/jueces'
+  const juecesUrl = '/jueces/' + params.id
 
   return (
     <div>
