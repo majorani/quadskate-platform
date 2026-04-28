@@ -352,9 +352,9 @@ function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast 
 
 // ─── MAIN PAGE ────────────────────────────────────────────────
 export default function JuecesPage() {
-  const params = useParams()
+  const params = useParams<{ eventId: string }>()
   const router = useRouter()
-  const eventId = params.eventId as string
+  const eventId = params?.eventId ?? ''
 
   const [state, dispatch] = useReducer(reducer, { scorecards: {}, toast: null })
   const [user, setUser] = useState<User | null>(null)
