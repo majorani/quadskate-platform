@@ -14,15 +14,17 @@ export default function JudgeButton({ eventId, ownerId }: { eventId: string, own
       const { data } = await supabase.auth.getSession()
       if (!data.session) { setLoading(false); return }
       const userId = data.session.user.id
-      // Es admin del evento
+      const userEmail = data.session.user.email
+
       if (userId === ownerId) { setShow(true); setLoading(false); return }
-      // Es juez del evento
+
       const { data: judge } = await supabase
         .from('judges')
         .select('id')
         .eq('event_id', eventId)
-        .eq('profile_id', userId)
+        .or(`profile_id.eq.${userId},email.eq.${userEmail}`)
         .maybeSingle()
+
       if (judge) setShow(true)
       setLoading(false)
     }

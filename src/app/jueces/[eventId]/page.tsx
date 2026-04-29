@@ -260,7 +260,7 @@ function JamColumn({ data, onAdd, onRemoveLast }: any) {
 }
 
 // ─── JAM MULTI VIEW ──────────────────────────────────────────
-function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast }: any) {
+function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event }: any) {
   const [data, setData] = useState(() =>
     parts.map((p: any) => ({ pId: p.id, name: p.display_name, tricks: scorecards[jId]?.[p.id]?.[1] || [], dirty: false }))
   )
@@ -272,26 +272,30 @@ function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast }:
   function addTrick(idx: number, nivel: number) { updateData(idx, (d: any) => ({ ...d, tricks: [...d.tricks, { nivel }] })) }
   function removeLast(idx: number) { updateData(idx, (d: any) => ({ ...d, tricks: d.tricks.slice(0, -1) })) }
 
-  async function saveAll() {
-    let ok = 0
-    for (let idx = 0; idx < data.length; idx++) {
-      const d = data[idx]
-      if (!d.dirty) continue
-      try {
-        const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1).maybeSingle()
-        if (existing.data) {
-          await supabase.from('scorecards').update({ tricks: d.tricks, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1)
-        } else {
-          await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: d.pId, run: 1, tricks: d.tricks })
-        }
-        const sc = scorecards
-        const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), 1: d.tricks } } }
-        dispatch({ type: 'SET_SC', sc: newSc })
-        ok++
-      } catch { toast('❌ Error al guardar ' + d.name) }
-    }
-    if (ok > 0) { setData((prev: any) => prev.map((d: any) => ({ ...d, dirty: false }))); toast('💾 Guardado') }
+async function saveAll() {
+  if (event?.status !== 'active') {
+    toast('❌ El evento aún no comenzó')
+    return
   }
+  let ok = 0
+  for (let idx = 0; idx < data.length; idx++) {
+    const d = data[idx]
+    if (!d.dirty) continue
+    try {
+      const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1).maybeSingle()
+      if (existing.data) {
+        await supabase.from('scorecards').update({ tricks: d.tricks, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1)
+      } else {
+        await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: d.pId, run: 1, tricks: d.tricks })
+      }
+      const sc = scorecards
+      const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), 1: d.tricks } } }
+      dispatch({ type: 'SET_SC', sc: newSc })
+      ok++
+    } catch { toast('❌ Error al guardar ' + d.name) }
+  }
+  if (ok > 0) { setData((prev: any) => prev.map((d: any) => ({ ...d, dirty: false }))); toast('💾 Guardado') }
+}
 
   const anyDirty = data.some((d: any) => d.dirty)
   return (
@@ -345,7 +349,7 @@ function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast 
           </div>
         )}
       </div>
-      <JamMultiView key={batIdx} parts={battery} jId={jId} cat={cat} eventId={eventId} scorecards={scorecards} dispatch={dispatch} toast={toast} />
+      <JamMultiView key={batIdx} parts={battery} jId={jId} cat={cat} eventId={eventId} scorecards={scorecards} dispatch={dispatch} toast={toast} event={event} />
     </div>
   )
 }
@@ -419,6 +423,10 @@ export default function JuecesPage() {
 
   async function save() {
     if (!participant || saving) return
+    if (event.status !== 'active') {
+      toast('❌ El evento aún no comenzó')
+      return
+    }
     setSaving(true)
     try {
       const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', participant.id).eq('run', run).maybeSingle()
@@ -482,7 +490,7 @@ export default function JuecesPage() {
             <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>Sin participantes</div>
           </div>
         ) : format === 'jam' ? (
-          <JamBatteryView parts={catParts} jId={jId} cat={cat} eventId={eventId} scorecards={state.scorecards} dispatch={dispatch} toast={toast} />
+          <JamBatteryView parts={catParts} jId={jId} cat={cat} eventId={eventId} scorecards={state.scorecards} dispatch={dispatch} toast={toast} event={event} />
         ) : (
           <>
             {/* NAV PARTICIPANTE */}

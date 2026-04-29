@@ -340,7 +340,7 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</div>
                     <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                      {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente · ' + (p.email ?? '')}
+                      {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
                     </div>
                   </div>
                   <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
@@ -435,7 +435,7 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.display_name ?? 'Juez'}</div>
               <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                {j.status === 'confirmed' ? 'Confirmado' : 'Pendiente · ' + (j.email ?? '')}
+                {j.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
               </div>
             </div>
             <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
