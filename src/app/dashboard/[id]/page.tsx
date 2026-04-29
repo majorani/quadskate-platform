@@ -171,6 +171,8 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
     location_name: ev.location_name ?? '', address: ev.address ?? '', description: ev.description ?? ''
   })
   const [saving, setSaving] = useState(false)
+  const [uploadingFlyer, setUploadingFlyer] = useState(false)
+  const [flyerUrl, setFlyerUrl] = useState(ev.flyer_url ?? null)
 
   async function save() {
     setSaving(true)
@@ -179,6 +181,45 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
     if (error) { showToast('❌ Error al guardar'); return }
     setEv((prev: any) => ({ ...prev, ...f }))
     showToast('✅ Evento actualizado')
+  }
+
+  async function uploadFlyer(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { showToast('❌ El archivo no puede superar 5MB'); return }
+    if (!file.type.startsWith('image/')) { showToast('❌ Solo se permiten imágenes'); return }
+
+    setUploadingFlyer(true)
+    const ext = file.name.split('.').pop()
+    const path = `${eventId}/flyer.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('flyers')
+      .upload(path, file, { upsert: true })
+
+    if (uploadError) { showToast('❌ Error al subir imagen'); setUploadingFlyer(false); return }
+
+    const { data: { publicUrl } } = supabase.storage.from('flyers').getPublicUrl(path)
+
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({ flyer_url: publicUrl })
+      .eq('id', eventId)
+
+    if (updateError) { showToast('❌ Error al guardar URL'); setUploadingFlyer(false); return }
+
+    setFlyerUrl(publicUrl)
+    setEv((prev: any) => ({ ...prev, flyer_url: publicUrl }))
+    showToast('✅ Flyer subido')
+    setUploadingFlyer(false)
+  }
+
+  async function removeFlyer() {
+    const { error } = await supabase.from('events').update({ flyer_url: null }).eq('id', eventId)
+    if (error) { showToast('❌ Error'); return }
+    setFlyerUrl(null)
+    setEv((prev: any) => ({ ...prev, flyer_url: null }))
+    showToast('Flyer eliminado')
   }
 
   return (
@@ -199,6 +240,35 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
       <div style={{ marginBottom: 10 }} />
       <textarea placeholder="Descripción" value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))}
         style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
+
+      {/* Flyer */}
+      <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 20, marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Flyer del evento</div>
+        {flyerUrl ? (
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <img src={flyerUrl} alt="Flyer" style={{ width: 120, height: 160, objectFit: 'cover', border: '1px solid #2a2a2a' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ background: '#111', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#e8e8e8', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
+                {uploadingFlyer ? 'Subiendo...' : 'Cambiar flyer'}
+                <input type="file" accept="image/*" onChange={uploadFlyer} style={{ display: 'none' }} disabled={uploadingFlyer} />
+              </label>
+              <button onClick={removeFlyer} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
+                Eliminar flyer
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #2a2a2a', padding: '32px 24px', cursor: 'pointer', gap: 8 }}>
+            <div style={{ fontSize: 28 }}>🖼</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploadingFlyer ? '#C9A84C' : '#444' }}>
+              {uploadingFlyer ? 'Subiendo...' : 'Subir flyer'}
+            </div>
+            <div style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>JPG, PNG o WEBP · Máx 5MB</div>
+            <input type="file" accept="image/*" onChange={uploadFlyer} style={{ display: 'none' }} disabled={uploadingFlyer} />
+          </label>
+        )}
+      </div>
+
       <button onClick={save} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
         {saving ? 'Guardando...' : 'Guardar cambios'}
       </button>
