@@ -43,7 +43,7 @@ export default function ManageEventPage() {
     const [evRes, catsRes, partsRes, judgesRes] = await Promise.all([
       supabase.from('events').select('*').eq('id', eventId).single(),
       supabase.from('categories').select('*').eq('event_id', eventId),
-      supabase.from('participants').select('*').eq('event_id', eventId),
+      supabase.from('participants').select('*, profiles(full_name)').eq('event_id', eventId),
       supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId),
     ])
     setEv(evRes.data); setCats(catsRes.data ?? [])
@@ -441,7 +441,9 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
               {catParts.map((p: any) => (
                 <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+                      {p.profiles?.full_name || p.display_name}
+                    </div>
                     <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
                       {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
                     </div>

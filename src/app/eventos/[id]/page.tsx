@@ -70,7 +70,7 @@ export default function EventoDetailPage() {
       const [evRes, catsRes, partsRes, judgesRes, scRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', params.id).single(),
         supabase.from('categories').select('*').eq('event_id', params.id),
-        supabase.from('participants').select('*').eq('event_id', params.id),
+        supabase.from('participants').select('*, profiles(full_name)').eq('event_id', params.id),
         supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', params.id),
         supabase.from('scorecards').select('*').eq('event_id', params.id),
       ])
@@ -231,7 +231,7 @@ export default function EventoDetailPage() {
                             {hasResults && p.score !== null ? i + 1 : '—'}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.display_name}</div>
+                            <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
                             {cat.format === 'best_trick' && hasResults && (
                               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
                                 {getBestTricks(p.id, scores).map((t: any, ti: number) => (
