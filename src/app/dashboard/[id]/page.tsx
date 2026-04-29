@@ -283,7 +283,7 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
   const [maxRuns, setMaxRuns] = useState(2)
   const [consolidation, setConsolidation] = useState('best_run')
   const [saving, setSaving] = useState(false)
-  const fmtL: Record<string,string> = { formal:'Torneo Formal', jam:'Jam', mixto:'Mixto' }
+  const fmtL: Record<string,string> = { formal:'Torneo Formal', jam:'Jam', mixto:'Mixto', best_trick:'Best Trick' }
   const consL: Record<string,string> = { best_run:'Mejor pasada', sum_runs:'Suma', best_trick:'Best Trick' }
 
   async function addCat() {
@@ -329,7 +329,7 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
         <input placeholder="Nombre *" value={name} onChange={e => setName(e.target.value)} style={inp} />
         <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Formato</div>
         <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-          {['formal','jam','mixto'].map(f => <button key={f} onClick={() => setFormat(f)} style={{ ...btnBase, flex: 1, background: format === f ? '#C9A84C' : '#0a0a0a', color: format === f ? '#000' : '#444' }}>{fmtL[f]}</button>)}
+          {['formal','jam','mixto','best_trick'].map(f => <button key={f} onClick={() => setFormat(f)} style={{ ...btnBase, flex: 1, background: format === f ? '#C9A84C' : '#0a0a0a', color: format === f ? '#000' : '#444' }}>{fmtL[f]}</button>)}
         </div>
         {format !== 'jam' && (
           <>
