@@ -65,6 +65,7 @@ export default function EventoDetailPage() {
 
   useEffect(() => {
     if (!params?.id) return
+
     async function load() {
       const [evRes, catsRes, partsRes, judgesRes, scRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', params.id).single(),
@@ -80,7 +81,32 @@ export default function EventoDetailPage() {
       setScores(scRes.data ?? [])
       setLoading(false)
     }
+
     load()
+
+    const channel = supabase
+      .channel(`event-scores-${params.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scorecards',
+          filter: `event_id=eq.${params.id}`,
+        },
+        async () => {
+          const { data } = await supabase
+            .from('scorecards')
+            .select('*')
+            .eq('event_id', params.id)
+          if (data) setScores(data)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [params?.id])
 
   if (loading) return (
