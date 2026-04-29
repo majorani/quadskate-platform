@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Buscar si el email ya tiene cuenta
-  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
-  const authUser = users.find(u => u.email === email)
+  const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+  const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
 
   const roleLabel = role === 'judge' ? 'juez' : 'participante'
 
