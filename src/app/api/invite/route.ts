@@ -60,8 +60,9 @@ export async function POST(req: NextRequest) {
   if (authUser) {
     await supabaseAdmin.from('notifications').insert({
       user_id: authUser.id,
+      type: role === 'judge' ? 'judge_invite' : 'participant_added',
       title: `Invitación a ${event.name}`,
-      message: `Fuiste invitado como ${roleLabel} al evento "${event.name}".`,
+      body: `Fuiste invitado como ${roleLabel} al evento "${event.name}".`,
       link: `/invitacion/${invitation.token}`,
       read: false,
     })

@@ -52,8 +52,9 @@ export async function POST(req: NextRequest) {
   if (profiles && profiles.length > 0) {
     const notifications = profiles.map((p: { id: string }) => ({
       user_id: p.id,
+      type: 'event_published',
       title: `Nuevo evento: ${event.name}`,
-      message: `Se publicó un nuevo evento en ${event.city}. ¡Anotate!`,
+      body: `Se publicó un nuevo evento en ${event.city}. ¡Anotate!`,
       link: `/eventos/${event.id}`,
       read: false,
     }))
