@@ -284,28 +284,37 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
 // ─── PARTS TAB ────────────────────────────────────────────────
 function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [catId, setCatId] = useState(cats[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function addPart() {
-    if (!email.trim() || !catId) return
+    if (!email.trim() || !displayName.trim() || !catId) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+
     const res = await fetch('/api/invite', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ email: email.trim(), eventId, role: 'participant', categoryId: catId }),
+      body: JSON.stringify({
+        email: email.trim(),
+        displayName: displayName.trim(),
+        eventId,
+        role: 'participant',
+        categoryId: catId,
+      }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? '✅ Notificación enviada al participante' : '✅ Email de invitación enviado')
+    showToast(data.hadAccount ? '✅ Participante agregado' : '✅ Invitación enviada')
     setEmail('')
+    setDisplayName('')
     const { data: partsData } = await supabase.from('participants').select('*').eq('event_id', eventId)
     if (partsData) setParts(partsData)
   }
@@ -328,7 +337,12 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
               {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
               {catParts.map((p: any) => (
                 <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name ?? p.email ?? 'Participante'}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</div>
+                    <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                      {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente · ' + (p.email ?? '')}
+                    </div>
+                  </div>
                   <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
                 </div>
               ))}
@@ -339,7 +353,13 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24, marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nuevo participante</div>
         <input
-          placeholder="Email del participante *"
+          placeholder="Nombre completo *"
+          value={displayName}
+          onChange={e => setDisplayName(e.target.value)}
+          style={inp}
+        />
+        <input
+          placeholder="Email *"
           value={email}
           onChange={e => setEmail(e.target.value)}
           type="email"
@@ -350,7 +370,7 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
           {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>
-          Si ya tiene cuenta recibirá una notificación. Si no, le llegará un email para registrarse.
+          Si ya tiene cuenta queda confirmado. Si no, le llega un email para registrarse.
         </div>
         <button onClick={addPart} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Agregando...' : 'Agregar participante'}
@@ -363,27 +383,35 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
 // ─── JUDGES TAB ───────────────────────────────────────────────
 function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
   const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function inviteJudge() {
-    if (!email.trim()) return
+    if (!email.trim() || !displayName.trim()) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+
     const res = await fetch('/api/invite', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ email: email.trim(), eventId, role: 'judge' }),
+      body: JSON.stringify({
+        email: email.trim(),
+        displayName: displayName.trim(),
+        eventId,
+        role: 'judge',
+      }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? '✅ Notificación enviada al juez' : '✅ Email de invitación enviado')
+    showToast(data.hadAccount ? '✅ Juez agregado' : '✅ Invitación enviada')
     setEmail('')
+    setDisplayName('')
     const { data: judgesData } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
     if (judgesData) setJudges(judgesData)
   }
@@ -402,12 +430,12 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
         {judges.map((j: any) => (
           <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 32, height: 32, background: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
-              {j.profiles?.full_name?.[0] ?? '?'}
+              {(j.profiles?.full_name ?? j.display_name ?? '?')[0]}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.email ?? 'Juez'}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.display_name ?? 'Juez'}</div>
               <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                {j.status === 'confirmed' ? 'Confirmado' : 'Invitado'}
+                {j.status === 'confirmed' ? 'Confirmado' : 'Pendiente · ' + (j.email ?? '')}
               </div>
             </div>
             <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
@@ -417,14 +445,20 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Invitar juez</div>
         <input
-          placeholder="Email del juez *"
+          placeholder="Nombre completo *"
+          value={displayName}
+          onChange={e => setDisplayName(e.target.value)}
+          style={inp}
+        />
+        <input
+          placeholder="Email *"
           value={email}
           onChange={e => setEmail(e.target.value)}
           type="email"
           style={inp}
         />
         <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>
-          Si ya tiene cuenta recibirá una notificación. Si no, le llegará un email para registrarse.
+          Si ya tiene cuenta queda confirmado. Si no, le llega un email para registrarse.
         </div>
         <button onClick={inviteJudge} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Invitando...' : 'Invitar juez'}
