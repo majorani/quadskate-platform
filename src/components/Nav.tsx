@@ -84,6 +84,7 @@ export default function Nav() {
                 🔔
                 {unread > 0 && <span style={{ position: 'absolute', top: 2, right: 4, background: '#C9A84C', color: '#000', borderRadius: 999, fontSize: 9, fontWeight: 900, minWidth: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{unread}</span>}
               </button>
+              <button onClick={() => go('/perfil')} style={linkStyle('/perfil')}>Perfil</button>
               <button onClick={() => go('/dashboard')} style={linkStyle('/dashboard')}>Mi panel</button>
               <button onClick={logout} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '6px 14px', color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Salir</button>
             </>
