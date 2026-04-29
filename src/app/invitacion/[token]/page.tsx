@@ -15,40 +15,39 @@ export default function InvitacionPage() {
   const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount'>('loading')
   const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    async function handleInvitation() {
-      const { data: { session } } = await supabase.auth.getSession()
+useEffect(() => {
+  async function handleInvitation() {
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
-      if (!session) {
-        localStorage.setItem('pendingInvitationToken', token)
-        setStatus('needsAccount')
-        return
-      }
-
-      // Limpiar cualquier token pendiente
-      localStorage.removeItem('pendingInvitationToken')
-
-      setStatus('accepting')
-      const res = await fetch(`/api/invite/accept/${token}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        setStatus('success')
-        setMessage(`¡Listo! Quedaste registrado como ${data.role === 'judge' ? 'juez' : 'participante'}.`)
-        setTimeout(() => router.push(`/eventos/${data.eventId}`), 2500)
-      } else {
-        setStatus('error')
-        setMessage(data.error || 'La invitación es inválida o ya fue usada.')
-      }
+    if (!user || !session) {
+      localStorage.setItem('pendingInvitationToken', token)
+      setStatus('needsAccount')
+      return
     }
 
-    handleInvitation()
-  }, [token])
+    localStorage.removeItem('pendingInvitationToken')
+    setStatus('accepting')
+    const res = await fetch(`/api/invite/accept/${token}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    })
+    const data = await res.json()
+
+    if (data.success) {
+      setStatus('success')
+      setMessage(`¡Listo! Quedaste registrado como ${data.role === 'judge' ? 'juez' : 'participante'}.`)
+      setTimeout(() => router.push(`/eventos/${data.eventId}`), 2500)
+    } else {
+      setStatus('error')
+      setMessage(data.error || 'La invitación es inválida o ya fue usada.')
+    }
+  }
+
+  handleInvitation()
+}, [token])
 
   const containerStyle: React.CSSProperties = {
     minHeight: '100vh',
