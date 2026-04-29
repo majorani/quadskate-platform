@@ -294,27 +294,16 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
-
     const res = await fetch('/api/invite', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        displayName: displayName.trim(),
-        eventId,
-        role: 'participant',
-        categoryId: catId,
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role: 'participant', categoryId: catId }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
     showToast(data.hadAccount ? '✅ Participante agregado' : '✅ Invitación enviada')
-    setEmail('')
-    setDisplayName('')
+    setEmail(''); setDisplayName('')
     const { data: partsData } = await supabase.from('participants').select('*').eq('event_id', eventId)
     if (partsData) setParts(partsData)
   }
@@ -325,46 +314,104 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
     showToast('Participante eliminado')
   }
 
+  async function updateBattery(partId: string, battery: number) {
+    const { error } = await supabase.from('participants').update({ battery }).eq('id', partId)
+    if (error) { showToast('❌ Error al actualizar batería'); return }
+    setParts((prev: any) => prev.map((p: any) => p.id === partId ? { ...p, battery } : p))
+  }
+
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Participantes</div>
       {cats.map((cat: any) => {
         const catParts = parts.filter((p: any) => p.category_id === cat.id)
+        const isJam = cat.format === 'jam'
+        const maxBattery = isJam ? Math.max(1, ...catParts.map((p: any) => p.battery || 1)) : 1
         return (
-          <div key={cat.id} style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 10, color: '#C9A84C', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{cat.name}</div>
+          <div key={cat.id} style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 10, color: '#C9A84C', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
+              {cat.name} {isJam && <span style={{ color: '#444' }}>· JAM</span>}
+            </div>
+
+            {/* Vista por baterías para Jam */}
+            {isJam && catParts.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
+                  Baterías configuradas
+                </div>
+                <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 12, flexWrap: 'wrap' }}>
+                  {Array.from({ length: maxBattery }, (_, i) => i + 1).map(b => {
+                    const bParts = catParts.filter((p: any) => (p.battery || 1) === b)
+                    return (
+                      <div key={b} style={{ background: '#0a0a0a', padding: '10px 14px', flex: 1, minWidth: 120 }}>
+                        <div style={{ fontSize: 9, color: '#C9A84C', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+                          Batería {b}
+                        </div>
+                        {bParts.length === 0
+                          ? <div style={{ fontSize: 10, color: '#333' }}>Vacía</div>
+                          : bParts.map((p: any) => (
+                            <div key={p.id} style={{ fontSize: 11, color: '#e8e8e8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>
+                              {p.display_name}
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-              {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
+              {catParts.length === 0 && (
+                <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
+                  Sin participantes
+                </div>
+              )}
               {catParts.map((p: any) => (
-                <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
+                <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{p.display_name}</div>
                     <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
                       {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
                     </div>
                   </div>
-                  <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
+
+                  {/* Selector de batería solo para Jam */}
+                  {isJam && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span style={{ fontSize: 9, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>BAT</span>
+                      <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
+                        {[1, 2, 3, 4, 5].map(b => (
+                          <button
+                            key={b}
+                            onClick={() => updateBattery(p.id, b)}
+                            style={{
+                              width: 28, height: 28, border: 'none', cursor: 'pointer',
+                              fontWeight: 900, fontSize: 11,
+                              background: (p.battery || 1) === b ? '#C9A84C' : '#0a0a0a',
+                              color: (p.battery || 1) === b ? '#000' : '#444',
+                            }}
+                          >
+                            {b}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
                 </div>
               ))}
             </div>
           </div>
         )
       })}
+
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24, marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nuevo participante</div>
-        <input
-          placeholder="Nombre completo *"
-          value={displayName}
-          onChange={e => setDisplayName(e.target.value)}
-          style={inp}
-        />
-        <input
-          placeholder="Email *"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          type="email"
-          style={inp}
-        />
+        <input placeholder="Nombre completo *" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
+        <input placeholder="Email *" value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
         <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Categoría</div>
         <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 8 }}>
           {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
