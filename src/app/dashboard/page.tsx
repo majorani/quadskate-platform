@@ -75,57 +75,173 @@ export default function DashboardPage() {
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
       <Nav />
 
+      <style>{`
+        .dash-header-inner {
+          max-width: 900px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 16px;
+        }
+        .dash-create-btn {
+          flex-shrink: 0;
+        }
+        .form-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .event-card {
+          background: #0a0a0a;
+          padding: 20px 20px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .event-card-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
+        }
+        .event-card-btn {
+          background: transparent;
+          border: 1px solid #2a2a2a;
+          padding: 8px 14px;
+          color: #666;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .form-action-row {
+          display: flex;
+          gap: 10px;
+          margin-top: 4px;
+          flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+          .dash-header-inner {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .dash-create-btn {
+            width: 100%;
+            text-align: center;
+          }
+          .form-grid-2 {
+            grid-template-columns: 1fr !important;
+          }
+          .event-card {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            padding: 16px !important;
+          }
+          .event-card-actions {
+            width: 100%;
+            justify-content: space-between;
+          }
+          .event-card-btn {
+            flex: 1;
+            text-align: center;
+          }
+        }
+      `}</style>
+
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
+        <div style={{
+          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999,
+          background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C',
+          color: toast.startsWith('❌') ? '#fff' : '#000',
+          padding: '11px 28px', fontWeight: 900, fontSize: 11,
+          letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}>
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 16px' }}>
+        <div className="dash-header-inner">
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Mi panel</div>
             <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>
               {user?.user_metadata?.full_name?.split(' ')[0] ?? 'Organizador'}
             </div>
           </div>
-          <button onClick={() => setShowCreate(!showCreate)} style={{
-            background: '#C9A84C', border: 'none', padding: '12px 24px',
-            color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer',
-            letterSpacing: 3, textTransform: 'uppercase',
-          }}>
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="dash-create-btn"
+            style={{
+              background: '#C9A84C', border: 'none', padding: '12px 24px',
+              color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer',
+              letterSpacing: 3, textTransform: 'uppercase',
+            }}
+          >
             + Crear evento
           </button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px' }}>
 
         {/* Formulario crear evento */}
         {showCreate && (
           <div style={{ borderTop: '2px solid #C9A84C', padding: '28px 0', marginBottom: 40 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Nuevo evento</div>
-            <input placeholder="Nombre del evento *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <input
+              placeholder="Nombre del evento *"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              style={inp}
+            />
+            <div className="form-grid-2">
               <input placeholder="Ciudad" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
               <input placeholder="País (ej: AR)" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
             </div>
             <div style={{ marginBottom: 10 }} />
-            <input placeholder="Nombre del lugar" value={form.location_name} onChange={e => setForm(f => ({ ...f, location_name: e.target.value }))} style={inp} />
-            <input placeholder="Dirección" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inp} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <input
+              placeholder="Nombre del lugar"
+              value={form.location_name}
+              onChange={e => setForm(f => ({ ...f, location_name: e.target.value }))}
+              style={inp}
+            />
+            <input
+              placeholder="Dirección"
+              value={form.address}
+              onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+              style={inp}
+            />
+            <div className="form-grid-2">
               <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
               <input type="time" value={form.event_time} onChange={e => setForm(f => ({ ...f, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
             </div>
             <div style={{ marginBottom: 10 }} />
-            <textarea placeholder="Descripción del evento" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button onClick={createEvent} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
+            <textarea
+              placeholder="Descripción del evento"
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              style={{ ...inp, minHeight: 80, resize: 'vertical' }}
+            />
+            <div className="form-action-row">
+              <button onClick={createEvent} disabled={saving} style={{
+                background: '#C9A84C', border: 'none', padding: '12px 28px',
+                color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer',
+                letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1,
+              }}>
                 {saving ? 'Creando...' : 'Crear evento'}
               </button>
-              <button onClick={() => setShowCreate(false)} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 28px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
+              <button onClick={() => setShowCreate(false)} style={{
+                background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 28px',
+                color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                letterSpacing: 2, textTransform: 'uppercase',
+              }}>
                 Cancelar
               </button>
             </div>
@@ -135,7 +251,9 @@ export default function DashboardPage() {
         {/* Lista eventos */}
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Mis eventos</div>
 
-        {loading && <div style={{ color: '#444', padding: 20, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>}
+        {loading && (
+          <div style={{ color: '#444', padding: 20, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>
+        )}
 
         {!loading && events.length === 0 && (
           <div style={{ borderTop: '1px solid #2a2a2a', padding: '48px 0', textAlign: 'center' }}>
@@ -145,24 +263,31 @@ export default function DashboardPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
           {events.map(ev => (
-            <div key={ev.id} style={{ background: '#0a0a0a', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 6 }}>{ev.name}</div>
+            <div key={ev.id} className="event-card">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 6 }}>
+                  {ev.name}
+                </div>
                 <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
                   {ev.event_date ? new Date(ev.event_date).toLocaleDateString('es-AR') : 'Sin fecha'}
                   {ev.city ? ' · ' + ev.city : ''}
                 </div>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: statusColor[ev.status], textTransform: 'uppercase' }}>
-                {statusLabel[ev.status]}
-              </span>
-              <button onClick={() => router.push('/dashboard/' + ev.id)} style={{
-                background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px',
-                color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700,
-                letterSpacing: 2, textTransform: 'uppercase',
-              }}>
-                Gestionar →
-              </button>
+              <div className="event-card-actions">
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 2,
+                  color: statusColor[ev.status], textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {statusLabel[ev.status]}
+                </span>
+                <button
+                  onClick={() => router.push('/dashboard/' + ev.id)}
+                  className="event-card-btn"
+                >
+                  Gestionar →
+                </button>
+              </div>
             </div>
           ))}
         </div>

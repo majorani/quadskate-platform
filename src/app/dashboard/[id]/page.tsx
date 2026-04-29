@@ -14,7 +14,156 @@ const inp: React.CSSProperties = {
   fontFamily: 'inherit',
 }
 
-function uid() { return Math.random().toString(36).slice(2, 10) }
+const RESPONSIVE_STYLES = `
+  .manage-header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .manage-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .status-btns {
+    display: flex;
+    gap: 1px;
+    background: #2a2a2a;
+    flex-wrap: wrap;
+    align-self: flex-start;
+  }
+  .tabs-row {
+    display: flex;
+    border-bottom: 1px solid #2a2a2a;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs-row::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: -1px;
+  }
+  .form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .format-btns {
+    display: flex;
+    gap: 1px;
+    background: #2a2a2a;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .format-btn {
+    flex: 1;
+    min-width: 80px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    white-space: nowrap;
+  }
+  .consolidation-btns {
+    display: flex;
+    gap: 1px;
+    background: #2a2a2a;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .consolidation-btn {
+    flex: 1;
+    min-width: 90px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    white-space: nowrap;
+  }
+  .participant-row {
+    background: #0a0a0a;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .battery-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .battery-btns {
+    display: flex;
+    gap: 1px;
+    background: #2a2a2a;
+  }
+  .form-action-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .flyer-section {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .jam-batteries {
+    display: flex;
+    gap: 1px;
+    background: #2a2a2a;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 640px) {
+    .manage-title-row {
+      flex-direction: column;
+    }
+    .status-btns {
+      width: 100%;
+    }
+    .status-btns button {
+      flex: 1;
+      min-width: 70px;
+    }
+    .form-grid-2 {
+      grid-template-columns: 1fr !important;
+    }
+    .participant-row {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .battery-selector {
+      width: 100%;
+    }
+    .flyer-section {
+      flex-direction: column;
+    }
+    .manage-header-inner {
+      padding: 0 16px;
+    }
+  }
+`
 
 export default function ManageEventPage() {
   const router = useRouter()
@@ -62,7 +211,6 @@ export default function ManageEventPage() {
     setEv(prev => prev ? { ...prev, status: status as any } : prev)
     showToast('✅ Estado actualizado')
 
-    // Si se publica, notificar a todos los usuarios
     if (status === 'published') {
       await fetch('/api/events/notify', {
         method: 'POST',
@@ -102,50 +250,73 @@ export default function ManageEventPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
+      <style>{RESPONSIVE_STYLES}</style>
       <Nav />
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
+        <div style={{
+          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999,
+          background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C',
+          color: toast.startsWith('❌') ? '#fff' : '#000',
+          padding: '11px 28px', fontWeight: 900, fontSize: 11,
+          letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}>
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '32px 24px 0' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, fontWeight: 700 }}>
+      <div style={{ borderBottom: '1px solid #2a2a2a', padding: '32px 16px 0' }}>
+        <div className="manage-header-inner">
+          <button
+            onClick={() => router.push('/dashboard')}
+            style={{
+              background: 'none', border: 'none', color: '#444', cursor: 'pointer',
+              fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
+              marginBottom: 20, fontWeight: 700, padding: 0,
+            }}
+          >
             ← Mis eventos
           </button>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+
+          <div className="manage-title-row">
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 8, textTransform: 'uppercase' }}>Gestionar evento</div>
               <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{ev.name}</div>
             </div>
-            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', flexWrap: 'wrap' }}>
+            <div className="status-btns">
               {statusOptions.map(s => (
-                <button key={s.value} onClick={() => updateStatus(s.value)} style={{
-                  padding: '10px 16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10,
-                  letterSpacing: 2, textTransform: 'uppercase',
-                  background: ev.status === s.value ? s.color : '#0a0a0a',
-                  color: ev.status === s.value ? (s.value === 'published' ? '#000' : '#fff') : '#444',
-                }}>
+                <button
+                  key={s.value}
+                  onClick={() => updateStatus(s.value)}
+                  style={{
+                    padding: '10px 14px', border: 'none', cursor: 'pointer',
+                    fontWeight: 700, fontSize: 10, letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    background: ev.status === s.value ? s.color : '#0a0a0a',
+                    color: ev.status === s.value ? (s.value === 'published' ? '#000' : '#fff') : '#444',
+                  }}
+                >
                   {s.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #2a2a2a' }}>
+          {/* Tabs — scrollable on mobile */}
+          <div className="tabs-row">
             {tabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
-                padding: '12px 20px', border: 'none', cursor: 'pointer', fontWeight: 700,
-                fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
-                background: 'transparent',
-                color: tab === t.id ? '#C9A84C' : '#444',
-                borderBottom: tab === t.id ? '2px solid #C9A84C' : '2px solid transparent',
-                marginBottom: -1,
-              }}>
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="tab-btn"
+                style={{
+                  color: tab === t.id ? '#C9A84C' : '#444',
+                  borderBottom: tab === t.id ? '2px solid #C9A84C' : '2px solid transparent',
+                }}
+              >
                 {t.label}
               </button>
             ))}
@@ -153,7 +324,7 @@ export default function ManageEventPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px' }}>
         {tab === 'info'   && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} />}
         {tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} />}
         {tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} eventId={eventId} showToast={showToast} />}
@@ -167,7 +338,7 @@ export default function ManageEventPage() {
 function InfoTab({ ev, setEv, eventId, showToast }: any) {
   const [f, setF] = useState({
     name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR',
-    event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0,5) ?? '',
+    event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0, 5) ?? '',
     location_name: ev.location_name ?? '', address: ev.address ?? '', description: ev.description ?? ''
   })
   const [saving, setSaving] = useState(false)
@@ -226,39 +397,55 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Información del evento</div>
       <input placeholder="Nombre *" value={f.name} onChange={e => setF(x => ({ ...x, name: e.target.value }))} style={inp} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="form-grid-2">
         <input placeholder="Ciudad" value={f.city} onChange={e => setF(x => ({ ...x, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
         <input placeholder="País" value={f.country} onChange={e => setF(x => ({ ...x, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
       <input placeholder="Nombre del lugar" value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp} />
       <input placeholder="Dirección" value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="form-grid-2">
         <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
         <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
-      <textarea placeholder="Descripción" value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))}
-        style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
+      <textarea
+        placeholder="Descripción"
+        value={f.description}
+        onChange={e => setF(x => ({ ...x, description: e.target.value }))}
+        style={{ ...inp, minHeight: 80, resize: 'vertical' }}
+      />
 
       {/* Flyer */}
       <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 20, marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Flyer del evento</div>
         {flyerUrl ? (
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-            <img src={flyerUrl} alt="Flyer" style={{ width: 120, height: 160, objectFit: 'cover', border: '1px solid #2a2a2a' }} />
+          <div className="flyer-section">
+            <img src={flyerUrl} alt="Flyer" style={{ width: 120, height: 160, objectFit: 'cover', border: '1px solid #2a2a2a', flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ background: '#111', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#e8e8e8', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
+              <label style={{
+                background: '#111', border: '1px solid #2a2a2a', padding: '10px 16px',
+                color: '#e8e8e8', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block',
+              }}>
                 {uploadingFlyer ? 'Subiendo...' : 'Cambiar flyer'}
                 <input type="file" accept="image/*" onChange={uploadFlyer} style={{ display: 'none' }} disabled={uploadingFlyer} />
               </label>
-              <button onClick={removeFlyer} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
+              <button onClick={removeFlyer} style={{
+                background: 'transparent', border: '1px solid #2a2a2a', padding: '10px 16px',
+                color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                letterSpacing: 2, textTransform: 'uppercase',
+              }}>
                 Eliminar flyer
               </button>
             </div>
           </div>
         ) : (
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #2a2a2a', padding: '32px 24px', cursor: 'pointer', gap: 8 }}>
+          <label style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', border: '2px dashed #2a2a2a',
+            padding: '32px 24px', cursor: 'pointer', gap: 8,
+          }}>
             <div style={{ fontSize: 28 }}>🖼</div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploadingFlyer ? '#C9A84C' : '#444' }}>
               {uploadingFlyer ? 'Subiendo...' : 'Subir flyer'}
@@ -269,7 +456,11 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
         )}
       </div>
 
-      <button onClick={save} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
+      <button onClick={save} disabled={saving} style={{
+        background: '#C9A84C', border: 'none', padding: '12px 28px',
+        color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer',
+        letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1,
+      }}>
         {saving ? 'Guardando...' : 'Guardar cambios'}
       </button>
     </div>
@@ -283,14 +474,23 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
   const [maxRuns, setMaxRuns] = useState(2)
   const [consolidation, setConsolidation] = useState('best_run')
   const [saving, setSaving] = useState(false)
-  const fmtL: Record<string,string> = { formal:'Torneo Formal', jam:'Jam', mixto:'Mixto', best_trick:'Best Trick' }
-  const consL: Record<string,string> = { best_run:'Mejor pasada', sum_runs:'Suma', best_trick:'Best Trick' }
+
+  const fmtL: Record<string, string> = {
+    formal: 'Formal', jam: 'Jam', mixto: 'Mixto', best_trick: 'Best Trick'
+  }
+  const consL: Record<string, string> = {
+    best_run: 'Mejor pasada', sum_runs: 'Suma', best_trick: 'Best Trick'
+  }
 
   async function addCat() {
     if (!name.trim()) return
     setSaving(true)
-    const weights = format === 'mixto' ? { intencion:15,dificultad:20,ejecucion:25,estilo:20,secuencia:20 } : { intencion:15,dificultad:30,ejecucion:30,estilo:10,secuencia:15 }
-    const { data, error } = await supabase.from('categories').insert({ event_id:eventId, name, format, max_runs:maxRuns, consolidation, weights }).select().single()
+    const weights = format === 'mixto'
+      ? { intencion: 15, dificultad: 20, ejecucion: 25, estilo: 20, secuencia: 20 }
+      : { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
+    const { data, error } = await supabase.from('categories').insert({
+      event_id: eventId, name, format, max_runs: maxRuns, consolidation, weights
+    }).select().single()
     setSaving(false)
     if (error) { showToast('❌ Error: ' + error.message); return }
     setCats((prev: any) => [...prev, data])
@@ -303,23 +503,28 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
     showToast('Categoría eliminada')
   }
 
-  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
+  const btnBase: React.CSSProperties = {
+    border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11,
+    letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px',
+  }
 
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Categorías</div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
-        {cats.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías</div>}
+        {cats.length === 0 && (
+          <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías</div>
+        )}
         {cats.map((cat: any) => (
-          <div key={cat.id} style={{ background: '#0a0a0a', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ flex: 1 }}>
+          <div key={cat.id} style={{ background: '#0a0a0a', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: -0.3 }}>{cat.name}</div>
               <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>
                 {fmtL[cat.format]}{cat.format !== 'jam' ? ' · ' + cat.max_runs + ' pasadas · ' + consL[cat.consolidation] : ''}
               </div>
             </div>
-            <button onClick={() => delCat(cat.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
+            <button onClick={() => delCat(cat.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
           </div>
         ))}
       </div>
@@ -327,23 +532,67 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Nueva categoría</div>
         <input placeholder="Nombre *" value={name} onChange={e => setName(e.target.value)} style={inp} />
+
         <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Formato</div>
-        <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-          {['formal','jam','mixto','best_trick'].map(f => <button key={f} onClick={() => setFormat(f)} style={{ ...btnBase, flex: 1, background: format === f ? '#C9A84C' : '#0a0a0a', color: format === f ? '#000' : '#444' }}>{fmtL[f]}</button>)}
+        <div className="format-btns">
+          {(['formal', 'jam', 'mixto', 'best_trick'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFormat(f)}
+              className="format-btn"
+              style={{
+                background: format === f ? '#C9A84C' : '#0a0a0a',
+                color: format === f ? '#000' : '#444',
+              }}
+            >
+              {fmtL[f]}
+            </button>
+          ))}
         </div>
+
         {format !== 'jam' && (
           <>
             <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Pasadas máximas</div>
             <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-              {[1,2,3].map(n => <button key={n} onClick={() => setMaxRuns(n)} style={{ ...btnBase, flex: 1, background: maxRuns === n ? '#C9A84C' : '#0a0a0a', color: maxRuns === n ? '#000' : '#444' }}>{n}</button>)}
+              {[1, 2, 3].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setMaxRuns(n)}
+                  style={{
+                    ...btnBase, flex: 1,
+                    background: maxRuns === n ? '#C9A84C' : '#0a0a0a',
+                    color: maxRuns === n ? '#000' : '#444',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
+
             <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Consolidación</div>
-            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-              {[['best_run','Mejor pasada'],['sum_runs','Suma'],['best_trick','Best Trick']].map(([v,l]) => <button key={v} onClick={() => setConsolidation(v)} style={{ ...btnBase, flex: 1, background: consolidation === v ? '#C9A84C' : '#0a0a0a', color: consolidation === v ? '#000' : '#444' }}>{l}</button>)}
+            <div className="consolidation-btns">
+              {([['best_run', 'Mejor pasada'], ['sum_runs', 'Suma'], ['best_trick', 'Best Trick']] as const).map(([v, l]) => (
+                <button
+                  key={v}
+                  onClick={() => setConsolidation(v)}
+                  className="consolidation-btn"
+                  style={{
+                    background: consolidation === v ? '#C9A84C' : '#0a0a0a',
+                    color: consolidation === v ? '#000' : '#444',
+                  }}
+                >
+                  {l}
+                </button>
+              ))}
             </div>
           </>
         )}
-        <button onClick={addCat} disabled={saving} style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
+
+        <button
+          onClick={addCat}
+          disabled={saving}
+          style={{ ...btnBase, background: '#C9A84C', color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}
+        >
           {saving ? 'Creando...' : 'Agregar categoría'}
         </button>
       </div>
@@ -357,7 +606,11 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   const [displayName, setDisplayName] = useState('')
   const [catId, setCatId] = useState(cats[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
-  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
+
+  const btnBase: React.CSSProperties = {
+    border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11,
+    letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px',
+  }
 
   async function addPart() {
     if (!email.trim() || !displayName.trim() || !catId) return
@@ -393,10 +646,12 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Participantes</div>
+
       {cats.map((cat: any) => {
         const catParts = parts.filter((p: any) => p.category_id === cat.id)
         const isJam = cat.format === 'jam'
         const maxBattery = isJam ? Math.max(1, ...catParts.map((p: any) => p.battery || 1)) : 1
+
         return (
           <div key={cat.id} style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 10, color: '#C9A84C', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
@@ -409,11 +664,11 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
                 <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>
                   Baterías configuradas
                 </div>
-                <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 12, flexWrap: 'wrap' }}>
+                <div className="jam-batteries">
                   {Array.from({ length: maxBattery }, (_, i) => i + 1).map(b => {
                     const bParts = catParts.filter((p: any) => (p.battery || 1) === b)
                     return (
-                      <div key={b} style={{ background: '#0a0a0a', padding: '10px 14px', flex: 1, minWidth: 120 }}>
+                      <div key={b} style={{ background: '#0a0a0a', padding: '10px 14px', flex: 1, minWidth: 110 }}>
                         <div style={{ fontSize: 9, color: '#C9A84C', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
                           Batería {b}
                         </div>
@@ -434,26 +689,30 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
               {catParts.length === 0 && (
-                <div style={{ background: '#0a0a0a', padding: '14px 20px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
+                <div style={{ background: '#0a0a0a', padding: '14px 16px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
                   Sin participantes
                 </div>
               )}
               {catParts.map((p: any) => (
-                <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+                <div key={p.id} className="participant-row">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.profiles?.full_name || p.display_name}
                     </div>
-                    <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                      {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
+                    <div style={{
+                      fontSize: 10,
+                      color: p.status === 'confirmed' ? '#4CAF50' : '#C9A84C',
+                      letterSpacing: 2, textTransform: 'uppercase', marginTop: 3,
+                    }}>
+                      {p.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
                     </div>
                   </div>
 
                   {/* Selector de batería solo para Jam */}
                   {isJam && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <div className="battery-selector">
                       <span style={{ fontSize: 9, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>BAT</span>
-                      <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
+                      <div className="battery-btns">
                         {[1, 2, 3, 4, 5].map(b => (
                           <button
                             key={b}
@@ -472,7 +731,10 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
                     </div>
                   )}
 
-                  <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
+                  <button
+                    onClick={() => delPart(p.id)}
+                    style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}
+                  >✕</button>
                 </div>
               ))}
             </div>
@@ -504,7 +766,11 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
-  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
+
+  const btnBase: React.CSSProperties = {
+    border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11,
+    letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px',
+  }
 
   async function inviteJudge() {
     if (!email.trim() || !displayName.trim()) return
@@ -514,23 +780,14 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
 
     const res = await fetch('/api/invite', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        displayName: displayName.trim(),
-        eventId,
-        role: 'judge',
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role: 'judge' }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
     showToast(data.hadAccount ? '✅ Juez agregado' : '✅ Invitación enviada')
-    setEmail('')
-    setDisplayName('')
+    setEmail(''); setDisplayName('')
     const { data: judgesData } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
     if (judgesData) setJudges(judgesData)
   }
@@ -544,23 +801,37 @@ function JudgesTab({ judges, setJudges, eventId, showToast }: any) {
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Jueces</div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
-        {judges.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin jueces asignados</div>}
+        {judges.length === 0 && (
+          <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin jueces asignados</div>
+        )}
         {judges.map((j: any) => (
-          <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 32, height: 32, background: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+          <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 32, height: 32, background: '#C9A84C',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#000', fontSize: 13, fontWeight: 900, flexShrink: 0,
+            }}>
               {(j.profiles?.full_name ?? j.display_name ?? '?')[0]}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.display_name ?? 'Juez'}</div>
-              <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : '#C9A84C', letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
-                {j.status === 'confirmed' ? 'Confirmado' : 'Pendiente — sin cuenta'}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {j.profiles?.full_name ?? j.display_name ?? 'Juez'}
+              </div>
+              <div style={{
+                fontSize: 10,
+                color: j.status === 'confirmed' ? '#4CAF50' : '#C9A84C',
+                letterSpacing: 2, textTransform: 'uppercase', marginTop: 3,
+              }}>
+                {j.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
               </div>
             </div>
-            <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666' }}>✕</button>
+            <button onClick={() => removeJudge(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
           </div>
         ))}
       </div>
+
       <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 16, textTransform: 'uppercase' }}>Invitar juez</div>
         <input
