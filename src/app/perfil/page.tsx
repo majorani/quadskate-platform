@@ -103,7 +103,11 @@ export default function PerfilPage() {
     </div>
   )
 
-  const initials = f.full_name ? f.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?'
+  const initials = f.full_name
+    ? f.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?'
+
+  const publicUrl = f.username ? `/u/${f.username}` : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8' }}>
@@ -117,16 +121,32 @@ export default function PerfilPage() {
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Mi cuenta</div>
-          <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Perfil</div>
+        <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Mi cuenta</div>
+            <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Perfil</div>
+          </div>
+          {/* Link al perfil público — solo si tiene username */}
+          {publicUrl && (
+            <button
+              onClick={() => router.push(publicUrl)}
+              style={{
+                background: 'transparent', border: '1px solid #2a2a2a',
+                padding: '8px 16px', color: '#555', fontWeight: 700,
+                fontSize: 10, cursor: 'pointer', letterSpacing: 2,
+                textTransform: 'uppercase',
+              }}
+            >
+              Ver perfil público →
+            </button>
+          )}
         </div>
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 24px' }}>
 
         {/* Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40, flexWrap: 'wrap' }}>
           <div style={{ width: 80, height: 80, background: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
             {f.avatar_url
               ? <img src={f.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -158,10 +178,15 @@ export default function PerfilPage() {
           <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Usuario</div>
           <input
             value={f.username}
-            onChange={e => setF(x => ({ ...x, username: e.target.value }))}
-            placeholder="@usuario"
+            onChange={e => setF(x => ({ ...x, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
+            placeholder="usuario (solo letras, números y _)"
             style={inp}
           />
+          {f.username && (
+            <div style={{ fontSize: 10, color: '#444', marginBottom: 10, letterSpacing: 1 }}>
+              Tu perfil: <span style={{ color: '#C9A84C' }}>quadskate-platform.vercel.app/u/{f.username}</span>
+            </div>
+          )}
 
           <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>País</div>
           <input
