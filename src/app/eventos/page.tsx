@@ -21,16 +21,15 @@ export default async function EventosPage() {
     <>
       <Nav />
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
-        <h1 style={{ color: '#e2e8f0', fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
-          Competencias
+        <h1 style={{ color: '#e8e8e8', fontSize: 28, fontWeight: 900, marginBottom: 8, textTransform: 'uppercase', letterSpacing: -0.5 }}>
+          Eventos
         </h1>
-        <p style={{ color: '#64748b', fontSize: 14, marginBottom: 32 }}>
-          Todos los eventos de quad skate registrados en la plataforma.
+        <p style={{ color: '#444', fontSize: 13, marginBottom: 32, letterSpacing: 1 }}>
+          Competencias y encuentros de quad skate registrados en la plataforma.
         </p>
 
         {events.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#334155' }}>
-            {/* <div style={{ fontSize: 48, marginBottom: 16 }}>🛼</div> */}
             <div style={{ fontSize: 16 }}>No hay eventos publicados todavía</div>
           </div>
         ) : (
