@@ -165,7 +165,7 @@ export default function ComoFuncionaPage() {
 
         <div ref={setElRef(1)}>
           <h1 className="arch" style={{ fontSize: 'clamp(44px, 7vw, 88px)', lineHeight: 0.95, letterSpacing: '-0.02em', textTransform: 'uppercase', marginBottom: 28, color: '#f4f1e8' }}>
-            De la idea<br /> al<span style={{ color: GOLD }}>Podio.</span>
+            De la idea<br />al<span style={{ color: GOLD }}> Podio.</span>
           </h1>
         </div>
 
