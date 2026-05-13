@@ -171,7 +171,7 @@ export default function ComoFuncionaPage() {
 
         <div ref={setElRef(2)}>
           <p className="manrope" style={{ fontSize: 'clamp(14px, 1.8vw, 17px)', color: '#8a8a82', maxWidth: 480, lineHeight: 1.7, fontWeight: 300 }}>
-            Creá tu evento de patín en minutos. <strong style={{ color: '#f4f1e8', fontWeight: 700 }}>Quad Skate Platform</strong> te simplifica todo lo que necesitás. Impulsemos juntos la comunidad.
+            Creá tu evento de patín en minutos.<br/><strong style={{ color: '#f4f1e8', fontWeight: 700 }}>Quad Skate Platform</strong> te simplifica todo lo que necesitás. Impulsemos juntos la comunidad.
           </p>
         </div>
       </div>
