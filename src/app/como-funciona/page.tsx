@@ -11,7 +11,7 @@ const MAX_W = 1100
 const STEPS = [
   {
     num: '01', label: 'ACCESO', title: 'Iniciar sesión',
-    desc: 'Entra con tu cuenta de organizador y accedé al panel donde vivirán todos tus eventos.',
+    desc: 'Entra con tu cuenta, crea un evento y accedé al panel donde vivirán todos tus proyectos.',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   },
   {
@@ -20,7 +20,7 @@ const STEPS = [
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   },
   {
-    num: '03', label: 'DATOS BASE', title: 'Formulario base',
+    num: '03', label: 'DATOS BASE', title: 'Formulario básico',
     desc: 'Nombre, ciudad, lugar, fecha y hora. Todo lo necesario para que el evento tome forma.',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
   },
@@ -31,7 +31,7 @@ const STEPS = [
   },
   {
     num: '05', label: 'ESTRUCTURA', title: 'Categorías y jueces',
-    desc: 'Definí formatos (Formal, Jam, Mixto, Best Trick), invitá jueces por email y armá tu equipo.',
+    desc: 'Definí el formato (Formal, Jam, Best Trick), invitá jueces por email y armá tu equipo.',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
   },
   {
@@ -165,13 +165,13 @@ export default function ComoFuncionaPage() {
 
         <div ref={setElRef(1)}>
           <h1 className="arch" style={{ fontSize: 'clamp(44px, 7vw, 88px)', lineHeight: 0.95, letterSpacing: '-0.02em', textTransform: 'uppercase', marginBottom: 28, color: '#f4f1e8' }}>
-            De la idea<br />al podio en<br /><span style={{ color: GOLD }}>6 pasos.</span>
+            De la idea<br />al<span style={{ color: GOLD }}>Podio.</span>
           </h1>
         </div>
 
         <div ref={setElRef(2)}>
           <p className="manrope" style={{ fontSize: 'clamp(14px, 1.8vw, 17px)', color: '#8a8a82', maxWidth: 480, lineHeight: 1.7, fontWeight: 300 }}>
-            Creá tu evento de patín en minutos. <strong style={{ color: '#f4f1e8', fontWeight: 700 }}>Quad Circuit</strong> te simplifica todo lo que necesitás — impulsemos juntos la comunidad.
+            Creá tu evento de patín en minutos. <strong style={{ color: '#f4f1e8', fontWeight: 700 }}>Quad Skate Platform</strong> te simplifica todo lo que necesitás. Impulsemos juntos la comunidad.
           </p>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function ComoFuncionaPage() {
         <div style={{ maxWidth: MAX_W, margin: '0 auto', padding: `clamp(28px, 4vw, 48px) ${pad} 0` }}>
           <div ref={setElRef(3)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12, marginBottom: 32 }}>
             <h2 className="arch" style={{ fontSize: 'clamp(22px, 3vw, 38px)', textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#f4f1e8', lineHeight: 1 }}>
-              El flujo, <span style={{ color: GOLD }}>paso</span> a paso.
+              Gestión, <span style={{ color: GOLD }}>paso</span> a paso.
             </h2>
             <span className="mono" style={{ fontSize: 10, color: '#444', letterSpacing: '0.3em', textTransform: 'uppercase' }}>06 etapas</span>
           </div>
@@ -301,7 +301,7 @@ export default function ComoFuncionaPage() {
                 Puntuar en vivo
               </h3>
               <p className="manrope" style={{ fontSize: 13, color: '#8a8a82', lineHeight: 1.7, fontWeight: 300, marginBottom: 28, maxWidth: 340 }}>
-                Los jueces invitados acceden desde cualquier dispositivo y puntúan en tiempo real. Resultados al instante.
+                Los jueces invitados acceden desde cualquier dispositivo y puntúan en tiempo real. Resultados al instante con total transparencia.
               </p>
               {['Acceso por invitación', 'Puntuación en tiempo real', 'Ranking automático'].map((f, i) => (
                 <div key={i} className="feature-row">{f}</div>
@@ -320,7 +320,7 @@ export default function ComoFuncionaPage() {
               ¿Listo para tu próximo <span style={{ color: GOLD }}>evento?</span>
             </h2>
             <p className="manrope" style={{ fontSize: 15, color: '#8a8a82', marginBottom: 40, fontWeight: 300 }}>
-              La comunidad de patín te espera.
+              La comunidad de quad skate te espera.
             </p>
             <button
               onClick={() => router.push('/dashboard')}

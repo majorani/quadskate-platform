@@ -82,7 +82,7 @@ export default async function HomePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Próximos eventos</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Competencias</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Competencias y encuentros</div>
                 </div>
                 <a href="/eventos" style={{ color: '#C9A84C', fontSize: 11, fontWeight: 700, letterSpacing: 2, textDecoration: 'none', textTransform: 'uppercase' }}>
                   Ver todos →
@@ -98,7 +98,7 @@ export default async function HomePage() {
         {/* FEATURES */}
         <div style={{ padding: '64px 24px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 40, textTransform: 'uppercase' }}>Por qué QuadSkate Platform</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 40, textTransform: 'uppercase' }}>Por qué Quad Skate Platform</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 1, background: '#2a2a2a' }}>
               {[
                 ['01', 'Portal de eventos', 'Es un lugar más accesible para visibilizar tu evento'],

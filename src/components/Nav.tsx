@@ -61,8 +61,8 @@ export default function Nav() {
       }}>
         {/* Logo */}
         <button onClick={() => go('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8', whiteSpace: 'nowrap' }}>QUAD</span>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C', whiteSpace: 'nowrap' }}>CIRCUIT</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8', whiteSpace: 'nowrap' }}>QS</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C', whiteSpace: 'nowrap' }}>PLATFORM</span>
           <span className="nav-by" style={{ fontSize: 11, fontWeight: 400, letterSpacing: 2, color: '#444', marginLeft: 2, whiteSpace: 'nowrap' }}>BY MAJORANI</span>
         </button>
 
