@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import type { User } from '@supabase/supabase-js'
@@ -47,6 +49,7 @@ const RESPONSIVE_STYLES = `
 `
 
 export default function ManageEventPage() {
+  const t = useTranslations('ManageEventPage')
   const router = useRouter()
   const params = useParams()
   const eventId = params.id as string
@@ -85,39 +88,48 @@ export default function ManageEventPage() {
 
   async function updateStatus(status: string) {
     const { error } = await supabase.from('events').update({ status }).eq('id', eventId)
-    if (error) { showToast('❌ Error'); return }
+    if (error) { showToast(t('toastStatusError')); return }
     setEv(prev => prev ? { ...prev, status: status as any } : prev)
-    showToast('✅ Estado actualizado')
+    showToast(t('toastStatusOk'))
     if (status === 'published') {
       await fetch('/api/events/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId }) })
     }
   }
 
-  if (loading) return <div style={{ minHeight: '100vh', background: '#0a0a0a' }}><Nav /><div style={{ padding: 80, textAlign: 'center', color: '#444', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>Cargando...</div></div>
-  if (!ev) return <div style={{ minHeight: '100vh', background: '#0a0a0a' }}><Nav /><div style={{ padding: 80, textAlign: 'center', color: '#ef4444' }}>Evento no encontrado</div></div>
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
+      <Nav />
+      <div style={{ padding: 80, textAlign: 'center', color: '#444', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>{t('loading')}</div>
+    </div>
+  )
+  if (!ev) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
+      <Nav />
+      <div style={{ padding: 80, textAlign: 'center', color: '#ef4444' }}>{t('notFound')}</div>
+    </div>
+  )
 
   const isEncuentro = (ev as any).event_type === 'encuentro'
 
-  // Tabs dinámicas según tipo
   const tabs = isEncuentro
     ? [
-        { id: 'info',          label: 'Info' },
-        { id: 'parts',         label: 'Participantes' },
-        { id: 'organizadores', label: 'Organizadores' },
-        { id: 'minijam',       label: 'Mini Jam' },
+        { id: 'info',          label: t('tabInfo') },
+        { id: 'parts',         label: t('tabParts') },
+        { id: 'organizadores', label: t('tabOrganizers') },
+        { id: 'minijam',       label: t('tabMiniJam') },
       ]
     : [
-        { id: 'info',   label: 'Info' },
-        { id: 'cats',   label: 'Categorías' },
-        { id: 'parts',  label: 'Participantes' },
-        { id: 'judges', label: 'Jueces' },
+        { id: 'info',   label: t('tabInfo') },
+        { id: 'cats',   label: t('tabCats') },
+        { id: 'parts',  label: t('tabParts') },
+        { id: 'judges', label: t('tabJudges') },
       ]
 
   const statusOptions = [
-    { value: 'draft',     label: 'Borrador',  color: '#444' },
-    { value: 'published', label: 'Publicar',  color: GOLD },
-    { value: 'active',    label: 'Activar',   color: '#4CAF50' },
-    { value: 'finished',  label: 'Finalizar', color: '#666' },
+    { value: 'draft',     label: t('statusDraft'),    color: '#444' },
+    { value: 'published', label: t('statusPublish'),  color: GOLD },
+    { value: 'active',    label: t('statusActivate'), color: '#4CAF50' },
+    { value: 'finished',  label: t('statusFinish'),   color: '#666' },
   ]
 
   return (
@@ -131,67 +143,55 @@ export default function ManageEventPage() {
         </div>
       )}
 
-      {/* Header */}
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '32px 16px 0' }}>
         <div className="manage-header-inner">
           <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, fontWeight: 700, padding: 0 }}>
-            ← Mis eventos
+            {t('backButton')}
           </button>
-
           <div className="manage-title-row">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase' }}>
-                  {isEncuentro ? 'Gestionar encuentro' : 'Gestionar evento'}
+                  {isEncuentro ? t('eyebrowEncuentro') : t('eyebrowCompetencia')}
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '2px 7px', border: `1px solid ${isEncuentro ? '#555' : GOLD}`, color: isEncuentro ? '#666' : GOLD }}>
-                  {isEncuentro ? 'Encuentro' : 'Competencia'}
+                  {isEncuentro ? t('badgeEncuentro') : t('badgeCompetencia')}
                 </span>
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{ev.name}</div>
             </div>
             <div className="status-btns">
               {statusOptions.map(s => (
-                <button key={s.value} onClick={() => updateStatus(s.value)} style={{
-                  padding: '10px 14px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase',
-                  background: ev.status === s.value ? s.color : '#0a0a0a',
-                  color: ev.status === s.value ? (s.value === 'published' ? '#000' : '#fff') : '#444',
-                }}>{s.label}</button>
+                <button key={s.value} onClick={() => updateStatus(s.value)} style={{ padding: '10px 14px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', background: ev.status === s.value ? s.color : '#0a0a0a', color: ev.status === s.value ? (s.value === 'published' ? '#000' : '#fff') : '#444' }}>
+                  {s.label}
+                </button>
               ))}
             </div>
           </div>
-
           <div className="tabs-row">
-            {tabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} className="tab-btn" style={{
-                color: tab === t.id ? GOLD : '#444',
-                borderBottom: tab === t.id ? `2px solid ${GOLD}` : '2px solid transparent',
-              }}>{t.label}</button>
+            {tabs.map(tb => (
+              <button key={tb.id} onClick={() => setTab(tb.id)} className="tab-btn" style={{ color: tab === tb.id ? GOLD : '#444', borderBottom: tab === tb.id ? `2px solid ${GOLD}` : '2px solid transparent' }}>
+                {tb.label}
+              </button>
             ))}
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px' }}>
-        {/* Tabs comunes */}
-        {tab === 'info' && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} />}
-
-        {/* Tabs competencia */}
-        {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} />}
-        {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} eventId={eventId} showToast={showToast} />}
-        {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} role="judge" title="Jueces" addLabel="Invitar juez" emptyLabel="Sin jueces asignados" />}
-
-        {/* Tabs encuentro */}
-        {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} />}
-        {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} role="judge" title="Organizadores" addLabel="Agregar organizador" emptyLabel="Sin organizadores asignados" />}
-        {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} />}
+        {tab === 'info' && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} t={t} />}
+        {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
+        {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} eventId={eventId} showToast={showToast} t={t} />}
+        {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
+        {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
+        {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
+        {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
       </div>
     </div>
   )
 }
 
-// ─── INFO TAB (compartido) ────────────────────────────────────
-function InfoTab({ ev, setEv, eventId, showToast }: any) {
+function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
   const [f, setF] = useState({
     name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR',
     event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0, 5) ?? '',
@@ -205,70 +205,67 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
     setSaving(true)
     const { error } = await supabase.from('events').update(f).eq('id', eventId)
     setSaving(false)
-    if (error) { showToast('❌ Error al guardar'); return }
+    if (error) { showToast(t('toastInfoError')); return }
     setEv((prev: any) => ({ ...prev, ...f }))
-    showToast('✅ Evento actualizado')
+    showToast(t('toastInfoSaved'))
   }
 
   async function uploadFlyer(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { showToast('❌ El archivo no puede superar 5MB'); return }
-    if (!file.type.startsWith('image/')) { showToast('❌ Solo se permiten imágenes'); return }
+    if (file.size > 5 * 1024 * 1024) { showToast(t('toastFlyerSizeError')); return }
+    if (!file.type.startsWith('image/')) { showToast(t('toastFlyerTypeError')); return }
     setUploadingFlyer(true)
     const ext = file.name.split('.').pop()
     const path = `${eventId}/flyer.${ext}`
     const { error: uploadError } = await supabase.storage.from('flyers').upload(path, file, { upsert: true })
-    if (uploadError) { showToast('❌ Error al subir imagen'); setUploadingFlyer(false); return }
+    if (uploadError) { showToast(t('toastFlyerUploadError')); setUploadingFlyer(false); return }
     const { data: { publicUrl } } = supabase.storage.from('flyers').getPublicUrl(path)
     const { error: updateError } = await supabase.from('events').update({ flyer_url: publicUrl }).eq('id', eventId)
-    if (updateError) { showToast('❌ Error al guardar URL'); setUploadingFlyer(false); return }
+    if (updateError) { showToast(t('toastFlyerUpdateError')); setUploadingFlyer(false); return }
     setFlyerUrl(publicUrl)
     setEv((prev: any) => ({ ...prev, flyer_url: publicUrl }))
-    showToast('✅ Flyer subido')
+    showToast(t('toastFlyerUploaded'))
     setUploadingFlyer(false)
   }
 
   async function removeFlyer() {
     const { error } = await supabase.from('events').update({ flyer_url: null }).eq('id', eventId)
-    if (error) { showToast('❌ Error'); return }
+    if (error) { showToast(t('toastStatusError')); return }
     setFlyerUrl(null)
     setEv((prev: any) => ({ ...prev, flyer_url: null }))
-    showToast('Flyer eliminado')
+    showToast(t('toastFlyerRemoved'))
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Información del evento</div>
-      <input placeholder="Nombre *" value={f.name} onChange={e => setF(x => ({ ...x, name: e.target.value }))} style={inp} />
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('infoTitle')}</div>
+      <input placeholder={t('infoPlaceholderName')} value={f.name} onChange={e => setF(x => ({ ...x, name: e.target.value }))} style={inp} />
       <div className="form-grid-2">
-        <input placeholder="Ciudad" value={f.city} onChange={e => setF(x => ({ ...x, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
-        <input placeholder="País" value={f.country} onChange={e => setF(x => ({ ...x, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
+        <input placeholder={t('infoPlaceholderCity')} value={f.city} onChange={e => setF(x => ({ ...x, city: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
+        <input placeholder={t('infoPlaceholderCountry')} value={f.country} onChange={e => setF(x => ({ ...x, country: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
-      <input placeholder="Nombre del lugar" value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp} />
-      <input placeholder="Dirección" value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp} />
+      <input placeholder={t('infoPlaceholderLocation')} value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp} />
+      <input placeholder={t('infoPlaceholderAddress')} value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp} />
       <div className="form-grid-2">
         <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
         <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
       </div>
       <div style={{ marginBottom: 10 }} />
-      <textarea placeholder="Descripción" value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))}
-        style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
-
-      {/* Flyer */}
+      <textarea placeholder={t('infoPlaceholderDescription')} value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))} style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
       <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>Flyer del evento</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('flyerTitle')}</div>
         {flyerUrl ? (
           <div className="flyer-section">
             <img src={flyerUrl} alt="Flyer" style={{ width: 120, height: 160, objectFit: 'cover', border: '1px solid #2a2a2a', flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ background: '#111', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#e8e8e8', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
-                {uploadingFlyer ? 'Subiendo...' : 'Cambiar flyer'}
+                {uploadingFlyer ? t('flyerUploading') : t('flyerChange')}
                 <input type="file" accept="image/*" onChange={uploadFlyer} style={{ display: 'none' }} disabled={uploadingFlyer} />
               </label>
               <button onClick={removeFlyer} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
-                Eliminar flyer
+                {t('flyerRemove')}
               </button>
             </div>
           </div>
@@ -276,30 +273,28 @@ function InfoTab({ ev, setEv, eventId, showToast }: any) {
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #2a2a2a', padding: '32px 24px', cursor: 'pointer', gap: 8 }}>
             <div style={{ fontSize: 28 }}>🖼</div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploadingFlyer ? GOLD : '#444' }}>
-              {uploadingFlyer ? 'Subiendo...' : 'Subir flyer'}
+              {uploadingFlyer ? t('flyerUploading') : t('flyerUpload')}
             </div>
-            <div style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>JPG, PNG o WEBP · Máx 5MB</div>
+            <div style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>{t('flyerHint')}</div>
             <input type="file" accept="image/*" onChange={uploadFlyer} style={{ display: 'none' }} disabled={uploadingFlyer} />
           </label>
         )}
       </div>
-
       <button onClick={save} disabled={saving} style={{ background: GOLD, border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
-        {saving ? 'Guardando...' : 'Guardar cambios'}
+        {saving ? t('infoSaving') : t('infoSave')}
       </button>
     </div>
   )
 }
 
-// ─── CATS TAB (solo competencia) ─────────────────────────────
-function CatsTab({ cats, setCats, eventId, showToast }: any) {
+function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
   const [name, setName] = useState('')
   const [format, setFormat] = useState('formal')
   const [maxRuns, setMaxRuns] = useState(2)
   const [consolidation, setConsolidation] = useState('best_run')
   const [saving, setSaving] = useState(false)
-  const fmtL: Record<string, string> = { formal: 'Formal', jam: 'Jam', mixto: 'Mixto', best_trick: 'Best Trick' }
-  const consL: Record<string, string> = { best_run: 'Mejor pasada', sum_runs: 'Suma', best_trick: 'Best Trick' }
+  const fmtL: Record<string, string> = { formal: t('catsFormatFormal'), jam: t('catsFormatJam'), mixto: t('catsFormatMixto'), best_trick: t('catsFormatBestTrick') }
+  const consL: Record<string, string> = { best_run: t('catsConsBestRun'), sum_runs: t('catsConsSum'), best_trick: t('catsConsBestTrick') }
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
   async function addCat() {
@@ -310,28 +305,28 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
       : { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
     const { data, error } = await supabase.from('categories').insert({ event_id: eventId, name, format, max_runs: maxRuns, consolidation, weights }).select().single()
     setSaving(false)
-    if (error) { showToast('❌ Error: ' + error.message); return }
+    if (error) { showToast(t('toastCatError', { msg: error.message })); return }
     setCats((prev: any) => [...prev, data])
-    setName(''); showToast('✅ Categoría creada')
+    setName(''); showToast(t('toastCatCreated'))
   }
 
   async function delCat(id: string) {
     await supabase.from('categories').delete().eq('id', id)
     setCats((prev: any) => prev.filter((c: any) => c.id !== id))
-    showToast('Categoría eliminada')
+    showToast(t('toastCatDeleted'))
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Categorías</div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('catsTitle')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
-        {cats.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías</div>}
+        {cats.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('catsEmpty')}</div>}
         {cats.map((cat: any) => (
           <div key={cat.id} style={{ background: '#0a0a0a', padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: -0.3 }}>{cat.name}</div>
               <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>
-                {fmtL[cat.format]}{cat.format !== 'jam' ? ' · ' + cat.max_runs + ' pasadas · ' + consL[cat.consolidation] : ''}
+                {fmtL[cat.format]}{cat.format !== 'jam' ? ' · ' + cat.max_runs + ' · ' + consL[cat.consolidation] : ''}
               </div>
             </div>
             <button onClick={() => delCat(cat.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
@@ -339,9 +334,9 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
         ))}
       </div>
       <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>Nueva categoría</div>
-        <input placeholder="Nombre *" value={name} onChange={e => setName(e.target.value)} style={inp} />
-        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Formato</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('catsNewTitle')}</div>
+        <input placeholder={t('catsPlaceholderName')} value={name} onChange={e => setName(e.target.value)} style={inp} />
+        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('catsFormatLabel')}</div>
         <div className="format-btns">
           {(['formal', 'jam', 'mixto', 'best_trick'] as const).map(f => (
             <button key={f} onClick={() => setFormat(f)} className="format-btn" style={{ background: format === f ? GOLD : '#0a0a0a', color: format === f ? '#000' : '#444' }}>{fmtL[f]}</button>
@@ -349,28 +344,27 @@ function CatsTab({ cats, setCats, eventId, showToast }: any) {
         </div>
         {format !== 'jam' && (
           <>
-            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Pasadas máximas</div>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('catsRunsLabel')}</div>
             <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
               {[1, 2, 3].map(n => <button key={n} onClick={() => setMaxRuns(n)} style={{ ...btnBase, flex: 1, background: maxRuns === n ? GOLD : '#0a0a0a', color: maxRuns === n ? '#000' : '#444' }}>{n}</button>)}
             </div>
-            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Consolidación</div>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('catsConsolidationLabel')}</div>
             <div className="consolidation-btns">
-              {([['best_run', 'Mejor pasada'], ['sum_runs', 'Suma'], ['best_trick', 'Best Trick']] as const).map(([v, l]) => (
-                <button key={v} onClick={() => setConsolidation(v)} className="consolidation-btn" style={{ background: consolidation === v ? GOLD : '#0a0a0a', color: consolidation === v ? '#000' : '#444' }}>{l}</button>
+              {(['best_run', 'sum_runs', 'best_trick'] as const).map(v => (
+                <button key={v} onClick={() => setConsolidation(v)} className="consolidation-btn" style={{ background: consolidation === v ? GOLD : '#0a0a0a', color: consolidation === v ? '#000' : '#444' }}>{consL[v]}</button>
               ))}
             </div>
           </>
         )}
         <button onClick={addCat} disabled={saving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Creando...' : 'Agregar categoría'}
+          {saving ? t('catsCreating') : t('catsAdd')}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── PARTS TAB (competencia — con categorías) ─────────────────
-function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
+function PartsTab({ parts, setParts, cats, eventId, showToast, t }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [catId, setCatId] = useState(cats[0]?.id ?? '')
@@ -381,12 +375,12 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
     if (!email.trim() || !displayName.trim() || !catId) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+    if (!session) { showToast(t('toastNoSession')); setSaving(false); return }
     const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role: 'participant', categoryId: catId }) })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? '✅ Participante agregado' : '✅ Invitación enviada')
+    showToast(data.hadAccount ? t('toastPartAdded') : t('toastPartInvited'))
     setEmail(''); setDisplayName('')
     const { data: partsData } = await supabase.from('participants').select('*').eq('event_id', eventId)
     if (partsData) setParts(partsData)
@@ -395,18 +389,18 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
   async function delPart(id: string) {
     await supabase.from('participants').delete().eq('id', id)
     setParts((prev: any) => prev.filter((p: any) => p.id !== id))
-    showToast('Participante eliminado')
+    showToast(t('toastPartDeleted'))
   }
 
   async function updateBattery(partId: string, battery: number) {
     const { error } = await supabase.from('participants').update({ battery }).eq('id', partId)
-    if (error) { showToast('❌ Error al actualizar batería'); return }
+    if (error) { showToast(t('toastPartBatteryError')); return }
     setParts((prev: any) => prev.map((p: any) => p.id === partId ? { ...p, battery } : p))
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Participantes</div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('partsTitle')}</div>
       {cats.map((cat: any) => {
         const catParts = parts.filter((p: any) => p.category_id === cat.id)
         const isJam = cat.format === 'jam'
@@ -418,14 +412,14 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
             </div>
             {isJam && catParts.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Baterías configuradas</div>
+                <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('partsBatteryLabel')}</div>
                 <div className="jam-batteries">
                   {Array.from({ length: maxBattery }, (_, i) => i + 1).map(b => {
                     const bParts = catParts.filter((p: any) => (p.battery || 1) === b)
                     return (
                       <div key={b} style={{ background: '#0a0a0a', padding: '10px 14px', flex: 1, minWidth: 110 }}>
-                        <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Batería {b}</div>
-                        {bParts.length === 0 ? <div style={{ fontSize: 10, color: '#333' }}>Vacía</div> : bParts.map((p: any) => <div key={p.id} style={{ fontSize: 11, color: '#e8e8e8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{p.display_name}</div>)}
+                        <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('partsBattery', { n: b })}</div>
+                        {bParts.length === 0 ? <div style={{ fontSize: 10, color: '#333' }}>{t('partsBatteryEmpty')}</div> : bParts.map((p: any) => <div key={p.id} style={{ fontSize: 11, color: '#e8e8e8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{p.display_name}</div>)}
                       </div>
                     )
                   })}
@@ -433,12 +427,14 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-              {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 16px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
+              {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 16px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('partsEmpty')}</div>}
               {catParts.map((p: any) => (
                 <div key={p.id} className="participant-row">
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profiles?.full_name || p.display_name}</div>
-                    <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{p.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}</div>
+                    <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                      {p.status === 'confirmed' ? t('partsStatusConfirmed') : t('partsStatusPending')}
+                    </div>
                   </div>
                   {isJam && (
                     <div className="battery-selector">
@@ -458,42 +454,39 @@ function PartsTab({ parts, setParts, cats, eventId, showToast }: any) {
         )
       })}
       <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24, marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>Nuevo participante</div>
-        <input placeholder="Nombre completo *" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
-        <input placeholder="Email *" value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
-        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Categoría</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('partsNewTitle')}</div>
+        <input placeholder={t('partsPlaceholderName')} value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
+        <input placeholder={t('partsPlaceholderEmail')} value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
+        <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('partsCategoryLabel')}</div>
         <select value={catId} onChange={e => setCatId(e.target.value)} style={{ ...inp, marginBottom: 8 }}>
           {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>Si ya tiene cuenta queda confirmado. Si no, le llega un email para registrarse.</div>
+        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>{t('partsInviteHint')}</div>
         <button onClick={addPart} disabled={saving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Agregando...' : 'Agregar participante'}
+          {saving ? t('partsAdding') : t('partsAdd')}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── ENCUENTRO PARTS TAB (sin categorías) ────────────────────
-function EncuentroPartsTab({ parts, setParts, eventId, showToast }: any) {
+function EncuentroPartsTab({ parts, setParts, eventId, showToast, t }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
-
-  // Solo participantes sin categoría asignada (encuentro)
   const freeParts = parts.filter((p: any) => !p.category_id || p.category_id === null)
 
   async function addPart() {
     if (!email.trim() || !displayName.trim()) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+    if (!session) { showToast(t('toastNoSession')); setSaving(false); return }
     const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role: 'participant' }) })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? '✅ Participante agregado' : '✅ Invitación enviada')
+    showToast(data.hadAccount ? t('toastPartAdded') : t('toastPartInvited'))
     setEmail(''); setDisplayName('')
     const { data: partsData } = await supabase.from('participants').select('*, profiles(full_name)').eq('event_id', eventId)
     if (partsData) setParts(partsData)
@@ -502,39 +495,40 @@ function EncuentroPartsTab({ parts, setParts, eventId, showToast }: any) {
   async function delPart(id: string) {
     await supabase.from('participants').delete().eq('id', id)
     setParts((prev: any) => prev.filter((p: any) => p.id !== id))
-    showToast('Participante eliminado')
+    showToast(t('toastPartDeleted'))
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Participantes</div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('partsTitle')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
-        {freeParts.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>}
+        {freeParts.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('partsEmpty')}</div>}
         {freeParts.map((p: any) => (
           <div key={p.id} className="participant-row">
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profiles?.full_name || p.display_name}</div>
-              <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{p.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}</div>
+              <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                {p.status === 'confirmed' ? t('partsStatusConfirmed') : t('partsStatusPending')}
+              </div>
             </div>
             <button onClick={() => delPart(p.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
           </div>
         ))}
       </div>
       <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>Agregar participante</div>
-        <input placeholder="Nombre completo *" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
-        <input placeholder="Email *" value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
-        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>Si ya tiene cuenta queda confirmado. Si no, le llega un email para registrarse.</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('encuentroPartsAddTitle')}</div>
+        <input placeholder={t('partsPlaceholderName')} value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
+        <input placeholder={t('partsPlaceholderEmail')} value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
+        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>{t('partsInviteHint')}</div>
         <button onClick={addPart} disabled={saving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Agregando...' : 'Agregar participante'}
+          {saving ? t('partsAdding') : t('partsAdd')}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── PEOPLE TAB (jueces / organizadores — reutilizable) ───────
-function PeopleTab({ people, setPeople, eventId, showToast, role, title, addLabel, emptyLabel }: any) {
+function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addLabel, emptyLabel }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -544,12 +538,12 @@ function PeopleTab({ people, setPeople, eventId, showToast, role, title, addLabe
     if (!email.trim() || !displayName.trim()) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+    if (!session) { showToast(t('toastNoSession')); setSaving(false); return }
     const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role }) })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? `✅ ${title.slice(0, -1)} agregado` : '✅ Invitación enviada')
+    showToast(data.hadAccount ? t('toastPeopleAdded', { singular: title.slice(0, -1) }) : t('toastPeopleInvited'))
     setEmail(''); setDisplayName('')
     const { data: fresh } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
     if (fresh) setPeople(fresh)
@@ -558,7 +552,7 @@ function PeopleTab({ people, setPeople, eventId, showToast, role, title, addLabe
   async function remove(id: string) {
     await supabase.from('judges').delete().eq('id', id)
     setPeople((prev: any) => prev.filter((j: any) => j.id !== id))
-    showToast('Eliminado')
+    showToast(t('toastPeopleDeleted'))
   }
 
   return (
@@ -572,8 +566,10 @@ function PeopleTab({ people, setPeople, eventId, showToast, role, title, addLabe
               {(j.profiles?.full_name ?? j.display_name ?? '?')[0]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.profiles?.full_name ?? j.display_name ?? title.slice(0, -1)}</div>
-              <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{j.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.profiles?.full_name ?? j.display_name ?? title}</div>
+              <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                {j.status === 'confirmed' ? t('peopleStatusConfirmed') : t('peopleStatusPending')}
+              </div>
             </div>
             <button onClick={() => remove(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
           </div>
@@ -581,33 +577,36 @@ function PeopleTab({ people, setPeople, eventId, showToast, role, title, addLabe
       </div>
       <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{addLabel}</div>
-        <input placeholder="Nombre completo *" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
-        <input placeholder="Email *" value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
-        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>Si ya tiene cuenta queda confirmado. Si no, le llega un email para registrarse.</div>
+        <input placeholder={t('partsPlaceholderName')} value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
+        <input placeholder={t('partsPlaceholderEmail')} value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
+        <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>{t('peopleInviteHint')}</div>
         <button onClick={invite} disabled={saving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Agregando...' : addLabel}
+          {saving ? t('peopleAdding') : addLabel}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── MINI JAM TAB (encuentro) ─────────────────────────────────
-function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast }: any) {
+function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: any) {
   const miniJam = cats.find((c: any) => c.format === 'jam')
   const [jamName, setJamName] = useState('Mini Jam')
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
 
+  const [addEmail, setAddEmail] = useState('')
+  const [addName, setAddName] = useState('')
+  const [addSaving, setAddSaving] = useState(false)
+
   async function activateJam() {
     setCreating(true)
     const weights = { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
     const { data, error } = await supabase.from('categories').insert({ event_id: eventId, name: jamName.trim() || 'Mini Jam', format: 'jam', max_runs: 1, consolidation: 'best_run', weights }).select().single()
     setCreating(false)
-    if (error) { showToast('❌ Error al crear Mini Jam'); return }
+    if (error) { showToast(t('toastMiniJamError')); return }
     setCats((prev: any) => [...prev, data])
-    showToast('✅ Mini Jam activada')
+    showToast(t('toastMiniJamCreated'))
   }
 
   async function deactivateJam() {
@@ -618,27 +617,22 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast }: any)
     setCats((prev: any) => prev.filter((c: any) => c.id !== miniJam.id))
     setParts((prev: any) => prev.filter((p: any) => p.category_id !== miniJam.id))
     setDeleting(false)
-    showToast('Mini Jam desactivada')
+    showToast(t('toastMiniJamDeactivated'))
   }
 
-  // Participantes de la Mini Jam
   const jamParts = miniJam ? parts.filter((p: any) => p.category_id === miniJam.id) : []
   const maxBattery = jamParts.length > 0 ? Math.max(1, ...jamParts.map((p: any) => p.battery || 1)) : 1
-
-  const [addEmail, setAddEmail] = useState('')
-  const [addName, setAddName] = useState('')
-  const [addSaving, setAddSaving] = useState(false)
 
   async function addJamPart() {
     if (!addEmail.trim() || !addName.trim() || !miniJam) return
     setAddSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { showToast('❌ Sin sesión'); setAddSaving(false); return }
+    if (!session) { showToast(t('toastNoSession')); setAddSaving(false); return }
     const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: addEmail.trim(), displayName: addName.trim(), eventId, role: 'participant', categoryId: miniJam.id }) })
     const data = await res.json()
     setAddSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
-    showToast(data.hadAccount ? '✅ Participante agregado' : '✅ Invitación enviada')
+    showToast(data.hadAccount ? t('toastPartAdded') : t('toastPartInvited'))
     setAddEmail(''); setAddName('')
     const { data: partsData } = await supabase.from('participants').select('*, profiles(full_name)').eq('event_id', eventId)
     if (partsData) setParts(partsData)
@@ -647,76 +641,72 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast }: any)
   async function delJamPart(id: string) {
     await supabase.from('participants').delete().eq('id', id)
     setParts((prev: any) => prev.filter((p: any) => p.id !== id))
-    showToast('Participante eliminado')
+    showToast(t('toastPartDeleted'))
   }
 
   async function updateBattery(partId: string, battery: number) {
     const { error } = await supabase.from('participants').update({ battery }).eq('id', partId)
-    if (error) { showToast('❌ Error'); return }
+    if (error) { showToast(t('toastPartBatteryError')); return }
     setParts((prev: any) => prev.map((p: any) => p.id === partId ? { ...p, battery } : p))
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Mini Jam</div>
-
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('miniJamTitle')}</div>
       {!miniJam ? (
-        /* ── Sin Mini Jam activa ── */
         <div>
           <div style={{ background: '#111', border: '1px solid #2a2a2a', padding: 24, marginBottom: 24, textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>🛼</div>
-            <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 8 }}>Mini Jam no activada</div>
-            <div style={{ fontSize: 11, color: '#555', letterSpacing: 0.5, lineHeight: 1.6 }}>
-              Activá la Mini Jam para poder asignar participantes y baterías dentro de este encuentro.
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 8 }}>{t('miniJamInactive')}</div>
+            <div style={{ fontSize: 11, color: '#555', letterSpacing: 0.5, lineHeight: 1.6 }}>{t('miniJamInactiveHint')}</div>
           </div>
-          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Nombre de la jam</div>
-          <input placeholder="Mini Jam" value={jamName} onChange={e => setJamName(e.target.value)} style={inp} />
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('miniJamNameLabel')}</div>
+          <input placeholder={t('miniJamNamePlaceholder')} value={jamName} onChange={e => setJamName(e.target.value)} style={inp} />
           <button onClick={activateJam} disabled={creating} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: creating ? 0.7 : 1 }}>
-            {creating ? 'Activando...' : '+ Activar Mini Jam'}
+            {creating ? t('miniJamActivating') : t('miniJamActivate')}
           </button>
         </div>
       ) : (
-        /* ── Mini Jam activa ── */
         <div>
-          {/* Header de jam */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '14px 16px', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase', marginBottom: 4 }}>Activa</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase', marginBottom: 4 }}>{t('miniJamActive')}</div>
               <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase' }}>{miniJam.name}</div>
-              <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, marginTop: 4 }}>{jamParts.length} participante{jamParts.length !== 1 ? 's' : ''} · {maxBattery} batería{maxBattery !== 1 ? 's' : ''}</div>
+              <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, marginTop: 4 }}>
+                {jamParts.length !== 1 ? t('miniJamParticipantsPlural', { count: jamParts.length }) : t('miniJamParticipants', { count: jamParts.length })}
+                {' · '}
+                {maxBattery !== 1 ? t('miniJamBatteryPlural', { count: maxBattery }) : t('miniJamBattery', { count: maxBattery })}
+              </div>
             </div>
             <button onClick={deactivateJam} disabled={deleting} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#555', padding: '8px 14px' }}>
-              {deleting ? 'Eliminando...' : 'Desactivar'}
+              {deleting ? t('miniJamDeactivating') : t('miniJamDeactivate')}
             </button>
           </div>
-
-          {/* Vista baterías */}
           {jamParts.length > 0 && (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Baterías</div>
+              <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('miniJamBatteriesLabel')}</div>
               <div className="jam-batteries">
                 {Array.from({ length: maxBattery }, (_, i) => i + 1).map(b => {
                   const bParts = jamParts.filter((p: any) => (p.battery || 1) === b)
                   return (
                     <div key={b} style={{ background: '#0a0a0a', padding: '10px 14px', flex: 1, minWidth: 110 }}>
-                      <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Batería {b}</div>
-                      {bParts.length === 0 ? <div style={{ fontSize: 10, color: '#333' }}>Vacía</div> : bParts.map((p: any) => <div key={p.id} style={{ fontSize: 11, color: '#e8e8e8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{p.display_name}</div>)}
+                      <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('miniJamBatteryN', { n: b })}</div>
+                      {bParts.length === 0 ? <div style={{ fontSize: 10, color: '#333' }}>{t('miniJamBatteryEmpty')}</div> : bParts.map((p: any) => <div key={p.id} style={{ fontSize: 11, color: '#e8e8e8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{p.display_name}</div>)}
                     </div>
                   )
                 })}
               </div>
             </div>
           )}
-
-          {/* Lista participantes */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
-            {jamParts.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes en la jam</div>}
+            {jamParts.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('miniJamEmptyParts')}</div>}
             {jamParts.map((p: any) => (
               <div key={p.id} className="participant-row">
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profiles?.full_name || p.display_name}</div>
-                  <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>{p.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}</div>
+                  <div style={{ fontSize: 10, color: p.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
+                    {p.status === 'confirmed' ? t('partsStatusConfirmed') : t('partsStatusPending')}
+                  </div>
                 </div>
                 <div className="battery-selector">
                   <span style={{ fontSize: 9, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>BAT</span>
@@ -730,15 +720,13 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast }: any)
               </div>
             ))}
           </div>
-
-          {/* Agregar a la jam */}
           <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>Agregar a la jam</div>
-            <input placeholder="Nombre completo *" value={addName} onChange={e => setAddName(e.target.value)} style={inp} />
-            <input placeholder="Email *" value={addEmail} onChange={e => setAddEmail(e.target.value)} type="email" style={inp} />
-            <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>Si ya tiene cuenta queda confirmado. Si no, le llega un email.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('miniJamAddTitle')}</div>
+            <input placeholder={t('partsPlaceholderName')} value={addName} onChange={e => setAddName(e.target.value)} style={inp} />
+            <input placeholder={t('partsPlaceholderEmail')} value={addEmail} onChange={e => setAddEmail(e.target.value)} type="email" style={inp} />
+            <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>{t('miniJamAddHint')}</div>
             <button onClick={addJamPart} disabled={addSaving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: addSaving ? 0.7 : 1 }}>
-              {addSaving ? 'Agregando...' : 'Agregar a la jam'}
+              {addSaving ? t('miniJamAdding') : t('miniJamAdd')}
             </button>
           </div>
         </div>

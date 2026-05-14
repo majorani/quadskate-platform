@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useReducer, createContext, useContext, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import type { User } from '@supabase/supabase-js'
 
-// ─── CONSTANTS ────────────────────────────────────────────────
 const GOLD = '#C9A84C'
 const JAM_NIVELES = [
   { val: 0.5, label: 'Intento',  short: '½', color: '#92400e', colorDark: '#78350f' },
@@ -17,27 +18,12 @@ const DEFAULT_W = { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, se
 const BT_W      = { intencion: 15, dificultad: 35, ejecucion: 35, estilo: 15 }
 
 function jamScore(t: any) { return t.nivel || 0 }
-function formalScore(t: any, w: any) {
-  if (!t.intencion) return 0
-  return (10 * w.intencion + (t.dificultad / 3 * 10) * w.dificultad + t.ejecucion * w.ejecucion + t.estilo * w.estilo + (t.secuencia ? 10 : 0) * (w.secuencia || 0)) / 100
-}
-function btScore(t: any) {
-  if (!t.intencion) return 0
-  return (10 * BT_W.intencion + (t.dificultad / 3 * 10) * BT_W.dificultad + t.ejecucion * BT_W.ejecucion + t.estilo * BT_W.estilo) / 100
-}
-
-// Parsea el valor guardado en scorecards (compatible con formato viejo array y nuevo objeto)
 function parseJamData(raw: any): { tricks: any[], fluidez: number, creatividad: number } {
   if (!raw) return { tricks: [], fluidez: 5, creatividad: 5 }
   if (Array.isArray(raw)) return { tricks: raw, fluidez: 5, creatividad: 5 }
-  return {
-    tricks:      Array.isArray(raw.tricks) ? raw.tricks : [],
-    fluidez:     raw.fluidez     ?? 5,
-    creatividad: raw.creatividad ?? 5,
-  }
+  return { tricks: Array.isArray(raw.tricks) ? raw.tricks : [], fluidez: raw.fluidez ?? 5, creatividad: raw.creatividad ?? 5 }
 }
 
-// ─── CONTEXT ─────────────────────────────────────────────────
 const Ctx = createContext<any>(null)
 const useJudge = () => useContext(Ctx)
 
@@ -50,7 +36,6 @@ function reducer(s: any, a: any) {
   }
 }
 
-// ─── SHARED STYLES ────────────────────────────────────────────
 const gs = {
   screen: { minHeight: '100vh', background: '#0a0a0a', color: '#e8e8e8', fontFamily: "'Inter',system-ui,sans-serif" } as React.CSSProperties,
   inp: { width: '100%', background: '#111', border: '1px solid #2a2a2a', padding: '13px 14px', color: '#e8e8e8', fontSize: 15, outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit', marginBottom: 10 } as React.CSSProperties,
@@ -59,7 +44,6 @@ const gs = {
   btnOutline: (extra: any = {}) => ({ background: 'transparent', border: '1px solid #2a2a2a', padding: '10px 16px', color: '#666', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' as const, ...extra }),
 }
 
-// ─── TOAST ────────────────────────────────────────────────────
 function Toast() {
   const { state, dispatch } = useJudge()
   useEffect(() => {
@@ -68,17 +52,12 @@ function Toast() {
   if (!state.toast) return null
   const isErr = state.toast.startsWith('❌')
   return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 9999, background: isErr ? '#ef4444' : GOLD,
-      color: isErr ? '#fff' : '#000', padding: '12px 28px',
-      fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
-      pointerEvents: 'none', whiteSpace: 'nowrap',
-    }}>{state.toast}</div>
+    <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: isErr ? '#ef4444' : GOLD, color: isErr ? '#fff' : '#000', padding: '12px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      {state.toast}
+    </div>
   )
 }
 
-// ─── DRAG NUM ────────────────────────────────────────────────
 function DragNum({ value, onChange, min = 0, max = 10, label, accent = GOLD }: any) {
   const startY = useRef<number | null>(null), startV = useRef(value), drag = useRef(false)
   function pd(e: React.PointerEvent) { startY.current = e.clientY; startV.current = value; drag.current = true; e.currentTarget.setPointerCapture(e.pointerId) }
@@ -101,61 +80,24 @@ function DragNum({ value, onChange, min = 0, max = 10, label, accent = GOLD }: a
   )
 }
 
-// ─── MODIFIER STEPPER (Fluidez / Creatividad) ─────────────────
 function ModifierStepper({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) {
   const delta = value - 5
   const deltaColor = delta > 0 ? '#4CAF50' : delta < 0 ? '#ef4444' : '#444'
   const deltaStr  = delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : '±0'
-
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      background: '#0d0d0d', padding: '8px 10px',
-      borderTop: '1px solid #1a1a1a',
-    }}>
-      {/* Label + delta */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0d0d0d', padding: '8px 10px', borderTop: '1px solid #1a1a1a' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 9, color: '#555', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>{label}</div>
         <div style={{ fontSize: 11, fontWeight: 900, color: deltaColor, letterSpacing: 1 }}>{deltaStr}</div>
       </div>
-
-      {/* Controls */}
-      <button
-        onClick={() => onChange(Math.max(0, value - 1))}
-        style={{
-          width: 30, height: 30, border: '1px solid #2a2a2a',
-          background: value > 0 ? '#1a1a1a' : 'transparent',
-          color: value > 0 ? '#e8e8e8' : '#2a2a2a',
-          fontSize: 18, fontWeight: 900, cursor: value > 0 ? 'pointer' : 'default',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}
-      >−</button>
-
-      <div style={{
-        width: 34, textAlign: 'center',
-        fontSize: 20, fontWeight: 900,
-        color: value === 5 ? '#666' : value > 5 ? '#4CAF50' : '#ef4444',
-        lineHeight: 1,
-      }}>
-        {value}
-      </div>
-
-      <button
-        onClick={() => onChange(Math.min(10, value + 1))}
-        style={{
-          width: 30, height: 30, border: '1px solid #2a2a2a',
-          background: value < 10 ? '#1a1a1a' : 'transparent',
-          color: value < 10 ? '#e8e8e8' : '#2a2a2a',
-          fontSize: 18, fontWeight: 900, cursor: value < 10 ? 'pointer' : 'default',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}
-      >+</button>
+      <button onClick={() => onChange(Math.max(0, value - 1))} style={{ width: 30, height: 30, border: '1px solid #2a2a2a', background: value > 0 ? '#1a1a1a' : 'transparent', color: value > 0 ? '#e8e8e8' : '#2a2a2a', fontSize: 18, fontWeight: 900, cursor: value > 0 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>−</button>
+      <div style={{ width: 34, textAlign: 'center', fontSize: 20, fontWeight: 900, color: value === 5 ? '#666' : value > 5 ? '#4CAF50' : '#ef4444', lineHeight: 1 }}>{value}</div>
+      <button onClick={() => onChange(Math.min(10, value + 1))} style={{ width: 30, height: 30, border: '1px solid #2a2a2a', background: value < 10 ? '#1a1a1a' : 'transparent', color: value < 10 ? '#e8e8e8' : '#2a2a2a', fontSize: 18, fontWeight: 900, cursor: value < 10 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>+</button>
     </div>
   )
 }
 
-// ─── FORMAL SCORER ───────────────────────────────────────────
-function FormalScorer({ weights, tricks, onAdd, onRemove }: any) {
+function FormalScorer({ weights, tricks, onAdd, onRemove, t }: any) {
   const [intencion, setIntencion] = useState(true)
   const [dificultad, setDificultad] = useState(1)
   const [ejecucion, setEjecucion] = useState(5)
@@ -172,10 +114,12 @@ function FormalScorer({ weights, tricks, onAdd, onRemove }: any) {
   return (
     <div style={{ padding: 14 }}>
       <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: 16, marginBottom: 14 }}>
-        <div style={gs.label}>Intención</div>
+        <div style={gs.label}>{t('labelIntencion')}</div>
         <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
           {[true, false].map(v => (
-            <button key={String(v)} onClick={() => setIntencion(v)} style={{ flex: 1, padding: 14, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 16, background: intencion === v ? (v ? '#14532d' : '#7f1d1d') : '#0a0a0a', color: intencion === v ? '#fff' : '#333' }}>{v ? '✓ SÍ' : '✗ NO'}</button>
+            <button key={String(v)} onClick={() => setIntencion(v)} style={{ flex: 1, padding: 14, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 16, background: intencion === v ? (v ? '#14532d' : '#7f1d1d') : '#0a0a0a', color: intencion === v ? '#fff' : '#333' }}>
+              {v ? t('intentYes') : t('intentNo')}
+            </button>
           ))}
         </div>
         <div style={{ opacity: intencion ? 1 : 0.2, pointerEvents: intencion ? 'auto' : 'none' }}>
@@ -185,18 +129,20 @@ function FormalScorer({ weights, tricks, onAdd, onRemove }: any) {
             <DragNum label="EST 0-10" value={estilo}     onChange={setEstilo}     min={0} max={10} accent="#888" />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #2a2a2a' }}>
-            <div style={gs.label}>Secuencia / Línea</div>
+            <div style={gs.label}>{t('labelSecuencia')}</div>
             <button onClick={() => setSecuencia(!secuencia)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
               <div style={{ width: 44, height: 24, background: secuencia ? '#1e3a5f' : '#2a2a2a', position: 'relative', transition: 'background .2s' }}>
                 <div style={{ position: 'absolute', top: 3, left: secuencia ? 22 : 3, width: 18, height: 18, background: secuencia ? GOLD : '#444', transition: 'left .2s' }} />
               </div>
-              <span style={{ fontSize: 10, color: secuencia ? GOLD : '#444', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>{secuencia ? 'Sí' : 'No'}</span>
+              <span style={{ fontSize: 10, color: secuencia ? GOLD : '#444', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+                {secuencia ? t('secuenciaSi') : t('secuenciaNo')}
+              </span>
             </button>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, borderTop: '1px solid #2a2a2a', paddingTop: 14 }}>
           <div style={{ flex: 1 }}>
-            <div style={gs.label}>Puntaje truco</div>
+            <div style={gs.label}>{t('labelTrickScore')}</div>
             <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{score.toFixed(2)}</div>
           </div>
           <button onClick={add} style={{ width: 60, height: 60, background: GOLD, border: 'none', color: '#000', fontWeight: 900, fontSize: 28, cursor: 'pointer' }}>+</button>
@@ -204,15 +150,15 @@ function FormalScorer({ weights, tricks, onAdd, onRemove }: any) {
       </div>
       {tricks.length > 0 && (
         <div>
-          <div style={{ fontSize: 9, color: '#333', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Historial — {tricks.length} trucos</div>
+          <div style={{ fontSize: 9, color: '#333', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('historial', { count: tricks.length })}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-            {[...tricks].reverse().map((t: any, ri: number) => {
+            {[...tricks].reverse().map((trick: any, ri: number) => {
               const i = tricks.length - 1 - ri
               return (
                 <div key={i} style={{ background: '#0a0a0a', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ fontSize: 10, color: '#333', width: 16 }}>{i + 1}</div>
-                  <div style={{ flex: 1, fontSize: 10, color: '#444' }}>Int:{t.intencion ? '✓' : '✗'} · Dif:{t.dificultad} · Eje:{t.ejecucion} · Est:{t.estilo}</div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: GOLD, minWidth: 44, textAlign: 'right' }}>{(t._score || 0).toFixed(2)}</div>
+                  <div style={{ flex: 1, fontSize: 10, color: '#444' }}>Int:{trick.intencion ? '✓' : '✗'} · Dif:{trick.dificultad} · Eje:{trick.ejecucion} · Est:{trick.estilo}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: GOLD, minWidth: 44, textAlign: 'right' }}>{(trick._score || 0).toFixed(2)}</div>
                   <button onClick={() => onRemove(i)} style={{ width: 28, height: 28, border: '1px solid #2a2a2a', background: 'transparent', color: '#444', cursor: 'pointer', fontSize: 13 }}>✕</button>
                 </div>
               )
@@ -224,15 +170,14 @@ function FormalScorer({ weights, tricks, onAdd, onRemove }: any) {
   )
 }
 
-// ─── BEST TRICK SCORER ───────────────────────────────────────
-function BestTrickScorer({ tricks, onAdd, onRemove }: any) {
+function BestTrickScorer({ tricks, onAdd, onRemove, t }: any) {
   const [nombre, setNombre] = useState('')
   const [intencion, setIntencion] = useState(true)
   const [dificultad, setDificultad] = useState(1)
   const [ejecucion, setEjecucion] = useState(5)
   const [estilo, setEstilo] = useState(5)
   const score = intencion ? ((10 * BT_W.intencion + (dificultad / 3 * 10) * BT_W.dificultad + ejecucion * BT_W.ejecucion + estilo * BT_W.estilo) / 100) : 0
-  const best = tricks.length ? Math.max(...tricks.map((t: any) => t._score || 0)) : 0
+  const best = tricks.length ? Math.max(...tricks.map((trick: any) => trick._score || 0)) : 0
 
   function add() {
     if (!nombre.trim()) return
@@ -244,17 +189,19 @@ function BestTrickScorer({ tricks, onAdd, onRemove }: any) {
     <div style={{ padding: 14 }}>
       {best > 0 && (
         <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: '14px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={gs.label}>Best trick actual</div>
+          <div style={gs.label}>{t('labelBestTrick')}</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: GOLD }}>{best.toFixed(2)}</div>
         </div>
       )}
       <div style={{ background: '#111', borderTop: '2px solid #2a2a2a', padding: 16, marginBottom: 14 }}>
-        <div style={gs.label}>Nombre del truco</div>
-        <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Soul grind baranda kinked" style={gs.inp} />
-        <div style={gs.label}>Intención</div>
+        <div style={gs.label}>{t('labelTrickName')}</div>
+        <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder={t('trickNamePlaceholder')} style={gs.inp} />
+        <div style={gs.label}>{t('labelIntencion')}</div>
         <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
           {[true, false].map(v => (
-            <button key={String(v)} onClick={() => setIntencion(v)} style={{ flex: 1, padding: 12, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 15, background: intencion === v ? (v ? '#14532d' : '#7f1d1d') : '#0a0a0a', color: intencion === v ? '#fff' : '#333' }}>{v ? '✓ SÍ' : '✗ NO'}</button>
+            <button key={String(v)} onClick={() => setIntencion(v)} style={{ flex: 1, padding: 12, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 15, background: intencion === v ? (v ? '#14532d' : '#7f1d1d') : '#0a0a0a', color: intencion === v ? '#fff' : '#333' }}>
+              {v ? t('intentYes') : t('intentNo')}
+            </button>
           ))}
         </div>
         <div style={{ opacity: intencion ? 1 : 0.2, pointerEvents: intencion ? 'auto' : 'none' }}>
@@ -266,7 +213,7 @@ function BestTrickScorer({ tricks, onAdd, onRemove }: any) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, borderTop: '1px solid #2a2a2a', paddingTop: 14 }}>
           <div style={{ flex: 1 }}>
-            <div style={gs.label}>Puntaje este truco</div>
+            <div style={gs.label}>{t('labelThisTrick')}</div>
             <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{score.toFixed(2)}</div>
           </div>
           <button onClick={add} disabled={!nombre.trim()} style={{ width: 60, height: 60, background: nombre.trim() ? GOLD : '#1a1a1a', border: 'none', color: nombre.trim() ? '#000' : '#333', fontWeight: 900, fontSize: 28, cursor: nombre.trim() ? 'pointer' : 'default' }}>+</button>
@@ -274,18 +221,18 @@ function BestTrickScorer({ tricks, onAdd, onRemove }: any) {
       </div>
       {tricks.length > 0 && (
         <div>
-          <div style={{ fontSize: 9, color: '#333', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Trucos — {tricks.length}</div>
+          <div style={{ fontSize: 9, color: '#333', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('tricksCount', { count: tricks.length })}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-            {[...tricks].sort((a: any, b: any) => (b._score || 0) - (a._score || 0)).map((t: any, i: number) => {
-              const isBest = t._score === best
+            {[...tricks].sort((a: any, b: any) => (b._score || 0) - (a._score || 0)).map((trick: any, i: number) => {
+              const isBest = trick._score === best
               return (
                 <div key={i} style={{ background: isBest ? '#111' : '#0a0a0a', borderLeft: isBest ? `3px solid ${GOLD}` : '3px solid transparent', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: isBest ? GOLD : '#e8e8e8', marginBottom: 3 }}>{t.nombre}</div>
-                    <div style={{ fontSize: 10, color: '#444' }}>Int:{t.intencion ? '✓' : '✗'} · Dif:{t.dificultad} · Eje:{t.ejecucion} · Est:{t.estilo}</div>
+                    <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: isBest ? GOLD : '#e8e8e8', marginBottom: 3 }}>{trick.nombre}</div>
+                    <div style={{ fontSize: 10, color: '#444' }}>Int:{trick.intencion ? '✓' : '✗'} · Dif:{trick.dificultad} · Eje:{trick.ejecucion} · Est:{trick.estilo}</div>
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: isBest ? GOLD : '#666', minWidth: 44, textAlign: 'right' }}>{(t._score || 0).toFixed(2)}</div>
-                  <button onClick={() => onRemove(tricks.indexOf(t))} style={{ width: 28, height: 28, border: '1px solid #2a2a2a', background: 'transparent', color: '#444', cursor: 'pointer', fontSize: 13 }}>✕</button>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: isBest ? GOLD : '#666', minWidth: 44, textAlign: 'right' }}>{(trick._score || 0).toFixed(2)}</div>
+                  <button onClick={() => onRemove(tricks.indexOf(trick))} style={{ width: 28, height: 28, border: '1px solid #2a2a2a', background: 'transparent', color: '#444', cursor: 'pointer', fontSize: 13 }}>✕</button>
                 </div>
               )
             })}
@@ -296,130 +243,51 @@ function BestTrickScorer({ tricks, onAdd, onRemove }: any) {
   )
 }
 
-// ─── JAM COLUMN ──────────────────────────────────────────────
-function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad }: any) {
-  const tricksTotal  = data.tricks.reduce((s: number, t: any) => s + jamScore(t), 0)
-  const modifier     = (data.fluidez - 5) + (data.creatividad - 5)
-  const total        = tricksTotal + modifier
-  const modColor     = modifier > 0 ? '#4CAF50' : modifier < 0 ? '#ef4444' : '#444'
+function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: any) {
+  const tricksTotal = data.tricks.reduce((s: number, trick: any) => s + jamScore(trick), 0)
+  const modifier    = (data.fluidez - 5) + (data.creatividad - 5)
+  const total       = tricksTotal + modifier
+  const modColor    = modifier > 0 ? '#4CAF50' : modifier < 0 ? '#ef4444' : '#444'
 
   return (
-    <div style={{
-      flex: 1, background: '#0a0a0a', display: 'flex',
-      flexDirection: 'column', minWidth: 0,
-    }}>
-      {/* ── Header ── */}
-      <div style={{
-        background: '#111', padding: '12px 10px', textAlign: 'center',
-        borderBottom: '2px solid #1a1a1a', flexShrink: 0,
-      }}>
-        <div style={{
-          fontSize: 10, fontWeight: 900, color: '#aaa',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4,
-        }}>{data.name}</div>
-
-        {/* Score principal */}
-        <div style={{ fontSize: 28, fontWeight: 900, color: GOLD, lineHeight: 1 }}>
-          {total.toFixed(1)}
-        </div>
-
-        {/* Desglose trucos + modificador */}
+    <div style={{ flex: 1, background: '#0a0a0a', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ background: '#111', padding: '12px 10px', textAlign: 'center', borderBottom: '2px solid #1a1a1a', flexShrink: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 900, color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{data.name}</div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{total.toFixed(1)}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: '#555' }}>{tricksTotal.toFixed(1)} trucos</span>
-          {modifier !== 0 && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: modColor }}>
-              {modifier > 0 ? '+' : ''}{modifier} mod
-            </span>
-          )}
+          <span style={{ fontSize: 10, color: '#555' }}>{tricksTotal.toFixed(1)} {t('tricksLabel', { count: '' }).trim()}</span>
+          {modifier !== 0 && <span style={{ fontSize: 10, fontWeight: 700, color: modColor }}>{modifier > 0 ? '+' : ''}{modifier} mod</span>}
         </div>
-
-        {data.dirty && (
-          <div style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>
-            Sin guardar
-          </div>
-        )}
+        {data.dirty && <div style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{t('unsaved')}</div>}
       </div>
-
-      {/* ── Botones de nivel ── */}
       <div style={{ padding: '6px 6px', display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
         {JAM_NIVELES.map(n => {
-          const count = data.tricks.filter((t: any) => t.nivel === n.val).length
+          const count = data.tricks.filter((trick: any) => trick.nivel === n.val).length
           return (
-            <button
-              key={n.val}
-              onClick={() => onAdd(n.val)}
-              style={{
-                width: '100%', padding: '10px 8px', border: 'none',
-                cursor: 'pointer', background: n.color,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: 4, transition: 'filter .1s',
-              }}
-            >
-              {/* Letra */}
-              <span style={{
-                fontSize: 16, fontWeight: 900, color: '#fff',
-                width: 20, textAlign: 'center', flexShrink: 0,
-              }}>{n.short}</span>
-
-              {/* Nombre */}
-              <span style={{
-                flex: 1, fontSize: 10, fontWeight: 700, color: '#ffffff99',
-                textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center',
-              }}>{n.label}</span>
-
-              {/* Contador */}
-              <span style={{
-                background: count > 0 ? '#ffffff30' : '#00000030',
-                color: count > 0 ? '#fff' : '#ffffff50',
-                padding: '2px 7px', fontSize: 13, fontWeight: 900,
-                minWidth: 28, textAlign: 'center', flexShrink: 0,
-              }}>{count}</span>
+            <button key={n.val} onClick={() => onAdd(n.val)} style={{ width: '100%', padding: '10px 8px', border: 'none', cursor: 'pointer', background: n.color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 900, color: '#fff', width: 20, textAlign: 'center', flexShrink: 0 }}>{n.short}</span>
+              <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#ffffff99', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>{n.label}</span>
+              <span style={{ background: count > 0 ? '#ffffff30' : '#00000030', color: count > 0 ? '#fff' : '#ffffff50', padding: '2px 7px', fontSize: 13, fontWeight: 900, minWidth: 28, textAlign: 'center', flexShrink: 0 }}>{count}</span>
             </button>
           )
         })}
-
-        {/* Deshacer */}
-        <button
-          onClick={onRemoveLast}
-          disabled={!data.tricks.length}
-          style={{
-            width: '100%', padding: '8px', border: '1px solid #1e1e1e',
-            background: data.tricks.length ? '#161616' : 'transparent',
-            color: data.tricks.length ? '#888' : '#2a2a2a',
-            cursor: data.tricks.length ? 'pointer' : 'default',
-            fontWeight: 700, fontSize: 10, letterSpacing: 2,
-            textTransform: 'uppercase', marginTop: 2,
-          }}
-        >
-          ↩ Deshacer
+        <button onClick={onRemoveLast} disabled={!data.tricks.length} style={{ width: '100%', padding: '8px', border: '1px solid #1e1e1e', background: data.tricks.length ? '#161616' : 'transparent', color: data.tricks.length ? '#888' : '#2a2a2a', cursor: data.tricks.length ? 'pointer' : 'default', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>
+          {t('undo')}
         </button>
       </div>
-
-      {/* ── Fluidez / Creatividad ── */}
       <div style={{ flexShrink: 0, borderTop: '1px solid #1a1a1a', marginTop: 2 }}>
         <ModifierStepper label="Fluidez"     value={data.fluidez}     onChange={onFluidez} />
         <ModifierStepper label="Creatividad" value={data.creatividad} onChange={onCreatividad} />
       </div>
-
-      {/* ── Historial compacto ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px 4px' }}>
-        {data.tricks.length === 0 && (
-          <div style={{ fontSize: 9, color: '#2a2a2a', textAlign: 'center', paddingTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>
-            Sin trucos
-          </div>
-        )}
+        {data.tricks.length === 0 && <div style={{ fontSize: 9, color: '#2a2a2a', textAlign: 'center', paddingTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noTricks')}</div>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-          {[...data.tricks].reverse().map((t: any, i: number) => {
-            const nObj = JAM_NIVELES.find(n => n.val === t.nivel)
+          {[...data.tricks].reverse().map((trick: any, i: number) => {
+            const nObj = JAM_NIVELES.find(n => n.val === trick.nivel)
             return (
-              <div key={i} style={{
-                background: nObj?.colorDark,
-                padding: '2px 6px',
-                display: 'flex', alignItems: 'center', gap: 3,
-              }}>
+              <div key={i} style={{ background: nObj?.colorDark, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
                 <span style={{ color: '#fff', fontSize: 10, fontWeight: 900 }}>{nObj?.short}</span>
-                <span style={{ color: GOLD, fontSize: 9, fontWeight: 700 }}>{t.nivel}</span>
+                <span style={{ color: GOLD, fontSize: 9, fontWeight: 700 }}>{trick.nivel}</span>
               </div>
             )
           })}
@@ -429,8 +297,7 @@ function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad }: any)
   )
 }
 
-// ─── JAM MULTI VIEW ──────────────────────────────────────────
-function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event }: any) {
+function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, t }: any) {
   const [data, setData] = useState(() =>
     parts.map((p: any) => {
       const parsed = parseJamData(scorecards[jId]?.[p.id]?.[1])
@@ -448,51 +315,34 @@ function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, e
   function updateData(idx: number, fn: any) {
     setData((prev: any) => prev.map((d: any, i: number) => i === idx ? { ...fn(d), dirty: true } : d))
   }
-  function addTrick(idx: number, nivel: number) {
-    updateData(idx, (d: any) => ({ ...d, tricks: [...d.tricks, { nivel }] }))
-  }
-  function removeLast(idx: number) {
-    updateData(idx, (d: any) => ({ ...d, tricks: d.tricks.slice(0, -1) }))
-  }
-  function setFluidez(idx: number, v: number) {
-    updateData(idx, (d: any) => ({ ...d, fluidez: v }))
-  }
-  function setCreatividad(idx: number, v: number) {
-    updateData(idx, (d: any) => ({ ...d, creatividad: v }))
-  }
+  function addTrick(idx: number, nivel: number) { updateData(idx, (d: any) => ({ ...d, tricks: [...d.tricks, { nivel }] })) }
+  function removeLast(idx: number) { updateData(idx, (d: any) => ({ ...d, tricks: d.tricks.slice(0, -1) })) }
+  function setFluidez(idx: number, v: number) { updateData(idx, (d: any) => ({ ...d, fluidez: v })) }
+  function setCreatividad(idx: number, v: number) { updateData(idx, (d: any) => ({ ...d, creatividad: v })) }
 
   async function saveAll() {
-    if (event?.status !== 'active') { toast('❌ El evento aún no comenzó'); return }
+    if (event?.status !== 'active') { toast(t('toastNotStarted')); return }
     let ok = 0
     for (let idx = 0; idx < data.length; idx++) {
       const d = data[idx]
       if (!d.dirty) continue
-      // Guardamos objeto completo con tricks + fluidez + creatividad
       const payload = { tricks: d.tricks, fluidez: d.fluidez, creatividad: d.creatividad }
       try {
-        const existing = await supabase.from('scorecards').select('id')
-          .eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1).maybeSingle()
+        const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1).maybeSingle()
         if (existing.data) {
-          await supabase.from('scorecards').update({ tricks: payload, updated_at: new Date().toISOString() })
-            .eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1)
+          await supabase.from('scorecards').update({ tricks: payload, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1)
         } else {
-          await supabase.from('scorecards').insert({
-            event_id: eventId, category_id: cat.id, judge_id: jId,
-            participant_id: d.pId, run: 1, tricks: payload,
-          })
+          await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: d.pId, run: 1, tricks: payload })
         }
         const sc = scorecards
-        const newSc = {
-          ...sc,
-          [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), 1: payload } },
-        }
+        const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), 1: payload } } }
         dispatch({ type: 'SET_SC', sc: newSc })
         ok++
-      } catch { toast('❌ Error al guardar ' + d.name) }
+      } catch { toast(t('toastError')) }
     }
     if (ok > 0) {
       setData((prev: any) => prev.map((d: any) => ({ ...d, dirty: false })))
-      toast('💾 Guardado')
+      toast(t('toastSaved'))
     }
   }
 
@@ -501,27 +351,19 @@ function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, e
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{ flex: 1, display: 'flex', gap: 1, background: '#1a1a1a', overflow: 'hidden' }}>
         {data.map((d: any, idx: number) => (
-          <JamColumn
-            key={d.pId}
-            data={d}
-            onAdd={(n: number) => addTrick(idx, n)}
-            onRemoveLast={() => removeLast(idx)}
-            onFluidez={(v: number) => setFluidez(idx, v)}
-            onCreatividad={(v: number) => setCreatividad(idx, v)}
-          />
+          <JamColumn key={d.pId} data={d} onAdd={(n: number) => addTrick(idx, n)} onRemoveLast={() => removeLast(idx)} onFluidez={(v: number) => setFluidez(idx, v)} onCreatividad={(v: number) => setCreatividad(idx, v)} t={t} />
         ))}
       </div>
       <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0 }}>
         <button onClick={saveAll} style={gs.btnGold({ background: anyDirty ? GOLD : '#1a1a1a', color: anyDirty ? '#000' : '#444' })}>
-          {anyDirty ? 'Guardar batería' : '✓ Guardado'}
+          {anyDirty ? t('saveBattery') : t('savedBattery')}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── JAM BATTERY VIEW ────────────────────────────────────────
-function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event }: any) {
+function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, t }: any) {
   const batteryMap: Record<number, any[]> = {}
   for (const p of parts) {
     const b = p.battery || 1
@@ -537,21 +379,13 @@ function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast,
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={() => setBatIdx(Math.max(0, batIdx - 1))}
-            disabled={batIdx === 0}
-            style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}
-          >‹</button>
+          <button onClick={() => setBatIdx(Math.max(0, batIdx - 1))} disabled={batIdx === 0} style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>batería {batIdx + 1} / {batteryNums.length}</div>
-            <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: GOLD }}>Batería {currentBatNum}</div>
+            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{t('batteryNav', { current: batIdx + 1, total: batteryNums.length })}</div>
+            <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: GOLD }}>{t('batteryTitle', { n: currentBatNum })}</div>
             <div style={{ fontSize: 10, color: '#444', marginTop: 2 }}>{battery.map((p: any) => p.display_name).join(' · ')}</div>
           </div>
-          <button
-            onClick={() => setBatIdx(Math.min(batteryNums.length - 1, batIdx + 1))}
-            disabled={batIdx === batteryNums.length - 1}
-            style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === batteryNums.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === batteryNums.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}
-          >›</button>
+          <button onClick={() => setBatIdx(Math.min(batteryNums.length - 1, batIdx + 1))} disabled={batIdx === batteryNums.length - 1} style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === batteryNums.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === batteryNums.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
         </div>
         {batteryNums.length > 1 && (
           <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginTop: 8 }}>
@@ -561,23 +395,13 @@ function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast,
           </div>
         )}
       </div>
-      <JamMultiView
-        key={batIdx}
-        parts={battery}
-        jId={jId}
-        cat={cat}
-        eventId={eventId}
-        scorecards={scorecards}
-        dispatch={dispatch}
-        toast={toast}
-        event={event}
-      />
+      <JamMultiView key={batIdx} parts={battery} jId={jId} cat={cat} eventId={eventId} scorecards={scorecards} dispatch={dispatch} toast={toast} event={event} t={t} />
     </div>
   )
 }
 
-// ─── MAIN PAGE ────────────────────────────────────────────────
 export default function JuecesPage() {
+  const t = useTranslations('JuecesPage')
   const params = useParams<{ eventId: string }>()
   const router = useRouter()
   const eventId = params?.eventId ?? ''
@@ -599,7 +423,7 @@ export default function JuecesPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { router.push('/auth?redirect=/jueces/' + eventId); return }
+      if (!data.session) { router.push('/auth'); return }
       setUser(data.session.user)
       await loadData(data.session.user.id)
       setLoading(false)
@@ -613,9 +437,7 @@ export default function JuecesPage() {
       supabase.from('participants').select('*').eq('event_id', eventId).order('battery', { ascending: true }),
       supabase.from('scorecards').select('*').eq('event_id', eventId),
     ])
-    setEvent(evRes.data)
-    setCats(catsRes.data ?? [])
-    setParts(partsRes.data ?? [])
+    setEvent(evRes.data); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
     const scMap: any = {}
     for (const sc of scsRes.data ?? []) {
       const raw = typeof sc.tricks === 'string' ? JSON.parse(sc.tricks) : sc.tricks
@@ -636,17 +458,16 @@ export default function JuecesPage() {
   useEffect(() => {
     if (!participant || !cat) return
     const saved = state.scorecards[jId]?.[participant.id]?.[run]
-    // Para formatos no-jam, tricks sigue siendo array
     const arr = Array.isArray(saved) ? saved : (saved?.tricks ?? [])
     setTricks(arr); setDirty(false)
   }, [catIdx, partIdx, run, state.scorecards])
 
-  function addTrick(t: any)    { setTricks(prev => [...prev, t]); setDirty(true) }
+  function addTrick(trick: any)      { setTricks(prev => [...prev, trick]); setDirty(true) }
   function removeTrick(i: number) { setTricks(prev => prev.filter((_, idx) => idx !== i)); setDirty(true) }
 
   async function save() {
     if (!participant || saving) return
-    if (event.status !== 'active') { toast('❌ El evento aún no comenzó'); return }
+    if (event.status !== 'active') { toast(t('toastNotStarted')); return }
     setSaving(true)
     try {
       const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', participant.id).eq('run', run).maybeSingle()
@@ -658,26 +479,26 @@ export default function JuecesPage() {
       const sc = state.scorecards
       const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [participant.id]: { ...((sc[jId] || {})[participant.id] || {}), [run]: tricks } } }
       dispatch({ type: 'SET_SC', sc: newSc })
-      setDirty(false); toast('💾 Guardado')
-    } catch { toast('❌ Error al guardar') } finally { setSaving(false) }
+      setDirty(false); toast(t('toastSaved'))
+    } catch { toast(t('toastError')) } finally { setSaving(false) }
   }
 
-  const totalScore = format === 'jam' ? tricks.reduce((s, t) => s + jamScore(t), 0)
-    : format === 'best_trick' ? (tricks.length ? Math.max(...tricks.map(t => t._score || 0)) : 0)
-    : tricks.reduce((s, t) => s + (t._score || 0), 0)
+  const totalScore = format === 'jam' ? tricks.reduce((s, trick) => s + jamScore(trick), 0)
+    : format === 'best_trick' ? (tricks.length ? Math.max(...tricks.map(trick => trick._score || 0)) : 0)
+    : tricks.reduce((s, trick) => s + (trick._score || 0), 0)
 
   if (loading) return (
     <div style={{ ...gs.screen, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontSize: 32, fontWeight: 900, color: GOLD, letterSpacing: -1 }}>CARGANDO</div>
+      <div style={{ fontSize: 32, fontWeight: 900, color: GOLD, letterSpacing: -1 }}>{t('loading')}</div>
     </div>
   )
 
   if (!event) return (
     <div style={{ ...gs.screen, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ borderTop: `2px solid ${GOLD}`, paddingTop: 24, textAlign: 'center' }}>
-        <div style={{ fontSize: 10, color: GOLD, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 12 }}>Error</div>
-        <div style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', marginBottom: 20 }}>Evento no encontrado</div>
-        <button onClick={() => router.push('/dashboard')} style={gs.btnOutline()}>Volver</button>
+        <div style={{ fontSize: 10, color: GOLD, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 12 }}>{t('errorEyebrow')}</div>
+        <div style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', marginBottom: 20 }}>{t('errorTitle')}</div>
+        <button onClick={() => router.push('/dashboard')} style={gs.btnOutline()}>{t('errorBack')}</button>
       </div>
     </div>
   )
@@ -687,19 +508,17 @@ export default function JuecesPage() {
       <div style={{ ...gs.screen, display: 'flex', flexDirection: 'column' }}>
         <Toast />
 
-        {/* TOP BAR */}
         <div style={{ background: '#0a0a0a', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>{user?.user_metadata?.full_name || user?.email}</div>
               <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginTop: 2 }}>{event.name}</div>
             </div>
-            <button onClick={() => router.push('/dashboard')} style={gs.btnOutline({ padding: '6px 12px' })}>← Panel</button>
+            <button onClick={() => router.push('/dashboard')} style={gs.btnOutline({ padding: '6px 12px' })}>{t('backPanel')}</button>
           </div>
           <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', overflowX: 'auto' }}>
             {cats.map((c, i) => (
-              <button key={c.id} onClick={() => { setCatIdx(i); setPartIdx(0); setRun(1) }}
-                style={{ padding: '8px 14px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', whiteSpace: 'nowrap', background: catIdx === i ? GOLD : '#0a0a0a', color: catIdx === i ? '#000' : '#444' }}>
+              <button key={c.id} onClick={() => { setCatIdx(i); setPartIdx(0); setRun(1) }} style={{ padding: '8px 14px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', whiteSpace: 'nowrap', background: catIdx === i ? GOLD : '#0a0a0a', color: catIdx === i ? '#000' : '#444' }}>
                 {c.name}
               </button>
             ))}
@@ -708,42 +527,30 @@ export default function JuecesPage() {
 
         {!catParts.length ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>Sin participantes</div>
+            <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
           </div>
         ) : format === 'jam' ? (
-          <JamBatteryView
-            parts={catParts}
-            jId={jId}
-            cat={cat}
-            eventId={eventId}
-            scorecards={state.scorecards}
-            dispatch={dispatch}
-            toast={toast}
-            event={event}
-          />
+          <JamBatteryView parts={catParts} jId={jId} cat={cat} eventId={eventId} scorecards={state.scorecards} dispatch={dispatch} toast={toast} event={event} t={t} />
         ) : (
           <>
-            {/* NAV PARTICIPANTE */}
             <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => { setPartIdx(Math.max(0, partIdx - 1)); setRun(1) }} disabled={partIdx === 0}
-                  style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+                <button onClick={() => { setPartIdx(Math.max(0, partIdx - 1)); setRun(1) }} disabled={partIdx === 0} style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{partIdx + 1} / {catParts.length}</div>
+                  <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{t('partNav', { current: partIdx + 1, total: catParts.length })}</div>
                   <div style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant?.display_name}</div>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 6 }}>
-                    <span style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{tricks.length} trucos</span>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: GOLD }}>{format === 'best_trick' ? 'BEST: ' : '/ '}{totalScore.toFixed(2)} pts</span>
-                    {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>SIN GUARDAR</span>}
+                    <span style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{tricks.length} {t('tricksLabel', { count: '' }).trim()}</span>
+                    <span style={{ fontSize: 12, fontWeight: 900, color: GOLD }}>{format === 'best_trick' ? t('bestPrefix') : '/ '}{totalScore.toFixed(2)}{t('ptsLabel')}</span>
+                    {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>{t('unsavedLabel')}</span>}
                   </div>
                 </div>
-                <button onClick={() => { setPartIdx(Math.min(catParts.length - 1, partIdx + 1)); setRun(1) }} disabled={partIdx === catParts.length - 1}
-                  style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === catParts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === catParts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+                <button onClick={() => { setPartIdx(Math.min(catParts.length - 1, partIdx + 1)); setRun(1) }} disabled={partIdx === catParts.length - 1} style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === catParts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === catParts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
               </div>
               {format === 'formal' && (
                 <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginTop: 10 }}>
                   {Array.from({ length: maxRuns }, (_, i) => i + 1).map((r: number) => (
-                    <button key={r} onClick={() => setRun(r)} style={{ flex: 1, padding: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', background: run === r ? GOLD : '#0a0a0a', color: run === r ? '#000' : '#444' }}>Pasada {r}</button>
+                    <button key={r} onClick={() => setRun(r)} style={{ flex: 1, padding: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', background: run === r ? GOLD : '#0a0a0a', color: run === r ? '#000' : '#444' }}>{t('run', { n: r })}</button>
                   ))}
                 </div>
               )}
@@ -751,14 +558,14 @@ export default function JuecesPage() {
 
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {format === 'best_trick'
-                ? <BestTrickScorer tricks={tricks} onAdd={(t: any) => { addTrick(t); toast('✅ Truco agregado') }} onRemove={(i: number) => { removeTrick(i); toast('🗑️ Eliminado') }} />
-                : <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(t: any) => { addTrick(t); toast('✅ Truco agregado') }} onRemove={(i: number) => { removeTrick(i); toast('🗑️ Eliminado') }} />
+                ? <BestTrickScorer tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
+                : <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
               }
             </div>
 
             <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0 }}>
               <button onClick={save} disabled={saving} style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
-                {saving ? 'Guardando...' : dirty ? 'Guardar planilla' : '✓ Guardado'}
+                {saving ? t('saving') : dirty ? t('savePlanilla') : t('savedPlanilla')}
               </button>
             </div>
           </>

@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthPage() {
-  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const t = useTranslations('Auth')
   const router = useRouter()
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -14,32 +16,31 @@ export default function AuthPage() {
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const [ok, setOk] = useState(false)
+
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search)
-  const invite = params.get('invite')
-  if (invite) setInviteToken(invite)
-  const stored = localStorage.getItem('pendingInvitationToken')
-  if (stored) setInviteToken(stored)
-}, [])
+    const params = new URLSearchParams(window.location.search)
+    const invite = params.get('invite')
+    if (invite) setInviteToken(invite)
+    const stored = localStorage.getItem('pendingInvitationToken')
+    if (stored) setInviteToken(stored)
+  }, [])
 
   async function handleSubmit() {
     if (!email.trim() || !pass.trim()) return
     setLoading(true); setErr('')
     try {
       if (mode === 'register') {
-        if (!name.trim()) { setErr('Ingresá tu nombre'); return }
+        if (!name.trim()) { setErr(t('errorName')); return }
         const { error } = await supabase.auth.signUp({
           email, password: pass,
           options: { data: { full_name: name } }
         })
         if (error) { setErr(error.message); return }
-        if (inviteToken) {
-          localStorage.removeItem('pendingInvitationToken')
-        }
+        if (inviteToken) localStorage.removeItem('pendingInvitationToken')
         setOk(true)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass })
-        if (error) { setErr('Usuario o contraseña incorrectos'); return }
+        if (error) { setErr(t('errorCredentials')); return }
         if (inviteToken) {
           localStorage.removeItem('pendingInvitationToken')
           router.push(`/invitacion/${inviteToken}`)
@@ -68,13 +69,24 @@ export default function AuthPage() {
   if (ok) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ textAlign: 'center', maxWidth: 380, borderTop: '2px solid #C9A84C', paddingTop: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Confirmación enviada</div>
-        <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 16 }}>Revisá tu email</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>
+          {t('confirmTitle')}
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 16 }}>
+          {t('confirmHeading')}
+        </div>
         <p style={{ color: '#666', lineHeight: 1.7, fontSize: 14, marginBottom: 28 }}>
-          Te enviamos un link a <strong style={{ color: '#e8e8e8' }}>{email}</strong>. Confirmá tu cuenta para ingresar.
+          {t('confirmText', { email }).split(email).map((part, i, arr) =>
+            i < arr.length - 1
+              ? <span key={i}>{part}<strong style={{ color: '#e8e8e8' }}>{email}</strong></span>
+              : <span key={i}>{part}</span>
+          )}
         </p>
-        <button onClick={() => { setOk(false); setMode('login') }} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 24px', color: '#666', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
-          Ir al login
+        <button
+          onClick={() => { setOk(false); setMode('login') }}
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 24px', color: '#666', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}
+        >
+          {t('confirmBack')}
         </button>
       </div>
     </div>
@@ -87,10 +99,10 @@ export default function AuthPage() {
         {/* Header */}
         <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 28, marginBottom: 32 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
-            {mode === 'login' ? 'Acceso' : 'Registro'}
+            {mode === 'login' ? t('loginLabel') : t('registerLabel')}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>
-            QuadSkate Platform
+            {t('title')}
           </div>
         </div>
 
@@ -105,7 +117,7 @@ export default function AuthPage() {
               borderBottom: mode === m ? '2px solid #C9A84C' : '2px solid transparent',
               marginBottom: -1,
             }}>
-              {m === 'login' ? 'Ingresar' : 'Registrarse'}
+              {m === 'login' ? t('tabLogin') : t('tabRegister')}
             </button>
           ))}
         </div>
@@ -117,19 +129,23 @@ export default function AuthPage() {
           cursor: 'pointer', marginBottom: 16, letterSpacing: 2, textTransform: 'uppercase',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         }}>
-          <span style={{ fontWeight: 900, fontSize: 14 }}>G</span> Continuar con Google
+          <span style={{ fontWeight: 900, fontSize: 14 }}>G</span> {t('google')}
         </button>
 
         <div style={{ textAlign: 'center', color: '#333', fontSize: 11, letterSpacing: 2, marginBottom: 16, textTransform: 'uppercase' }}>
-          — o con email —
+          {t('orEmail')}
         </div>
 
         {mode === 'register' && (
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre completo" style={inp} />
+          <input value={name} onChange={e => setName(e.target.value)} placeholder={t('namePlaceholder')} style={inp} />
         )}
-        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" style={inp} />
-        <input value={pass} onChange={e => setPass(e.target.value)} placeholder="Contraseña" type="password"
-          onKeyDown={e => e.key === 'Enter' && handleSubmit()} style={{ ...inp, marginBottom: 16 }} />
+        <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} type="email" style={inp} />
+        <input
+          value={pass} onChange={e => setPass(e.target.value)}
+          placeholder={t('passPlaceholder')} type="password"
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          style={{ ...inp, marginBottom: 16 }}
+        />
 
         {err && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 12, letterSpacing: 1 }}>{err}</div>}
 
@@ -139,7 +155,7 @@ export default function AuthPage() {
           cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase',
           opacity: loading ? 0.7 : 1,
         }}>
-          {loading ? '...' : mode === 'login' ? 'Ingresar' : 'Crear cuenta'}
+          {loading ? t('loading') : mode === 'login' ? t('submitLogin') : t('submitRegister')}
         </button>
 
       </div>

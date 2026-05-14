@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 
@@ -13,6 +14,7 @@ const inp: React.CSSProperties = {
 }
 
 export default function PerfilPage() {
+  const t = useTranslations('PerfilPage')
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,15 +67,15 @@ export default function PerfilPage() {
       })
       .eq('id', user.id)
     setSaving(false)
-    if (error) { showToast('❌ Error al guardar'); return }
-    showToast('✅ Perfil actualizado')
+    if (error) { showToast(t('toastError')); return }
+    showToast(t('toastSaved'))
   }
 
   async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 3 * 1024 * 1024) { showToast('❌ Máximo 3MB'); return }
-    if (!file.type.startsWith('image/')) { showToast('❌ Solo imágenes'); return }
+    if (file.size > 3 * 1024 * 1024) { showToast(t('toastSizeError')); return }
+    if (!file.type.startsWith('image/')) { showToast(t('toastTypeError')); return }
 
     setUploadingAvatar(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -86,20 +88,22 @@ export default function PerfilPage() {
       .from('avatars')
       .upload(path, file, { upsert: true })
 
-    if (uploadError) { showToast('❌ Error al subir imagen'); setUploadingAvatar(false); return }
+    if (uploadError) { showToast(t('toastUploadError')); setUploadingAvatar(false); return }
 
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
 
     await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id)
     setF(prev => ({ ...prev, avatar_url: publicUrl }))
-    showToast('✅ Foto actualizada')
+    showToast(t('toastPhotoSaved'))
     setUploadingAvatar(false)
   }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
       <Nav />
-      <div style={{ padding: 80, textAlign: 'center', color: '#444', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>Cargando...</div>
+      <div style={{ padding: 80, textAlign: 'center', color: '#444', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>
+        {t('loading')}
+      </div>
     </div>
   )
 
@@ -123,21 +127,15 @@ export default function PerfilPage() {
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>Mi cuenta</div>
-            <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>Perfil</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{t('title')}</div>
           </div>
-          {/* Link al perfil público — solo si tiene username */}
           {publicUrl && (
             <button
               onClick={() => router.push(publicUrl)}
-              style={{
-                background: 'transparent', border: '1px solid #2a2a2a',
-                padding: '8px 16px', color: '#555', fontWeight: 700,
-                fontSize: 10, cursor: 'pointer', letterSpacing: 2,
-                textTransform: 'uppercase',
-              }}
+              style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#555', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}
             >
-              Ver perfil público →
+              {t('viewPublic')}
             </button>
           )}
         </div>
@@ -154,10 +152,10 @@ export default function PerfilPage() {
             }
           </div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 4 }}>{f.full_name || 'Sin nombre'}</div>
+            <div style={{ fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 4 }}>{f.full_name || t('noName')}</div>
             <div style={{ fontSize: 12, color: '#444', marginBottom: 12 }}>{email}</div>
             <label style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
-              {uploadingAvatar ? 'Subiendo...' : 'Cambiar foto'}
+              {uploadingAvatar ? t('uploading') : t('changePhoto')}
               <input type="file" accept="image/*" onChange={uploadAvatar} style={{ display: 'none' }} disabled={uploadingAvatar} />
             </label>
           </div>
@@ -165,47 +163,47 @@ export default function PerfilPage() {
 
         {/* Formulario */}
         <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>Información personal</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionTitle')}</div>
 
-          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Nombre completo</div>
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('labelName')}</div>
           <input
             value={f.full_name}
             onChange={e => setF(x => ({ ...x, full_name: e.target.value }))}
-            placeholder="Tu nombre completo"
+            placeholder={t('placeholderName')}
             style={inp}
           />
 
-          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Usuario</div>
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('labelUsername')}</div>
           <input
             value={f.username}
             onChange={e => setF(x => ({ ...x, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
-            placeholder="usuario (solo letras, números y _)"
+            placeholder={t('placeholderUsername')}
             style={inp}
           />
           {f.username && (
             <div style={{ fontSize: 10, color: '#444', marginBottom: 10, letterSpacing: 1 }}>
-              Tu perfil: <span style={{ color: '#C9A84C' }}>quadskate-platform.vercel.app/u/{f.username}</span>
+              {t('publicProfileUrl', { url: '' })}<span style={{ color: '#C9A84C' }}>quadskate-platform.vercel.app/u/{f.username}</span>
             </div>
           )}
 
-          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>País</div>
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('labelCountry')}</div>
           <input
             value={f.country}
             onChange={e => setF(x => ({ ...x, country: e.target.value }))}
-            placeholder="Argentina"
+            placeholder={t('placeholderCountry')}
             style={inp}
           />
 
-          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Email</div>
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('labelEmail')}</div>
           <input
             value={email}
             disabled
             style={{ ...inp, color: '#444', cursor: 'not-allowed' }}
           />
-          <div style={{ fontSize: 11, color: '#333', marginBottom: 20, letterSpacing: 1 }}>El email no se puede modificar.</div>
+          <div style={{ fontSize: 11, color: '#333', marginBottom: 20, letterSpacing: 1 }}>{t('emailNote')}</div>
 
           <button onClick={save} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Guardando...' : 'Guardar cambios'}
+            {saving ? t('saving') : t('saveButton')}
           </button>
         </div>
       </div>

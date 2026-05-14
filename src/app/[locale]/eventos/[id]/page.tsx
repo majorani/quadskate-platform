@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import JudgeButton from '@/components/JudgeButton'
@@ -59,18 +60,30 @@ function getBestTricks(participantId: string, scores: any[]) {
     .slice(0, 5)
 }
 
-const STATUS_COLOR: Record<string, string> = { draft: '#333', published: GOLD, active: '#4CAF50', finished: '#666' }
-const STATUS_LABEL: Record<string, string> = { draft: 'Borrador', published: 'Próximamente', active: 'En vivo', finished: 'Finalizado' }
-const FORMAT_LABEL: Record<string, string> = { formal: 'Torneo Formal', jam: 'Jam', mixto: 'Mixto', best_trick: 'Best Trick' }
-
 export default function EventoDetailPage() {
   const params = useParams<{ id: string }>()
+  const t = useTranslations('EventoDetailPage')
+
   const [ev, setEv]           = useState<any>(null)
   const [cats, setCats]       = useState<any[]>([])
   const [parts, setParts]     = useState<any[]>([])
   const [judges, setJudges]   = useState<any[]>([])
   const [scores, setScores]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  const STATUS_COLOR: Record<string, string> = { draft: '#333', published: GOLD, active: '#4CAF50', finished: '#666' }
+  const STATUS_LABEL: Record<string, string> = {
+    draft: t('statusDraft'),
+    published: t('statusPublished'),
+    active: t('statusActive'),
+    finished: t('statusFinished'),
+  }
+  const FORMAT_LABEL: Record<string, string> = {
+    formal: t('formatFormal'),
+    jam: t('formatJam'),
+    mixto: t('formatMixto'),
+    best_trick: t('formatBestTrick'),
+  }
 
   async function loadParts() {
     const { data } = await supabase.from('participants').select('*, profiles(full_name)').eq('event_id', params.id)
@@ -111,8 +124,21 @@ export default function EventoDetailPage() {
     return () => { supabase.removeChannel(channel); supabase.removeChannel(evChannel) }
   }, [params?.id])
 
-  if (loading) return <div style={{ minHeight: '100vh', background: '#0a0a0a' }}><Nav /><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80 }}><div style={{ fontSize: 11, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>Cargando...</div></div></div>
-  if (!ev) return <div style={{ minHeight: '100vh', background: '#0a0a0a' }}><Nav /><div style={{ textAlign: 'center', padding: 80, color: '#ef4444' }}>Evento no encontrado</div></div>
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
+      <Nav />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80 }}>
+        <div style={{ fontSize: 11, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('loading')}</div>
+      </div>
+    </div>
+  )
+
+  if (!ev) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
+      <Nav />
+      <div style={{ textAlign: 'center', padding: 80, color: '#ef4444' }}>{t('notFound')}</div>
+    </div>
+  )
 
   const color = STATUS_COLOR[ev.status] ?? '#333'
   const label = STATUS_LABEL[ev.status] ?? ev.status
@@ -127,7 +153,9 @@ export default function EventoDetailPage() {
       {/* HEADER */}
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '48px 24px 40px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <a href="/eventos" style={{ color: '#444', fontSize: 11, textDecoration: 'none', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block', marginBottom: 24 }}>← Volver</a>
+          <a href="/eventos" style={{ color: '#444', fontSize: 11, textDecoration: 'none', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block', marginBottom: 24 }}>
+            {t('back')}
+          </a>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
             <div style={{ flex: 1 }}>
@@ -135,7 +163,7 @@ export default function EventoDetailPage() {
                 {isLive && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4CAF50', display: 'inline-block' }} />}
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color, textTransform: 'uppercase' }}>{label}</span>
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '2px 7px', border: `1px solid ${isEncuentro ? '#333' : '#C9A84C44'}`, color: isEncuentro ? '#666' : GOLD }}>
-                  {isEncuentro ? '🛼 Encuentro' : '🏆 Competencia'}
+                  {isEncuentro ? t('badgeEncuentro') : t('badgeCompetencia')}
                 </span>
               </div>
               <h1 style={{ fontSize: 'clamp(28px,5vw,52px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: -1, lineHeight: 1, marginBottom: 20 }}>{ev.name}</h1>
@@ -168,7 +196,7 @@ export default function EventoDetailPage() {
         <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
-              {isEncuentro ? 'Organizadores' : 'Jurado'}
+              {isEncuentro ? t('sectionOrganizers') : t('sectionJudges')}
             </div>
             <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', flexWrap: 'wrap' }}>
               {judges.map((j: any) => (
@@ -177,8 +205,12 @@ export default function EventoDetailPage() {
                     {j.profiles?.full_name?.[0] ?? '?'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? (isEncuentro ? 'Organizador' : 'Juez')}</div>
-                    <div style={{ fontSize: 10, color: j.status === 'accepted' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>{j.status === 'accepted' ? 'Confirmado' : 'Invitado'}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+                      {j.profiles?.full_name ?? (isEncuentro ? t('organizerDefaultName') : t('judgeDefaultName'))}
+                    </div>
+                    <div style={{ fontSize: 10, color: j.status === 'accepted' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>
+                      {j.status === 'accepted' ? t('judgeConfirmed') : t('judgeInvited')}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -191,12 +223,11 @@ export default function EventoDetailPage() {
       <div style={{ padding: '40px 24px 80px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
-          {/* Publicado: lista categorías + inscriptos */}
           {ev.status === 'published' && (
             <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 40 }}>
               {!isEncuentro && cats.length > 0 && (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>Categorías</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionCategories')}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 40 }}>
                     {cats.map((cat: any) => {
                       const count = parts.filter((p: any) => p.category_id === cat.id).length
@@ -206,7 +237,9 @@ export default function EventoDetailPage() {
                             <div style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: -0.3 }}>{cat.name}</div>
                             <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{FORMAT_LABEL[cat.format] ?? cat.format}</div>
                           </div>
-                          <div style={{ fontSize: 11, color: '#555', letterSpacing: 1 }}>{count} inscripto{count !== 1 ? 's' : ''}</div>
+                          <div style={{ fontSize: 11, color: '#555', letterSpacing: 1 }}>
+                            {count !== 1 ? t('inscribedPlural', { count }) : t('inscribed', { count })}
+                          </div>
                         </div>
                       )
                     })}
@@ -215,9 +248,13 @@ export default function EventoDetailPage() {
               )}
               <div style={{ textAlign: 'center', padding: '32px 0' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-                <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 8 }}>Próximamente</div>
+                <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 8 }}>{t('comingSoon')}</div>
                 <div style={{ fontSize: 11, color: '#555', letterSpacing: 1 }}>
-                  {ev.event_date ? `El evento comienza el ${formatDate(ev.event_date)}${ev.event_time ? ' a las ' + ev.event_time.slice(0, 5) : ''}` : 'Fecha por confirmar'}
+                  {ev.event_date
+                    ? ev.event_time
+                      ? t('comingSoonDate', { date: formatDate(ev.event_date) ?? '', time: ev.event_time.slice(0, 5) })
+                      : t('comingSoonDateNoTime', { date: formatDate(ev.event_date) ?? '' })
+                    : t('comingSoonNoDate')}
                 </div>
               </div>
             </div>
@@ -225,14 +262,17 @@ export default function EventoDetailPage() {
 
           {ev.status === 'draft' && (
             <div style={{ textAlign: 'center', padding: '48px 24px', borderTop: '1px solid #2a2a2a' }}>
-              <div style={{ fontSize: 11, color: '#333', letterSpacing: 3, textTransform: 'uppercase' }}>Evento en preparación</div>
+              <div style={{ fontSize: 11, color: '#333', letterSpacing: 3, textTransform: 'uppercase' }}>{t('draft')}</div>
             </div>
           )}
 
-          {/* Active / Finished: resultados */}
           {hasResults && (
             <>
-              {cats.length === 0 && <div style={{ color: '#333', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', textAlign: 'center', padding: '40px 0' }}>Sin categorías configuradas</div>}
+              {cats.length === 0 && (
+                <div style={{ color: '#333', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', textAlign: 'center', padding: '40px 0' }}>
+                  {t('noCategories')}
+                </div>
+              )}
               {cats.map(cat => {
                 const catParts = parts
                   .filter((p: any) => p.category_id === cat.id)
@@ -245,7 +285,7 @@ export default function EventoDetailPage() {
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                     </div>
                     {catParts.length === 0
-                      ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin participantes</div>
+                      ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
                       : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
                           {catParts.map((p: any, i: number) => (
