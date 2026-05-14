@@ -1,0 +1,50 @@
+{
+  "Nav": {
+    "howItWorks": "Cómo funciona",
+    "events": "Eventos",
+    "notifications": "Notificaciones",
+    "notificationsCount": "Notificaciones ({count})",
+    "profile": "Perfil",
+    "myPanel": "Mi panel",
+    "logout": "Salir",
+    "login": "Ingresar"
+  },
+  "HomePage": {
+    "hero": {
+      "eyebrow": "Plataforma oficial · Competencias de Quad Skate",
+      "subtitle": "Gestiona tu evento en un solo lugar.",
+      "ctaEvents": "Ver eventos",
+      "ctaLogin": "Iniciar sesión"
+    },
+    "stats": {
+      "judgesValue": "3",
+      "judgesLabel": "Jueces por evento",
+      "transparencyValue": "100%",
+      "transparencyLabel": "Transparencia",
+      "realtimeValue": "Tiempo real",
+      "realtimeLabel": "Resultados en vivo",
+      "originValue": "Argentina",
+      "originLabel": "Origen"
+    },
+    "events": {
+      "eyebrow": "Próximos eventos",
+      "title": "Competencias y encuentros",
+      "seeAll": "Ver todos →"
+    },
+    "features": {
+      "eyebrow": "Por qué Quad Skate Platform",
+      "f1Title": "Portal de eventos",
+      "f1Desc": "Es un lugar más accesible para visibilizar tu evento.",
+      "f2Title": "3 jueces, 1 resultado",
+      "f2Desc": "Sistema promediado entre jueces para máxima imparcialidad.",
+      "f3Title": "App para jueces",
+      "f3Desc": "Interfaz optimizada para puntuar desde el celular en vivo.",
+      "f4Title": "Notificaciones",
+      "f4Desc": "Te avisamos cuando te invitan como jurado o participante."
+    },
+    "footer": {
+      "copyright": "© 2025 QuadSkate Platform · Argentina",
+      "powered": "Powered by Majorani"
+    }
+  }
+}

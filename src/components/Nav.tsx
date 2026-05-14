@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname, useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 import type { User } from '@supabase/supabase-js'
 
 export default function Nav() {
   const router = useRouter()
   const pathname = usePathname()
+  const t = useTranslations('Nav')
   const [user, setUser] = useState<User | null>(null)
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
@@ -38,7 +41,7 @@ export default function Nav() {
 
   function go(path: string) {
     setOpen(false)
-    router.push(path)
+    router.push(path as any)
   }
 
   const linkStyle = (path: string): React.CSSProperties => ({
@@ -59,30 +62,30 @@ export default function Nav() {
         position: 'sticky', top: 0, zIndex: 100,
         width: '100%', overflow: 'hidden',
       }}>
-        {/* Logo */}
         <button onClick={() => go('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8', whiteSpace: 'nowrap' }}>QS</span>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C', whiteSpace: 'nowrap' }}>PLATFORM</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8', whiteSpace: 'nowrap' }}>QUAD</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C', whiteSpace: 'nowrap' }}>CIRCUIT</span>
           <span className="nav-by" style={{ fontSize: 11, fontWeight: 400, letterSpacing: 2, color: '#444', marginLeft: 2, whiteSpace: 'nowrap' }}>BY MAJORANI</span>
         </button>
 
-        {/* Desktop links */}
+        {/* Desktop */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="nav-desktop">
-          <button onClick={() => go('/como-funciona')} style={linkStyle('/como-funciona')}>Cómo funciona</button>
-          <button onClick={() => go('/eventos')} style={linkStyle('/eventos')}>Eventos</button>
+          <button onClick={() => go('/como-funciona')} style={linkStyle('/como-funciona')}>{t('howItWorks')}</button>
+          <button onClick={() => go('/eventos')} style={linkStyle('/eventos')}>{t('events')}</button>
           {user ? (
             <>
               <button onClick={() => go('/notificaciones')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 14, position: 'relative', padding: '6px 10px' }}>
                 🔔
                 {unread > 0 && <span style={{ position: 'absolute', top: 2, right: 4, background: '#C9A84C', color: '#000', borderRadius: 999, fontSize: 9, fontWeight: 900, minWidth: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{unread}</span>}
               </button>
-              <button onClick={() => go('/perfil')} style={linkStyle('/perfil')}>Perfil</button>
-              <button onClick={() => go('/dashboard')} style={linkStyle('/dashboard')}>Mi panel</button>
-              <button onClick={logout} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '6px 14px', color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Salir</button>
+              <button onClick={() => go('/perfil')} style={linkStyle('/perfil')}>{t('profile')}</button>
+              <button onClick={() => go('/dashboard')} style={linkStyle('/dashboard')}>{t('myPanel')}</button>
+              <button onClick={logout} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '6px 14px', color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>{t('logout')}</button>
             </>
           ) : (
-            <button onClick={() => go('/auth')} style={{ background: '#C9A84C', border: 'none', padding: '8px 18px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>Ingresar</button>
+            <button onClick={() => go('/auth')} style={{ background: '#C9A84C', border: 'none', padding: '8px 18px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>{t('login')}</button>
           )}
+          <div style={{ marginLeft: 6 }}><LanguageSwitcher /></div>
         </div>
 
         {/* Hamburger */}
@@ -97,25 +100,25 @@ export default function Nav() {
       {/* Mobile menu */}
       {open && (
         <div style={{ position: 'fixed', top: 56, left: 0, right: 0, bottom: 0, background: '#0a0a0a', borderTop: '1px solid #2a2a2a', zIndex: 99, display: 'flex', flexDirection: 'column', padding: '24px 24px 32px', gap: 0, overflowY: 'auto' }}>
-          <MobileLink label="Cómo funciona" onClick={() => go('/como-funciona')} active={pathname === '/como-funciona'} />
-          <MobileLink label="Eventos" onClick={() => go('/eventos')} active={pathname === '/eventos'} />
+          <MobileLink label={t('howItWorks')} onClick={() => go('/como-funciona')} active={pathname === '/como-funciona'} />
+          <MobileLink label={t('events')} onClick={() => go('/eventos')} active={pathname === '/eventos'} />
           {user ? (
             <>
-              <MobileLink label={unread > 0 ? `Notificaciones (${unread})` : 'Notificaciones'} onClick={() => go('/notificaciones')} active={pathname === '/notificaciones'} gold={unread > 0} />
-              <MobileLink label="Perfil" onClick={() => go('/perfil')} active={pathname === '/perfil'} />
-              <MobileLink label="Mi panel" onClick={() => go('/dashboard')} active={pathname === '/dashboard'} />
+              <MobileLink label={unread > 0 ? `${t('notifications')} (${unread})` : t('notifications')} onClick={() => go('/notificaciones')} active={pathname === '/notificaciones'} gold={unread > 0} />
+              <MobileLink label={t('profile')} onClick={() => go('/perfil')} active={pathname === '/perfil'} />
+              <MobileLink label={t('myPanel')} onClick={() => go('/dashboard')} active={pathname === '/dashboard'} />
+              <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a' }}><LanguageSwitcher /></div>
               <div style={{ marginTop: 'auto', paddingTop: 32, borderTop: '1px solid #2a2a2a' }}>
-                <button onClick={logout} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '14px 28px', color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-                  Salir
-                </button>
+                <button onClick={logout} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '14px 28px', color: '#666', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>{t('logout')}</button>
               </div>
             </>
           ) : (
-            <div style={{ marginTop: 'auto' }}>
-              <button onClick={() => go('/auth')} style={{ background: '#C9A84C', border: 'none', padding: '16px', color: '#000', fontWeight: 900, fontSize: 13, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-                Ingresar
-              </button>
-            </div>
+            <>
+              <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a' }}><LanguageSwitcher /></div>
+              <div style={{ marginTop: 'auto' }}>
+                <button onClick={() => go('/auth')} style={{ background: '#C9A84C', border: 'none', padding: '16px', color: '#000', fontWeight: 900, fontSize: 13, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>{t('login')}</button>
+              </div>
+            </>
           )}
         </div>
       )}

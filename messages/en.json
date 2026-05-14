@@ -1,0 +1,50 @@
+{
+  "Nav": {
+    "howItWorks": "How it works",
+    "events": "Events",
+    "notifications": "Notifications",
+    "notificationsCount": "Notifications ({count})",
+    "profile": "Profile",
+    "myPanel": "My panel",
+    "logout": "Log out",
+    "login": "Log in"
+  },
+  "HomePage": {
+    "hero": {
+      "eyebrow": "Official platform · Quad Skate competitions",
+      "subtitle": "Manage your event in one place.",
+      "ctaEvents": "View events",
+      "ctaLogin": "Log in"
+    },
+    "stats": {
+      "judgesValue": "3",
+      "judgesLabel": "Judges per event",
+      "transparencyValue": "100%",
+      "transparencyLabel": "Transparency",
+      "realtimeValue": "Real time",
+      "realtimeLabel": "Live results",
+      "originValue": "Argentina",
+      "originLabel": "Origin"
+    },
+    "events": {
+      "eyebrow": "Upcoming events",
+      "title": "Competitions & meetups",
+      "seeAll": "See all →"
+    },
+    "features": {
+      "eyebrow": "Why Quad Skate Platform",
+      "f1Title": "Event portal",
+      "f1Desc": "A more accessible place to showcase your event.",
+      "f2Title": "3 judges, 1 result",
+      "f2Desc": "Averaged scoring system across judges for maximum fairness.",
+      "f3Title": "Judge app",
+      "f3Desc": "Mobile-optimized interface for live scoring.",
+      "f4Title": "Notifications",
+      "f4Desc": "We notify you when you're invited as a judge or participant."
+    },
+    "footer": {
+      "copyright": "© 2025 QuadSkate Platform · Argentina",
+      "powered": "Powered by Majorani"
+    }
+  }
+}
