@@ -102,7 +102,11 @@
     "comingSoonNoDate": "Fecha por confirmar",
     "draft": "Evento en preparación",
     "noCategories": "Sin categorías configuradas",
-    "noParticipants": "Sin participantes"
+    "noParticipants": "Sin participantes",
+    "reglamentoTitle": "Reglamento",
+    "reglamentoStandardBadge": "Estándar",
+    "reglamentoCustomBadge": "Personalizado",
+    "reglamentoView": "Ver reglamento →"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Cómo funciona",
@@ -349,7 +353,25 @@
     "miniJamAdd": "Agregar a la jam",
     "toastMiniJamCreated": "✅ Mini Jam activada",
     "toastMiniJamError": "❌ Error al crear Mini Jam",
-    "toastMiniJamDeactivated": "Mini Jam desactivada"
+    "toastMiniJamDeactivated": "Mini Jam desactivada",
+    "reglamentoTitle": "Reglamento del evento",
+    "reglamentoUseCustom": "Usar reglamento propio",
+    "reglamentoUseStandard": "Usar reglamento estándar",
+    "reglamentoHintStandard": "Se mostrará el reglamento estándar de la plataforma en la página del evento.",
+    "reglamentoHintCustom": "Subí el PDF de tu reglamento propio.",
+    "reglamentoUploading": "Subiendo...",
+    "reglamentoUpload": "Subir PDF",
+    "reglamentoChange": "Cambiar PDF",
+    "reglamentoRemove": "Eliminar",
+    "reglamentoHintFile": "PDF · Máx 10MB",
+    "reglamentoCurrentStandard": "Usando reglamento estándar",
+    "reglamentoCurrentCustom": "Reglamento propio cargado",
+    "reglamentoView": "Ver PDF →",
+    "toastReglamentoUploaded": "✅ Reglamento subido",
+    "toastReglamentoRemoved": "Reglamento eliminado",
+    "toastReglamentoUploadError": "❌ Error al subir PDF",
+    "toastReglamentoSizeError": "❌ Máximo 10MB",
+    "toastReglamentoTypeError": "❌ Solo archivos PDF"
   },
   "JuecesPage": {
     "loading": "CARGANDO",
@@ -416,5 +438,11 @@
     "errorTitle": "ERROR",
     "errorFallback": "La invitación es inválida o ya fue usada.",
     "errorBtn": "IR AL INICIO"
+  },
+  "reglamento": {
+    "eyebrow": "Reglamento oficial",
+    "title": "Reglamento estándar",
+    "desc": "Documento base para todas las competencias de la plataforma. Cada organizador puede adoptar el estándar o subir su propio reglamento.",
+    "btn": "Ver reglamento →"
   }
 }

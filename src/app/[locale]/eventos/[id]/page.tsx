@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import JudgeButton from '@/components/JudgeButton'
 import InscripcionButton from '@/components/InscripcionButton'
+import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 
 const GOLD = '#C9A84C'
 
@@ -172,6 +173,27 @@ export default function EventoDetailPage() {
                 {ev.city && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📍 {ev.location_name ? ev.location_name + ' — ' : ''}{ev.city}</div>}
               </div>
               {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7 }}>{ev.description}</p>}
+              {/* Reglamento */}
+              {!isEncuentro && (() => {
+                const url = ev.use_custom_reglamento && ev.reglamento_url
+                  ? ev.reglamento_url
+                  : REGLAMENTO_ESTANDAR_URL
+                const isCustom = ev.use_custom_reglamento && ev.reglamento_url
+                return (
+                  <a href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 10, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}
+                  >
+                    <span>📄</span>
+                    <span>{t('reglamentoTitle')}</span>
+                    <span style={{ fontSize: 9, color: isCustom ? GOLD : '#444', border: `1px solid ${isCustom ? '#C9A84C44' : '#333'}`, padding: '1px 6px', letterSpacing: 2 }}>
+                      {isCustom ? t('reglamentoCustomBadge') : t('reglamentoStandardBadge')}
+                    </span>
+                    <span style={{ color: GOLD }}>→</span>
+                  </a>
+                )
+              })()}
             </div>
             {ev.flyer_url && <div style={{ width: 180, height: 240, flexShrink: 0, background: `url(${ev.flyer_url}) center/cover`, border: '1px solid #2a2a2a' }} />}
           </div>

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import type { User } from '@supabase/supabase-js'
 import type { Event, Category, Participant } from '@/lib/supabase'
+import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 
 const GOLD = '#C9A84C'
 
@@ -280,6 +281,8 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
           </label>
         )}
       </div>
+      <ReglamentoSection eventId={eventId} ev={ev} setEv={setEv} showToast={showToast} t={t} />
+
       <button onClick={save} disabled={saving} style={{ background: GOLD, border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
         {saving ? t('infoSaving') : t('infoSave')}
       </button>
@@ -729,6 +732,108 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
               {addSaving ? t('miniJamAdding') : t('miniJamAdd')}
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
+  const [useCustom, setUseCustom] = useState<boolean>(ev.use_custom_reglamento ?? false)
+  const [reglamentoUrl, setReglamentoUrl] = useState<string | null>(ev.reglamento_url ?? null)
+  const [uploading, setUploading] = useState(false)
+
+  async function toggleCustom(val: boolean) {
+    setUseCustom(val)
+    await supabase.from('events').update({ use_custom_reglamento: val }).eq('id', eventId)
+    setEv((prev: any) => ({ ...prev, use_custom_reglamento: val }))
+  }
+
+  async function uploadReglamento(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { showToast(t('toastReglamentoSizeError')); return }
+    if (file.type !== 'application/pdf') { showToast(t('toastReglamentoTypeError')); return }
+    setUploading(true)
+    const path = `${eventId}/reglamento.pdf`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+    if (uploadError) { showToast(t('toastReglamentoUploadError')); setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+    await supabase.from('events').update({ reglamento_url: publicUrl, use_custom_reglamento: true }).eq('id', eventId)
+    setReglamentoUrl(publicUrl)
+    setUseCustom(true)
+    setEv((prev: any) => ({ ...prev, reglamento_url: publicUrl, use_custom_reglamento: true }))
+    showToast(t('toastReglamentoUploaded'))
+    setUploading(false)
+  }
+
+  async function removeReglamento() {
+    await supabase.from('events').update({ reglamento_url: null, use_custom_reglamento: false }).eq('id', eventId)
+    setReglamentoUrl(null)
+    setUseCustom(false)
+    setEv((prev: any) => ({ ...prev, reglamento_url: null, use_custom_reglamento: false }))
+    showToast(t('toastReglamentoRemoved'))
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 24, marginBottom: 24 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>
+        {t('reglamentoTitle')}
+      </div>
+
+      <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
+        <button
+          onClick={() => toggleCustom(false)}
+          style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: !useCustom ? GOLD : '#0a0a0a', color: !useCustom ? '#000' : '#444' }}
+        >
+          {t('reglamentoUseStandard')}
+        </button>
+        <button
+          onClick={() => toggleCustom(true)}
+          style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: useCustom ? GOLD : '#0a0a0a', color: useCustom ? '#000' : '#444' }}
+        >
+          {t('reglamentoUseCustom')}
+        </button>
+      </div>
+
+      {!useCustom && (
+        <div style={{ background: '#111', borderLeft: '3px solid #2a2a2a', padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5 }}>
+          {t('reglamentoHintStandard')}
+        </div>
+      )}
+
+      {useCustom && (
+        <div>
+          <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5, marginBottom: 16 }}>
+            {t('reglamentoHintCustom')}
+          </div>
+          {reglamentoUrl ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111', border: '1px solid #2a2a2a', padding: '14px 16px', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 24, flexShrink: 0 }}>📄</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8', marginBottom: 4 }}>{t('reglamentoCurrentCustom')}</div>
+                <a href={reglamentoUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: GOLD, letterSpacing: 1, textDecoration: 'none' }}>{t('reglamentoView')}</a>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <label style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 14px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
+                  {uploading ? t('reglamentoUploading') : t('reglamentoChange')}
+                  <input type="file" accept="application/pdf" onChange={uploadReglamento} style={{ display: 'none' }} disabled={uploading} />
+                </label>
+                <button onClick={removeReglamento} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 14px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
+                  {t('reglamentoRemove')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #2a2a2a', padding: '28px 24px', cursor: 'pointer', gap: 8 }}>
+              <div style={{ fontSize: 28 }}>📄</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploading ? GOLD : '#444' }}>
+                {uploading ? t('reglamentoUploading') : t('reglamentoUpload')}
+              </div>
+              <div style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>{t('reglamentoHintFile')}</div>
+              <input type="file" accept="application/pdf" onChange={uploadReglamento} style={{ display: 'none' }} disabled={uploading} />
+            </label>
+          )}
         </div>
       )}
     </div>

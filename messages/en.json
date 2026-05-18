@@ -102,7 +102,11 @@
     "comingSoonNoDate": "Date to be confirmed",
     "draft": "Event in preparation",
     "noCategories": "No categories configured",
-    "noParticipants": "No participants"
+    "noParticipants": "No participants",
+    "reglamentoTitle": "Rulebook",
+    "reglamentoStandardBadge": "Standard",
+    "reglamentoCustomBadge": "Custom",
+    "reglamentoView": "View rulebook →"
   },
   "ComoFuncionaPage": {
     "eyebrow": "How it works",
@@ -349,7 +353,25 @@
     "miniJamAdd": "Add to jam",
     "toastMiniJamCreated": "✅ Mini Jam activated",
     "toastMiniJamError": "❌ Error creating Mini Jam",
-    "toastMiniJamDeactivated": "Mini Jam deactivated"
+    "toastMiniJamDeactivated": "Mini Jam deactivated",
+    "reglamentoTitle": "Event rulebook",
+    "reglamentoUseCustom": "Use custom rulebook",
+    "reglamentoUseStandard": "Use standard rulebook",
+    "reglamentoHintStandard": "The platform standard rulebook will be shown on the event page.",
+    "reglamentoHintCustom": "Upload your own rulebook PDF.",
+    "reglamentoUploading": "Uploading...",
+    "reglamentoUpload": "Upload PDF",
+    "reglamentoChange": "Change PDF",
+    "reglamentoRemove": "Remove",
+    "reglamentoHintFile": "PDF · Max 10MB",
+    "reglamentoCurrentStandard": "Using standard rulebook",
+    "reglamentoCurrentCustom": "Custom rulebook uploaded",
+    "reglamentoView": "View PDF →",
+    "toastReglamentoUploaded": "✅ Rulebook uploaded",
+    "toastReglamentoRemoved": "Rulebook removed",
+    "toastReglamentoUploadError": "❌ Error uploading PDF",
+    "toastReglamentoSizeError": "❌ Maximum 10MB",
+    "toastReglamentoTypeError": "❌ PDF files only"
   },
   "JuecesPage": {
     "loading": "LOADING",
@@ -416,5 +438,11 @@
     "errorTitle": "ERROR",
     "errorFallback": "The invitation is invalid or has already been used.",
     "errorBtn": "GO TO HOME"
+  },
+  "reglamento": {
+    "eyebrow": "Official rulebook",
+    "title": "Standard rulebook",
+    "desc": "Base document for all platform competitions. Each organizer can adopt the standard or upload their own rulebook.",
+    "btn": "View rulebook →"
   }
 }

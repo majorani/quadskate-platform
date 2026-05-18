@@ -65,3 +65,6 @@ export type Notification = {
   read: boolean
   created_at: string
 }
+
+export const REGLAMENTO_ESTANDAR_URL =
+  'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/Reglamento_Quad_Skate_v1.4_LucasMajorana.pdf'

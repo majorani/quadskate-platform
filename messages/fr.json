@@ -102,7 +102,11 @@
     "comingSoonNoDate": "Date à confirmer",
     "draft": "Événement en préparation",
     "noCategories": "Aucune catégorie configurée",
-    "noParticipants": "Aucun participant"
+    "noParticipants": "Aucun participant",
+    "reglamentoTitle": "Règlement",
+    "reglamentoStandardBadge": "Standard",
+    "reglamentoCustomBadge": "Personnalisé",
+    "reglamentoView": "Voir le règlement →"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Comment ça marche",
@@ -349,7 +353,25 @@
     "miniJamAdd": "Ajouter à la jam",
     "toastMiniJamCreated": "✅ Mini Jam activée",
     "toastMiniJamError": "❌ Erreur lors de la création",
-    "toastMiniJamDeactivated": "Mini Jam désactivée"
+    "toastMiniJamDeactivated": "Mini Jam désactivée",
+    "reglamentoTitle": "Règlement de l'événement",
+    "reglamentoUseCustom": "Utiliser un règlement personnalisé",
+    "reglamentoUseStandard": "Utiliser le règlement standard",
+    "reglamentoHintStandard": "Le règlement standard de la plateforme sera affiché sur la page de l'événement.",
+    "reglamentoHintCustom": "Téléchargez le PDF de votre propre règlement.",
+    "reglamentoUploading": "Envoi...",
+    "reglamentoUpload": "Télécharger PDF",
+    "reglamentoChange": "Changer PDF",
+    "reglamentoRemove": "Supprimer",
+    "reglamentoHintFile": "PDF · Max 10 Mo",
+    "reglamentoCurrentStandard": "Règlement standard utilisé",
+    "reglamentoCurrentCustom": "Règlement personnalisé chargé",
+    "reglamentoView": "Voir le PDF →",
+    "toastReglamentoUploaded": "✅ Règlement téléchargé",
+    "toastReglamentoRemoved": "Règlement supprimé",
+    "toastReglamentoUploadError": "❌ Erreur lors du téléchargement",
+    "toastReglamentoSizeError": "❌ Maximum 10 Mo",
+    "toastReglamentoTypeError": "❌ Fichiers PDF uniquement"
   },
   "JuecesPage": {
     "loading": "CHARGEMENT",
@@ -416,5 +438,11 @@
     "errorTitle": "ERREUR",
     "errorFallback": "L'invitation est invalide ou a déjà été utilisée.",
     "errorBtn": "ALLER À L'ACCUEIL"
+  },
+  "reglamento": {
+    "eyebrow": "Règlement officiel",
+    "title": "Règlement standard",
+    "desc": "Document de base pour toutes les compétitions de la plateforme. Chaque organisateur peut adopter le standard ou télécharger son propre règlement.",
+    "btn": "Voir le règlement →"
   }
 }

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import Nav from '@/components/Nav'
 import EventCard from '@/components/EventCard'
 import type { Event } from '@/lib/supabase'
+import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 
 export default function HomePageClient({ events }: { events: Event[] }) {
   const t = useTranslations('HomePage')
@@ -94,6 +95,42 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.6 }}>{desc}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* REGLAMENTO */}
+        <div style={{ borderTop: '1px solid #2a2a2a', padding: '64px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
+                  {t('reglamento.eyebrow')}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 12 }}>
+                  {t('reglamento.title')}
+                </div>
+                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, maxWidth: 420, marginBottom: 24 }}>
+                  {t('reglamento.desc')}
+                </p>
+                
+                <a href={REGLAMENTO_ESTANDAR_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ background: 'transparent', border: '1px solid #C9A84C', padding: '12px 24px', color: '#C9A84C', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
+                >
+                  {t('reglamento.btn')}
+                </a>
+              </div>
+              <div style={{ background: '#111', border: '1px solid #2a2a2a', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+                <div style={{ fontSize: 36 }}>📄</div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#e8e8e8', marginBottom: 4 }}>
+                    Reglamento Quad Skate v1.4
+                  </div>
+                  <div style={{ fontSize: 10, color: '#444', letterSpacing: 1 }}>PDF · Quad Skate Platform</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
