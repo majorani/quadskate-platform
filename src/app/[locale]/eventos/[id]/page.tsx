@@ -21,7 +21,16 @@ async function tryAutoActivate(ev: any): Promise<boolean> {
   const timeStr = ev.event_time ? ev.event_time.slice(0, 5) : '00:00'
   if (new Date(`${ev.event_date}T${timeStr}:00`) > new Date()) return false
   try {
-    const res = await fetch('/api/events/auto-activate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: ev.id }) })
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return false
+    const res = await fetch('/api/events/auto-activate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ eventId: ev.id }),
+    })
     const data = await res.json()
     return (data.activated ?? 0) > 0
   } catch { return false }
