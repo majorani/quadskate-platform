@@ -45,6 +45,12 @@
     "footer": {
       "copyright": "© 2025 QuadSkate Platform · Argentina",
       "powered": "Powered by Majorani"
+    },
+    "reglamento": {
+      "eyebrow": "Reglamento oficial",
+      "title": "Reglamento estándar",
+      "desc": "Documento base para todas las competencias de la plataforma. Cada organizador puede adoptar el estándar o subir su propio reglamento.",
+      "btn": "Ver reglamento →"
     }
   },
   "Auth": {
@@ -438,11 +444,5 @@
     "errorTitle": "ERROR",
     "errorFallback": "La invitación es inválida o ya fue usada.",
     "errorBtn": "IR AL INICIO"
-  },
-  "reglamento": {
-    "eyebrow": "Reglamento oficial",
-    "title": "Reglamento estándar",
-    "desc": "Documento base para todas las competencias de la plataforma. Cada organizador puede adoptar el estándar o subir su propio reglamento.",
-    "btn": "Ver reglamento →"
   }
 }
