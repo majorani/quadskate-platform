@@ -70,6 +70,27 @@ export default function ManageEventPage() {
       setUser(data.session.user)
       loadAll()
     })
+
+    const partsChannel = supabase.channel(`dashboard-parts-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `event_id=eq.${eventId}` },
+        async () => {
+          const { data } = await supabase.from('participants').select('*, profiles(full_name)').eq('event_id', eventId)
+          if (data) setParts(data)
+        })
+      .subscribe()
+
+    const judgesChannel = supabase.channel(`dashboard-judges-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'judges', filter: `event_id=eq.${eventId}` },
+        async () => {
+          const { data } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
+          if (data) setJudges(data)
+        })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(partsChannel)
+      supabase.removeChannel(judgesChannel)
+    }
   }, [])
 
   async function loadAll() {
