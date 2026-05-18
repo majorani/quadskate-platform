@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function AuthPage() {
   const t = useTranslations('Auth')
@@ -67,7 +68,10 @@ export default function AuthPage() {
   }
 
   if (ok) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 20, right: 20 }}>
+        <LanguageSwitcher />
+      </div>
       <div style={{ textAlign: 'center', maxWidth: 380, borderTop: '2px solid #C9A84C', paddingTop: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>
           {t('confirmTitle')}
@@ -94,6 +98,9 @@ export default function AuthPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ position: 'absolute', top: 20, right: 20 }}>
+        <LanguageSwitcher />
+      </div>
       <div style={{ width: '100%', maxWidth: 400 }}>
 
         {/* Header */}

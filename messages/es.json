@@ -444,5 +444,32 @@
     "errorTitle": "ERROR",
     "errorFallback": "La invitación es inválida o ya fue usada.",
     "errorBtn": "IR AL INICIO"
+  },
+  "EventCard": {
+    "noFlyer": "Sin flyer",
+    "badgeEncuentro": "🛼 Encuentro",
+    "badgeCompetencia": "🏆 Competencia",
+    "statusDraft": "Borrador",
+    "statusPublished": "Próximamente",
+    "statusActive": "En vivo",
+    "statusFinished": "Finalizado"
+  },
+  "JudgeButton": {
+    "label": "🛼 Acceder como juez"
+  },
+  "InscripcionButton": {
+    "loginPrompt": "Accedé para inscribirte →",
+    "alreadyRegistered": "Ya estás inscripto",
+    "registerBtn": "Inscribirme →",
+    "formTitle": "Inscripción",
+    "labelName": "Tu nombre",
+    "placeholderName": "Nombre completo",
+    "labelCategory": "Categoría",
+    "disclaimer": "Recordá que podés ser recategorizado según tu nivel de ser necesario.",
+    "confirming": "Confirmando...",
+    "confirmBtn": "Confirmar inscripción",
+    "cancelBtn": "Cancelar",
+    "toastSuccess": "✅ ¡Inscripción confirmada!",
+    "toastError": "❌ Error al inscribirse"
   }
 }

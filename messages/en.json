@@ -444,5 +444,32 @@
     "errorTitle": "ERROR",
     "errorFallback": "The invitation is invalid or has already been used.",
     "errorBtn": "GO TO HOME"
+  },
+  "EventCard": {
+    "noFlyer": "No flyer",
+    "badgeEncuentro": "🛼 Meetup",
+    "badgeCompetencia": "🏆 Competition",
+    "statusDraft": "Draft",
+    "statusPublished": "Coming soon",
+    "statusActive": "Live",
+    "statusFinished": "Finished"
+  },
+  "JudgeButton": {
+    "label": "🛼 Access as judge"
+  },
+  "InscripcionButton": {
+    "loginPrompt": "Log in to register →",
+    "alreadyRegistered": "You are registered",
+    "registerBtn": "Register →",
+    "formTitle": "Registration",
+    "labelName": "Your name",
+    "placeholderName": "Full name",
+    "labelCategory": "Category",
+    "disclaimer": "Note that you may be re-categorized based on your level if necessary.",
+    "confirming": "Confirming...",
+    "confirmBtn": "Confirm registration",
+    "cancelBtn": "Cancel",
+    "toastSuccess": "✅ Registration confirmed!",
+    "toastError": "❌ Error registering"
   }
 }
