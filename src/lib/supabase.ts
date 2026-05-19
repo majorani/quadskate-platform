@@ -33,10 +33,14 @@ export type Category = {
   id: string
   event_id: string
   name: string
-  format: 'formal' | 'jam' | 'mixto' | 'best_trick'
+  format: 'formal' | 'jam' | 'best_trick'
   max_runs: number
   consolidation: string
   weights: Record<string, number>
+  has_final: boolean
+  finalists_count: number
+  has_best_trick_final: boolean
+  phase: 'qualification' | 'final'
 }
 
 export type Participant = {
@@ -45,6 +49,11 @@ export type Participant = {
   category_id: string
   profile_id: string | null
   display_name: string
+  is_finalist: boolean
+  sort_order: number | null
+  battery: number | null
+  status: string
+  email: string
 }
 
 export type Judge = {

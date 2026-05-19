@@ -27,10 +27,7 @@ async function tryAutoActivate(ev: any): Promise<boolean> {
     if (!session) return false
     const res = await fetch('/api/events/auto-activate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
       body: JSON.stringify({ eventId: ev.id }),
     })
     const data = await res.json()
@@ -38,24 +35,33 @@ async function tryAutoActivate(ev: any): Promise<boolean> {
   } catch { return false }
 }
 
-function calcScore(participantId: string, scores: any[], cat: any): number | null {
-  const judgeIds = [...new Set(scores.map((s: any) => s.judge_id))] as string[]
+// Puntaje clasificación (run=1)
+function calcQualScore(participantId: string, scores: any[], cat: any): number | null {
+  const judgeIds = [...new Set(scores.filter((s: any) => s.run === 1).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
-    const runs = scores.filter((s: any) => s.judge_id === jId && s.participant_id === participantId)
+    const runs = scores.filter((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === 1)
     if (!runs.length) return null
     if (cat.format === 'jam') {
       return runs.reduce((sum: number, r: any) => {
         const tricks = Array.isArray(r.tricks) ? r.tricks : (r.tricks?.tricks ?? [])
         const fluidez = r.tricks?.fluidez ?? 5
         const creatividad = r.tricks?.creatividad ?? 5
-        return sum + tricks.reduce((s: number, t: any) => s + (t.nivel || 0), 0) + (fluidez - 5) + (creatividad - 5)
+        const exitosos = tricks.filter((t: any) => t.nivel > 0)
+        const total = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t.nivel || 0), 0) / exitosos.length : 0
+        return sum + total + (fluidez - 5) + (creatividad - 5)
       }, 0)
     }
     if (cat.format === 'best_trick') {
       const allTricks = runs.flatMap((r: any) => r.tricks || [])
-      return allTricks.length ? Math.max(...allTricks.map((t: any) => t._score || 0)) : null
+      const exitosos = allTricks.filter((t: any) => t.intencion === true)
+      return exitosos.length ? Math.max(...exitosos.map((t: any) => t._score || 0)) : null
     }
-    const totals = runs.map((r: any) => (r.tricks || []).reduce((s: number, t: any) => s + (t._score || 0), 0))
+    const totals = runs.map((r: any) => {
+      const tricks = r.tricks || []
+      const exitosos = tricks.filter((t: any) => t.intencion === true)
+      if (!exitosos.length) return 0
+      return exitosos.reduce((s: number, t: any) => s + (t._score || 0), 0) / exitosos.length
+    })
     if (cat.consolidation === 'best_run') return Math.max(...totals)
     return totals.reduce((a: number, b: number) => a + b, 0)
   }).filter((x): x is number => x !== null)
@@ -63,11 +69,85 @@ function calcScore(participantId: string, scores: any[], cat: any): number | nul
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
 }
 
+// Puntaje pasada final (run=2)
+function calcFinalRunScore(participantId: string, scores: any[]): number | null {
+  const judgeIds = [...new Set(scores.filter((s: any) => s.run === 2).map((s: any) => s.judge_id))] as string[]
+  const jScores = judgeIds.map(jId => {
+    const runs = scores.filter((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === 2)
+    if (!runs.length) return null
+    const totals = runs.map((r: any) => {
+      const tricks = r.tricks || []
+      const exitosos = tricks.filter((t: any) => t.intencion === true)
+      if (!exitosos.length) return 0
+      return exitosos.reduce((s: number, t: any) => s + (t._score || 0), 0) / exitosos.length
+    })
+    return Math.max(...totals)
+  }).filter((x): x is number => x !== null)
+  if (!jScores.length) return null
+  return jScores.reduce((a, b) => a + b, 0) / jScores.length
+}
+
+// Puntaje best trick final (run=3)
+function calcBestTrickFinalScore(participantId: string, scores: any[]): {
+  score: number, meetsRequirement: boolean, successfulTricks: number
+} {
+  const judgeScores = scores.filter((s: any) => s.participant_id === participantId && s.run === 3)
+  if (!judgeScores.length) return { score: 0, meetsRequirement: false, successfulTricks: 0 }
+
+  const trickMap: Record<string, { scores: number[], validCount: number }> = {}
+  for (const sc of judgeScores) {
+    for (const trick of (sc.tricks || [])) {
+      if (!trick.nombre) continue
+      if (!trickMap[trick.nombre]) trickMap[trick.nombre] = { scores: [], validCount: 0 }
+      if (trick.intencion === true) {
+        trickMap[trick.nombre].scores.push(trick._score || 0)
+        trickMap[trick.nombre].validCount++
+      } else {
+        trickMap[trick.nombre].scores.push(0)
+      }
+    }
+  }
+
+  const judgeCount = new Set(judgeScores.map((s: any) => s.judge_id)).size
+  const trickScores: Array<{ nombre: string, score: number, valid: boolean }> = []
+  for (const [nombre, data] of Object.entries(trickMap)) {
+    const avg = data.scores.reduce((a, b) => a + b, 0) / judgeCount
+    const valid = data.validCount >= Math.ceil(judgeCount / 2)
+    trickScores.push({ nombre, score: avg, valid })
+  }
+
+  const validTricks = trickScores.filter(t => t.valid)
+  const meetsRequirement = validTricks.length >= 2
+  const totalScore = validTricks.reduce((s, t) => s + t.score, 0)
+  return { score: totalScore, meetsRequirement, successfulTricks: validTricks.length }
+}
+
+// Compatibilidad con JAM y Best Trick sin fases
+function calcScore(participantId: string, scores: any[], cat: any): number | null {
+  return calcQualScore(participantId, scores, cat)
+}
+
+function getBestTricksFinal(participantId: string, scores: any[]) {
+  const judgeScores = scores.filter((s: any) => s.participant_id === participantId && s.run === 3)
+  const trickMap: Record<string, number[]> = {}
+  for (const sc of judgeScores) {
+    for (const trick of (sc.tricks || [])) {
+      if (!trick.nombre) continue
+      if (!trickMap[trick.nombre]) trickMap[trick.nombre] = []
+      trickMap[trick.nombre].push(trick.intencion ? (trick._score || 0) : 0)
+    }
+  }
+  const judgeCount = new Set(judgeScores.map((s: any) => s.judge_id)).size || 1
+  return Object.entries(trickMap)
+    .map(([nombre, sc]) => ({ nombre, score: sc.reduce((a, b) => a + b, 0) / judgeCount }))
+    .sort((a, b) => b.score - a.score)
+}
+
 function getBestTricks(participantId: string, scores: any[]) {
   return scores
-    .filter((s: any) => s.participant_id === participantId)
+    .filter((s: any) => s.participant_id === participantId && s.run === 1)
     .flatMap((s: any) => s.tricks || [])
-    .filter((t: any) => t.nombre)
+    .filter((t: any) => t.nombre && t.intencion === true)
     .sort((a: any, b: any) => (b._score || 0) - (a._score || 0))
     .slice(0, 5)
 }
@@ -85,16 +165,12 @@ export default function EventoDetailPage() {
 
   const STATUS_COLOR: Record<string, string> = { draft: '#333', published: GOLD, active: '#4CAF50', finished: '#666' }
   const STATUS_LABEL: Record<string, string> = {
-    draft: t('statusDraft'),
-    published: t('statusPublished'),
-    active: t('statusActive'),
-    finished: t('statusFinished'),
+    draft: t('statusDraft'), published: t('statusPublished'),
+    active: t('statusActive'), finished: t('statusFinished'),
   }
   const FORMAT_LABEL: Record<string, string> = {
-    formal: t('formatFormal'),
-    jam: t('formatJam'),
-    mixto: t('formatMixto'),
-    best_trick: t('formatBestTrick'),
+    formal: t('formatFormal'), jam: t('formatJam'),
+    mixto: t('formatMixto'), best_trick: t('formatBestTrick'),
   }
 
   async function loadParts() {
@@ -104,7 +180,6 @@ export default function EventoDetailPage() {
 
   useEffect(() => {
     if (!params?.id) return
-
     async function load() {
       const [evRes, catsRes, partsRes, judgesRes, scRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', params.id).single(),
@@ -168,7 +243,6 @@ export default function EventoDetailPage() {
           <a href="/eventos" style={{ color: '#444', fontSize: 11, textDecoration: 'none', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block', marginBottom: 24 }}>
             {t('back')}
           </a>
-
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -184,18 +258,12 @@ export default function EventoDetailPage() {
                 {ev.city && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📍 {ev.location_name ? ev.location_name + ' — ' : ''}{ev.city}</div>}
               </div>
               {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7 }}>{ev.description}</p>}
-              {/* Reglamento */}
               {!isEncuentro && (() => {
-                const url = ev.use_custom_reglamento && ev.reglamento_url
-                  ? ev.reglamento_url
-                  : REGLAMENTO_ESTANDAR_URL
+                const url = ev.use_custom_reglamento && ev.reglamento_url ? ev.reglamento_url : REGLAMENTO_ESTANDAR_URL
                 const isCustom = ev.use_custom_reglamento && ev.reglamento_url
                 return (
-                  <a href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 10, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}
-                  >
+                  <a href={url} target="_blank" rel="noopener noreferrer"
+                    style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 10, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}>
                     <span>📄</span>
                     <span>{t('reglamentoTitle')}</span>
                     <span style={{ fontSize: 9, color: isCustom ? GOLD : '#444', border: `1px solid ${isCustom ? '#C9A84C44' : '#333'}`, padding: '1px 6px', letterSpacing: 2 }}>
@@ -208,17 +276,10 @@ export default function EventoDetailPage() {
             </div>
             {ev.flyer_url && <div style={{ width: 180, height: 240, flexShrink: 0, background: `url(${ev.flyer_url}) center/cover`, border: '1px solid #2a2a2a' }} />}
           </div>
-
-          {/* Acciones */}
           <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
             <JudgeButton eventId={params.id} ownerId={ev.owner_id} />
             {!isEncuentro && (
-              <InscripcionButton
-                eventId={params.id}
-                cats={cats}
-                eventStatus={ev.status}
-                onRegistered={loadParts}
-              />
+              <InscripcionButton eventId={params.id} cats={cats} eventStatus={ev.status} onRegistered={loadParts} />
             )}
           </div>
         </div>
@@ -307,43 +368,128 @@ export default function EventoDetailPage() {
                 </div>
               )}
               {cats.map(cat => {
-                const catParts = parts
-                  .filter((p: any) => p.category_id === cat.id)
-                  .map((p: any) => ({ ...p, score: calcScore(p.id, scores, cat) }))
+                const isFinalPhase = cat.phase === 'final'
+                const hasBTFinal = cat.has_best_trick_final
+                const allCatParts = parts.filter((p: any) => p.category_id === cat.id)
+
+                const qualParts = allCatParts
+                  .map((p: any) => ({ ...p, score: calcQualScore(p.id, scores, cat) }))
                   .sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))
+
+                const finalParts = isFinalPhase
+                  ? allCatParts
+                      .filter((p: any) => p.is_finalist)
+                      .map((p: any) => {
+                        const runScore = calcFinalRunScore(p.id, scores) ?? 0
+                        const btResult = hasBTFinal ? calcBestTrickFinalScore(p.id, scores) : { score: 0, meetsRequirement: true, successfulTricks: 0 }
+                        const totalScore = runScore + btResult.score
+                        return { ...p, runScore, btScore: btResult.score, meetsRequirement: btResult.meetsRequirement, successfulTricks: btResult.successfulTricks, totalScore }
+                      })
+                      .sort((a: any, b: any) => {
+                        if (a.meetsRequirement && !b.meetsRequirement) return -1
+                        if (!a.meetsRequirement && b.meetsRequirement) return 1
+                        return b.totalScore - a.totalScore
+                      })
+                  : []
+
                 return (
-                  <div key={cat.id} style={{ marginBottom: 48 }}>
+                  <div key={cat.id} style={{ marginBottom: 64 }}>
+                    {/* Header categoría */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                      {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>FINAL</span>}
                     </div>
-                    {catParts.length === 0
-                      ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+
+                    {/* RANKING CLASIFICACIÓN */}
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
+                      {isFinalPhase ? 'Clasificación' : 'Ranking'}
+                    </div>
+                    {qualParts.length === 0
+                      ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 32 }}>{t('noParticipants')}</div>
                       : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-                          {catParts.map((p: any, i: number) => (
-                            <div key={p.id} style={{ background: '#0a0a0a', padding: '16px 20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: isFinalPhase ? 40 : 0 }}>
+                          {qualParts.map((p: any, i: number) => (
+                            <div key={p.id} style={{ background: isFinalPhase && p.is_finalist ? '#0f0f0f' : '#0a0a0a', padding: '16px 20px', borderLeft: isFinalPhase && p.is_finalist ? `3px solid ${GOLD}` : '3px solid transparent' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 ? GOLD : i === 1 ? '#94a3b8' : i === 2 ? '#f97316' : '#333', flexShrink: 0 }}>{p.score !== null ? i + 1 : '—'}</div>
+                                <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 ? GOLD : i === 1 ? '#94a3b8' : i === 2 ? '#f97316' : '#333', flexShrink: 0 }}>
+                                  {p.score !== null ? i + 1 : '—'}
+                                </div>
                                 <div style={{ flex: 1 }}>
                                   <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+                                  {isFinalPhase && p.is_finalist && (
+                                    <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Finalista</div>
+                                  )}
                                   {cat.format === 'best_trick' && (
                                     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                      {getBestTricks(p.id, scores).map((t: any, ti: number) => (
+                                      {getBestTricks(p.id, scores).map((trick: any, ti: number) => (
                                         <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                          <span style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flex: 1 }}>{t.nombre}</span>
-                                          <span style={{ fontSize: 11, fontWeight: 700, color: ti === 0 ? GOLD : '#666' }}>{(t._score || 0).toFixed(2)}</span>
+                                          <span style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flex: 1 }}>{trick.nombre}</span>
+                                          <span style={{ fontSize: 11, fontWeight: 700, color: ti === 0 ? GOLD : '#666' }}>{(trick._score || 0).toFixed(2)}</span>
                                         </div>
                                       ))}
                                     </div>
                                   )}
                                 </div>
-                                <div style={{ fontSize: p.score !== null ? 24 : 16, fontWeight: 900, color: p.score !== null ? GOLD : '#333', flexShrink: 0 }}>{p.score !== null ? p.score.toFixed(2) : '—'}</div>
+                                <div style={{ fontSize: p.score !== null ? 24 : 16, fontWeight: 900, color: p.score !== null ? GOLD : '#333', flexShrink: 0 }}>
+                                  {p.score !== null ? p.score.toFixed(2) : '—'}
+                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
+
+                    {/* RANKING FINAL */}
+                    {isFinalPhase && (
+                      <>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>
+                          Final
+                        </div>
+                        {finalParts.length === 0
+                          ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+                          : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                              {finalParts.map((p: any, i: number) => (
+                                <div key={p.id} style={{ background: '#0a0a0a', padding: '16px 20px', borderLeft: p.meetsRequirement ? `3px solid #4CAF50` : '3px solid #333' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 && p.meetsRequirement ? GOLD : i === 1 && p.meetsRequirement ? '#94a3b8' : i === 2 && p.meetsRequirement ? '#f97316' : '#333', flexShrink: 0 }}>
+                                      {p.totalScore > 0 ? i + 1 : '—'}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+                                      <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                                        {p.runScore > 0 && <span style={{ fontSize: 10, color: '#555' }}>Pasada: {p.runScore.toFixed(2)}</span>}
+                                        {hasBTFinal && (
+                                          <span style={{ fontSize: 10, color: p.meetsRequirement ? '#4CAF50' : '#ef4444' }}>
+                                            BT: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
+                                          </span>
+                                        )}
+                                        {hasBTFinal && !p.meetsRequirement && (
+                                          <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>No cumple requisito</span>
+                                        )}
+                                      </div>
+                                      {hasBTFinal && p.meetsRequirement && (
+                                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                          {getBestTricksFinal(p.id, scores).map((trick: any, ti: number) => (
+                                            <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                              <span style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flex: 1 }}>{trick.nombre}</span>
+                                              <span style={{ fontSize: 11, fontWeight: 700, color: ti === 0 ? GOLD : '#666' }}>{trick.score.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: p.totalScore > 0 ? 24 : 16, fontWeight: 900, color: p.totalScore > 0 ? (p.meetsRequirement ? GOLD : '#555') : '#333', flexShrink: 0 }}>
+                                      {p.totalScore > 0 ? p.totalScore.toFixed(2) : '—'}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                      </>
+                    )}
                   </div>
                 )
               })}
