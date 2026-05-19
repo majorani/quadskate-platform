@@ -138,18 +138,19 @@ export default function ManageEventPage() {
   const isEncuentro = (ev as any).event_type === 'encuentro'
 
   const tabs = isEncuentro
-    ? [
-        { id: 'info',          label: t('tabInfo') },
-        { id: 'parts',         label: t('tabParts') },
-        { id: 'organizadores', label: t('tabOrganizers') },
-        { id: 'minijam',       label: t('tabMiniJam') },
-      ]
-    : [
-        { id: 'info',   label: t('tabInfo') },
-        { id: 'cats',   label: t('tabCats') },
-        { id: 'parts',  label: t('tabParts') },
-        { id: 'judges', label: t('tabJudges') },
-      ]
+  ? [
+      { id: 'info',          label: t('tabInfo') },
+      { id: 'parts',         label: t('tabParts') },
+      { id: 'organizadores', label: t('tabOrganizers') },
+      { id: 'minijam',       label: t('tabMiniJam') },
+    ]
+  : [
+      { id: 'info',   label: t('tabInfo') },
+      { id: 'cats',   label: t('tabCats') },
+      { id: 'parts',  label: t('tabParts') },
+      { id: 'judges', label: t('tabJudges') },
+      { id: 'rounds', label: 'Rondas' },
+    ]
 
   const statusOptions = [
     { value: 'draft',     label: t('statusDraft'),    color: '#444' },
@@ -209,6 +210,7 @@ export default function ManageEventPage() {
         {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} setCats={setCats} judges={judges} scores={scores} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
+        {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} showToast={showToast} />}
         {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
         {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
@@ -1137,6 +1139,112 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function RoundsTab({ eventId, cats, judges, showToast }: any) {
+  const [confirmations, setConfirmations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    load()
+    const channel = supabase.channel(`rounds-admin-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'round_confirmations', filter: `event_id=eq.${eventId}` },
+        async () => {
+          const { data } = await supabase.from('round_confirmations').select('*').eq('event_id', eventId)
+          if (data) setConfirmations(data)
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  async function load() {
+    const { data } = await supabase.from('round_confirmations').select('*').eq('event_id', eventId)
+    setConfirmations(data ?? [])
+    setLoading(false)
+  }
+
+  async function revokeConfirmation(confirmId: string) {
+    const { error } = await supabase.from('round_confirmations').delete().eq('id', confirmId)
+    if (error) { showToast('❌ Error al revertir'); return }
+    setConfirmations(prev => prev.filter(c => c.id !== confirmId))
+    showToast('✅ Confirmación revertida')
+  }
+
+  if (loading) return <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>
+
+  const formalCats = cats.filter((c: any) => c.format === 'formal')
+  const acceptedJudges = judges.filter((j: any) => j.status === 'accepted')
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
+        Estado de rondas
+      </div>
+      {formalCats.length === 0 && (
+        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías formales</div>
+      )}
+      {formalCats.map((cat: any) => {
+        const catConfirms = confirmations.filter(c => c.category_id === cat.id)
+        const runs = cat.has_final ? [1, 2] : [1, ...(cat.max_runs >= 2 ? [2] : [])]
+        return (
+          <div key={cat.id} style={{ marginBottom: 40 }}>
+            <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>
+              {cat.name}
+              {cat.phase === 'final' && <span style={{ color: '#4CAF50', marginLeft: 8 }}>· EN FINAL</span>}
+            </div>
+            {runs.map(run => {
+              const runConfirms = catConfirms.filter(c => c.run === run)
+              const allConfirmed = acceptedJudges.length > 0 && acceptedJudges.every((j: any) =>
+                runConfirms.some(c => c.judge_id === j.profile_id)
+              )
+              return (
+                <div key={run} style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>
+                      {run === 2 && cat.has_final ? 'Final' : `Pasada ${run}`}
+                    </div>
+                    {allConfirmed && (
+                      <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>
+                        ✓ Todos confirmaron
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                    {acceptedJudges.length === 0 && (
+                      <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>Sin jueces aceptados</div>
+                    )}
+                    {acceptedJudges.map((j: any) => {
+                      const confirm = runConfirms.find(c => c.judge_id === j.profile_id)
+                      return (
+                        <div key={j.id} style={{ background: '#0a0a0a', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: confirm ? '#4CAF50' : '#333', flexShrink: 0 }} />
+                          <div style={{ flex: 1, fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>
+                            {j.profiles?.full_name ?? j.display_name ?? 'Juez'}
+                          </div>
+                          {confirm ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 10, color: '#4CAF50', letterSpacing: 1 }}>Confirmado</span>
+                              <button
+                                onClick={() => revokeConfirmation(confirm.id)}
+                                style={{ background: 'transparent', border: '1px solid #333', padding: '4px 10px', color: '#ef4444', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
+                                Revertir
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>Pendiente</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
     </div>
   )
 }

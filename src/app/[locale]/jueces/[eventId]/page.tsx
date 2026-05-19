@@ -177,7 +177,9 @@ function BestTrickScorer({ tricks, onAdd, onRemove, t }: any) {
   const [ejecucion, setEjecucion] = useState(5)
   const [estilo, setEstilo] = useState(5)
   const score = intencion ? ((10 * BT_W.intencion + (dificultad / 3 * 10) * BT_W.dificultad + ejecucion * BT_W.ejecucion + estilo * BT_W.estilo) / 100) : 0
-  const best = tricks.length ? Math.max(...tricks.map((trick: any) => trick._score || 0)) : 0
+  const best = tricks.filter((t: any) => t.intencion === true).length
+    ? Math.max(...tricks.filter((t: any) => t.intencion === true).map((t: any) => t._score || 0))
+    : 0
 
   function add() {
     if (!nombre.trim()) return
@@ -224,7 +226,7 @@ function BestTrickScorer({ tricks, onAdd, onRemove, t }: any) {
           <div style={{ fontSize: 9, color: '#333', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('tricksCount', { count: tricks.length })}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
             {[...tricks].sort((a: any, b: any) => (b._score || 0) - (a._score || 0)).map((trick: any, i: number) => {
-              const isBest = trick._score === best
+              const isBest = trick._score === best && trick.intencion
               return (
                 <div key={i} style={{ background: isBest ? '#111' : '#0a0a0a', borderLeft: isBest ? `3px solid ${GOLD}` : '3px solid transparent', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1 }}>
@@ -243,14 +245,142 @@ function BestTrickScorer({ tricks, onAdd, onRemove, t }: any) {
   )
 }
 
+function BestTrickScorerFinal({ eventId, catId, participantId, jId, scorecards, dispatch, toast, event, t }: any) {
+  const MAX_ATTEMPTS = 4
+  const saved = scorecards[jId]?.[participantId]?.[3]
+  const [tricks, setTricks] = useState<any[]>(Array.isArray(saved) ? saved : (saved?.tricks ?? []))
+  const [nombre, setNombre] = useState('')
+  const [intencion, setIntencion] = useState(true)
+  const [dificultad, setDificultad] = useState(1)
+  const [ejecucion, setEjecucion] = useState(5)
+  const [estilo, setEstilo] = useState(5)
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const saved = scorecards[jId]?.[participantId]?.[3]
+    setTricks(Array.isArray(saved) ? saved : (saved?.tricks ?? []))
+    setDirty(false)
+  }, [participantId, scorecards])
+
+  const score = intencion ? ((10 * BT_W.intencion + (dificultad / 3 * 10) * BT_W.dificultad + ejecucion * BT_W.ejecucion + estilo * BT_W.estilo) / 100) : 0
+  const exitosos = tricks.filter((t: any) => t.intencion === true)
+  const canAdd = tricks.length < MAX_ATTEMPTS && nombre.trim()
+
+  function add() {
+    if (!canAdd) return
+    setTricks(prev => [...prev, { nombre: nombre.trim(), intencion, dificultad, ejecucion, estilo, _score: parseFloat(score.toFixed(3)) }])
+    setNombre(''); setDificultad(1); setEjecucion(5); setEstilo(5); setIntencion(true)
+    setDirty(true)
+  }
+
+  function remove(i: number) {
+    setTricks(prev => prev.filter((_, idx) => idx !== i))
+    setDirty(true)
+  }
+
+  async function save() {
+    if (!participantId || saving) return
+    if (event?.status !== 'active') { toast(t('toastNotStarted')); return }
+    setSaving(true)
+    try {
+      const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', participantId).eq('run', 3).maybeSingle()
+      if (existing.data) {
+        await supabase.from('scorecards').update({ tricks, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', participantId).eq('run', 3)
+      } else {
+        await supabase.from('scorecards').insert({ event_id: eventId, category_id: catId, judge_id: jId, participant_id: participantId, run: 3, tricks })
+      }
+      const sc = scorecards
+      const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [participantId]: { ...((sc[jId] || {})[participantId] || {}), 3: tricks } } }
+      dispatch({ type: 'SET_SC', sc: newSc })
+      setDirty(false)
+      toast(t('toastSaved'))
+    } catch { toast(t('toastError')) } finally { setSaving(false) }
+  }
+
+  return (
+    <div style={{ padding: 14 }}>
+      <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 14 }}>
+        {Array.from({ length: MAX_ATTEMPTS }, (_, i) => {
+          const trick = tricks[i]
+          return (
+            <div key={i} style={{ flex: 1, padding: '10px 8px', background: trick ? (trick.intencion ? '#14532d' : '#7f1d1d') : '#0a0a0a', textAlign: 'center' }}>
+              <div style={{ fontSize: 9, color: trick ? '#fff' : '#333', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+                {trick ? (trick.intencion ? '✓' : '✗') : (i + 1)}
+              </div>
+              {trick && <div style={{ fontSize: 10, color: '#ffffff88', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trick.nombre}</div>}
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ background: exitosos.length >= 2 ? '#0d2b0d' : '#1a0a0a', border: `1px solid ${exitosos.length >= 2 ? '#166534' : '#7f1d1d'}`, padding: '8px 14px', marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: exitosos.length >= 2 ? '#4CAF50' : '#ef4444' }}>
+          {exitosos.length >= 2 ? '✓ Requisito cumplido' : `✗ ${exitosos.length}/2 exitosos`}
+        </div>
+      </div>
+      {tricks.length < MAX_ATTEMPTS && (
+        <div style={{ background: '#111', borderTop: '2px solid #2a2a2a', padding: 16, marginBottom: 14 }}>
+          <div style={gs.label}>Nombre del truco</div>
+          <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Fakie 360..." style={gs.inp} />
+          <div style={gs.label}>{t('labelIntencion')}</div>
+          <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
+            {[true, false].map(v => (
+              <button key={String(v)} onClick={() => setIntencion(v)} style={{ flex: 1, padding: 12, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 15, background: intencion === v ? (v ? '#14532d' : '#7f1d1d') : '#0a0a0a', color: intencion === v ? '#fff' : '#333' }}>
+                {v ? t('intentYes') : t('intentNo')}
+              </button>
+            ))}
+          </div>
+          <div style={{ opacity: intencion ? 1 : 0.2, pointerEvents: intencion ? 'auto' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-around', gap: 8 }}>
+              <DragNum label="DIF 0-3" value={dificultad} onChange={setDificultad} min={0} max={3} accent={GOLD} />
+              <DragNum label="EJE 0-10" value={ejecucion} onChange={setEjecucion} min={0} max={10} accent="#e8e8e8" />
+              <DragNum label="EST 0-10" value={estilo} onChange={setEstilo} min={0} max={10} accent="#888" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, borderTop: '1px solid #2a2a2a', paddingTop: 14 }}>
+            <div style={{ flex: 1 }}>
+              <div style={gs.label}>Puntaje este intento</div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{score.toFixed(2)}</div>
+            </div>
+            <button onClick={add} disabled={!canAdd} style={{ width: 60, height: 60, background: canAdd ? GOLD : '#1a1a1a', border: 'none', color: canAdd ? '#000' : '#333', fontWeight: 900, fontSize: 28, cursor: canAdd ? 'pointer' : 'default' }}>+</button>
+          </div>
+        </div>
+      )}
+      {tricks.length === MAX_ATTEMPTS && (
+        <div style={{ background: '#111', border: '1px solid #2a2a2a', padding: '12px 16px', marginBottom: 14, textAlign: 'center', fontSize: 11, color: '#555', letterSpacing: 1 }}>
+          Máximo de intentos alcanzado ({MAX_ATTEMPTS}/{MAX_ATTEMPTS})
+        </div>
+      )}
+      {tricks.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 14 }}>
+          {tricks.map((trick: any, i: number) => (
+            <div key={i} style={{ background: trick.intencion ? '#0d1a0d' : '#1a0a0a', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, borderLeft: `3px solid ${trick.intencion ? '#166534' : '#7f1d1d'}` }}>
+              <div style={{ fontSize: 11, color: '#555', width: 16 }}>{i + 1}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: trick.intencion ? '#e8e8e8' : '#555' }}>{trick.nombre}</div>
+                <div style={{ fontSize: 10, color: '#444', marginTop: 2 }}>Int:{trick.intencion ? '✓' : '✗'} · Dif:{trick.dificultad} · Eje:{trick.ejecucion} · Est:{trick.estilo}</div>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: trick.intencion ? GOLD : '#333' }}>{(trick._score || 0).toFixed(2)}</div>
+              <button onClick={() => remove(i)} style={{ width: 28, height: 28, border: '1px solid #2a2a2a', background: 'transparent', color: '#444', cursor: 'pointer', fontSize: 13 }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={save} disabled={saving || !dirty} style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
+        {saving ? t('saving') : dirty ? 'Guardar Best Trick' : 'Guardado'}
+      </button>
+    </div>
+  )
+}
+
 function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: any) {
   const tricksExitosos = data.tricks.filter((trick: any) => trick.nivel > 0)
   const tricksTotal = tricksExitosos.length > 0
-  ? tricksExitosos.reduce((s: number, trick: any) => s + jamScore(trick), 0) / tricksExitosos.length
-  : 0
-  const modifier    = (data.fluidez - 5) + (data.creatividad - 5)
-  const total       = tricksTotal + modifier
-  const modColor    = modifier > 0 ? '#4CAF50' : modifier < 0 ? '#ef4444' : '#444'
+    ? tricksExitosos.reduce((s: number, trick: any) => s + jamScore(trick), 0) / tricksExitosos.length
+    : 0
+  const modifier = (data.fluidez - 5) + (data.creatividad - 5)
+  const total = tricksTotal + modifier
+  const modColor = modifier > 0 ? '#4CAF50' : modifier < 0 ? '#ef4444' : '#444'
 
   return (
     <div style={{ flex: 1, background: '#0a0a0a', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -415,6 +545,8 @@ export default function JuecesPage() {
   const [event, setEvent] = useState<any>(null)
   const [cats, setCats] = useState<any[]>([])
   const [parts, setParts] = useState<any[]>([])
+  const [judges, setJudges] = useState<any[]>([])
+  const [confirmations, setConfirmations] = useState<any[]>([])
   const [catIdx, setCatIdx] = useState(0)
   const [partIdx, setPartIdx] = useState(0)
   const [run, setRun] = useState(1)
@@ -431,16 +563,30 @@ export default function JuecesPage() {
       await loadData(data.session.user.id)
       setLoading(false)
     })
+
+    // Realtime para confirmaciones
+    const confirmChannel = supabase.channel(`judge-confirms-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'round_confirmations', filter: `event_id=eq.${eventId}` },
+        async () => {
+          const { data } = await supabase.from('round_confirmations').select('*').eq('event_id', eventId)
+          if (data) setConfirmations(data)
+        })
+      .subscribe()
+
+    return () => { supabase.removeChannel(confirmChannel) }
   }, [])
 
   async function loadData(userId: string) {
-    const [evRes, catsRes, partsRes, scsRes] = await Promise.all([
+    const [evRes, catsRes, partsRes, judgesRes, scsRes, confirmsRes] = await Promise.all([
       supabase.from('events').select('*').eq('id', eventId).single(),
       supabase.from('categories').select('*').eq('event_id', eventId),
       supabase.from('participants').select('*, is_finalist').eq('event_id', eventId).order('battery', { ascending: true }),
+      supabase.from('judges').select('*').eq('event_id', eventId).eq('status', 'accepted'),
       supabase.from('scorecards').select('*').eq('event_id', eventId),
+      supabase.from('round_confirmations').select('*').eq('event_id', eventId),
     ])
     setEvent(evRes.data); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
+    setJudges(judgesRes.data ?? []); setConfirmations(confirmsRes.data ?? [])
     const scMap: any = {}
     for (const sc of scsRes.data ?? []) {
       const raw = typeof sc.tricks === 'string' ? JSON.parse(sc.tricks) : sc.tricks
@@ -451,38 +597,70 @@ export default function JuecesPage() {
     dispatch({ type: 'SET_SC', sc: scMap })
   }
 
-  const cat      = cats[catIdx] || null
+  const cat = cats[catIdx] || null
   const phase = cat?.phase ?? 'qualification'
   const hasBestTrickFinal = cat?.has_best_trick_final ?? false
   const isFinalPhase = phase === 'final'
-  // En fase final solo mostrar finalistas
   const catParts = cat
     ? (isFinalPhase
         ? parts.filter(p => p.category_id === cat.id && p.is_finalist)
         : parts.filter(p => p.category_id === cat.id))
     : []
   const participant = catParts[partIdx] || null
-  const jId      = user?.id || ''
-  const format   = cat?.format || 'formal'
-  const maxRuns  = cat?.max_runs || 2
-  const currentRun = isFinalPhase ? 2 : 1
-  
+  const jId = user?.id || ''
+  const format = cat?.format || 'formal'
+  const maxRuns = cat?.max_runs || 2
+
+  // Helpers de confirmación
+  function judgeConfirmed(run: number): boolean {
+    return confirmations.some(c => c.judge_id === jId && c.category_id === cat?.id && c.run === run)
+  }
+
+  function allJudgesConfirmed(run: number): boolean {
+    if (!judges.length) return false
+    return judges.every((j: any) =>
+      confirmations.some(c => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
+    )
+  }
+
+  function currentEnabledRun(): number {
+    if (isFinalPhase) return 2
+    if (maxRuns >= 2 && allJudgesConfirmed(1)) return 2
+    return 1
+  }
+
+  const enabledRun = currentEnabledRun()
+  const myConfirmedCurrentRun = judgeConfirmed(isFinalPhase ? 2 : enabledRun)
+
+  async function confirmRound(run: number) {
+    if (!cat || !jId) return
+    try {
+      await supabase.from('round_confirmations').insert({
+        event_id: eventId,
+        category_id: cat.id,
+        judge_id: jId,
+        run,
+      })
+      setConfirmations(prev => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run }])
+      toast('✅ Ronda confirmada')
+    } catch { toast('❌ Error al confirmar') }
+  }
 
   useEffect(() => {
     if (!participant || !cat) return
-    const saved = state.scorecards[jId]?.[participant.id]?.[isFinalPhase ? 2 : 1]
+    const saved = state.scorecards[jId]?.[participant.id]?.[isFinalPhase ? 2 : enabledRun]
     const arr = Array.isArray(saved) ? saved : (saved?.tricks ?? [])
     setTricks(arr); setDirty(false)
-  }, [catIdx, partIdx, run, state.scorecards, isFinalPhase])
+  }, [catIdx, partIdx, run, state.scorecards, isFinalPhase, enabledRun])
 
-  function addTrick(trick: any)      { setTricks(prev => [...prev, trick]); setDirty(true) }
+  function addTrick(trick: any) { setTricks(prev => [...prev, trick]); setDirty(true) }
   function removeTrick(i: number) { setTricks(prev => prev.filter((_, idx) => idx !== i)); setDirty(true) }
 
   async function save() {
     if (!participant || saving) return
     if (event.status !== 'active') { toast(t('toastNotStarted')); return }
     setSaving(true)
-    const saveRun = isFinalPhase ? 2 : 1
+    const saveRun = isFinalPhase ? 2 : enabledRun
     try {
       const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', participant.id).eq('run', saveRun).maybeSingle()
       if (existing.data) {
@@ -498,18 +676,18 @@ export default function JuecesPage() {
   }
 
   const totalScore = format === 'jam'
-  ? (() => {
-      const exitosos = tricks.filter((t: any) => t.nivel > 0)
-      return exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) / exitosos.length : 0
-    })()
-  : format === 'best_trick'
-  ? (tricks.filter((t: any) => t.intencion === true).length
-      ? Math.max(...tricks.filter((t: any) => t.intencion === true).map((t: any) => t._score || 0))
-      : 0)
-  : (() => {
-      const exitosos = tricks.filter((t: any) => t.intencion === true)
-      return exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t._score || 0), 0) / exitosos.length : 0
-    })()
+    ? (() => {
+        const exitosos = tricks.filter((t: any) => t.nivel > 0)
+        return exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) / exitosos.length : 0
+      })()
+    : format === 'best_trick'
+    ? (tricks.filter((t: any) => t.intencion === true).length
+        ? Math.max(...tricks.filter((t: any) => t.intencion === true).map((t: any) => t._score || 0))
+        : 0)
+    : (() => {
+        const exitosos = tricks.filter((t: any) => t.intencion === true)
+        return exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t._score || 0), 0) / exitosos.length : 0
+      })()
 
   if (loading) return (
     <div style={{ ...gs.screen, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
@@ -561,44 +739,89 @@ export default function JuecesPage() {
           <>
             <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => { setPartIdx(Math.max(0, partIdx - 1)); setRun(1) }} disabled={partIdx === 0} style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+                <button onClick={() => { setPartIdx(Math.max(0, partIdx - 1)); setRun(1) }} disabled={partIdx === 0}
+                  style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
                 <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{t('partNav', { current: partIdx + 1, total: catParts.length })}</div>
                   <div style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant?.display_name}</div>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 6 }}>
                     <span style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{tricks.length} {t('tricksLabel', { count: '' }).trim()}</span>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: GOLD }}>{format === 'best_trick' ? t('bestPrefix') : '/ '}{totalScore.toFixed(2)}{t('ptsLabel')}</span>
+                    <span style={{ fontSize: 12, fontWeight: 900, color: GOLD }}>{totalScore.toFixed(2)}{t('ptsLabel')}</span>
                     {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>{t('unsavedLabel')}</span>}
                   </div>
+                  <div style={{ marginTop: 4, fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase' }}>
+                    {isFinalPhase
+                      ? (hasBestTrickFinal ? 'Final · Pasada 2 + Best Trick' : 'Final · Pasada 2')
+                      : `Clasificación · Pasada ${enabledRun}`}
+                  </div>
                 </div>
-                <button onClick={() => { setPartIdx(Math.min(catParts.length - 1, partIdx + 1)); setRun(1) }} disabled={partIdx === catParts.length - 1} style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === catParts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === catParts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+                <button onClick={() => { setPartIdx(Math.min(catParts.length - 1, partIdx + 1)); setRun(1) }} disabled={partIdx === catParts.length - 1}
+                  style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === catParts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === catParts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
               </div>
-              {format === 'formal' && !isFinalPhase && (
-                <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginTop: 10 }}>
-                  {Array.from({ length: maxRuns }, (_, i) => i + 1).map((r: number) => (
-                    <button key={r} onClick={() => setRun(r)} style={{ flex: 1, padding: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', background: run === r ? GOLD : '#0a0a0a', color: run === r ? '#000' : '#444' }}>{t('run', { n: r })}</button>
-                  ))}
-                </div>
-              )}
-              {isFinalPhase && (
-                <div style={{ marginTop: 8, fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', textAlign: 'center' }}>
-                  {hasBestTrickFinal ? 'Pasada 2 + Best Trick' : 'Pasada 2'}
-                </div>
-              )}
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {format === 'best_trick' || (isFinalPhase && hasBestTrickFinal)
-                ? <BestTrickScorer tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
-                : <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
-              }
-            </div>
+            {myConfirmedCurrentRun ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+                <div style={{ fontSize: 48 }}>🔒</div>
+                <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
+                  Pasada {isFinalPhase ? 2 : enabledRun} confirmada
+                </div>
+                <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
+                  {allJudgesConfirmed(isFinalPhase ? 2 : enabledRun)
+                    ? 'Todos los jueces confirmaron.'
+                    : 'Esperando que los demás jueces confirmen...'}
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  {judges.map((j: any) => {
+                    const confirmed = confirmations.some(c => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === (isFinalPhase ? 2 : enabledRun))
+                    return (
+                      <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>
+                        {confirmed ? '✓' : '?'}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  {format === 'best_trick'
+                    ? <BestTrickScorer tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
+                    : isFinalPhase && hasBestTrickFinal
+                    ? <>
+                        <div style={{ padding: '10px 14px', background: '#111', borderBottom: '1px solid #2a2a2a' }}>
+                          <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>Pasada 2</div>
+                        </div>
+                        <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
+                        <div style={{ padding: '10px 14px', background: '#111', borderBottom: '1px solid #2a2a2a', borderTop: '2px solid #2a2a2a' }}>
+                          <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>Best Trick Final — 4 intentos</div>
+                        </div>
+                        <BestTrickScorerFinal eventId={eventId} catId={cat.id} participantId={participant?.id} jId={jId} scorecards={state.scorecards} dispatch={dispatch} toast={toast} event={event} t={t} />
+                      </>
+                    : <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
+                  }
+                </div>
 
-            <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0 }}>
-              <button onClick={save} disabled={saving} style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
-                {saving ? t('saving') : dirty ? t('savePlanilla') : t('savedPlanilla')}
-              </button>
-            </div>
+                <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button onClick={save} disabled={saving || !dirty}
+                    style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
+                    {saving ? t('saving') : dirty ? t('savePlanilla') : t('savedPlanilla')}
+                  </button>
+                  {!dirty && (
+                    <button
+                      onClick={() => confirmRound(isFinalPhase ? 2 : enabledRun)}
+                      style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
+                      ✓ Confirmar pasada {isFinalPhase ? 2 : enabledRun}
+                    </button>
+                  )}
+                  {dirty && (
+                    <div style={{ fontSize: 10, color: '#555', textAlign: 'center', letterSpacing: 1 }}>
+                      Guardá antes de confirmar la ronda
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
