@@ -69,11 +69,14 @@ export async function POST(req: Request) {
 // GET — cron de Vercel (protegido con CRON_SECRET)
 export async function GET(req: Request) {
   try {
-    const authHeader = req.headers.get('Authorization')
+    const url = new URL(req.url)
+    const secret = url.searchParams.get('secret')
     const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+
+    if (!cronSecret || secret !== cronSecret) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
+
     const result = await activate()
     if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
     return NextResponse.json(result)

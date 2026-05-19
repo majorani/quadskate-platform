@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/events/auto-activate",
+      "path": "/api/events/auto-activate?secret=l2vi91OPHF5NsaSUQH0maNb102dJdcobsq9L2atPUiQ=",
       "schedule": "0 0 * * *"
     }
   ]
