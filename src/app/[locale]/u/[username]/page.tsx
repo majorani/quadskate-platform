@@ -169,10 +169,10 @@ export default function PublicProfilePage() {
                   {ev.event_date && (
                     <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 40 }}>
                       <div style={{ fontSize: 18, fontWeight: 900, color: '#e8e8e8', lineHeight: 1 }}>
-                        {new Date(ev.event_date).getDate()}
+                        {new Date(ev.event_date).getUTCDate()}
                       </div>
                       <div style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-                        {new Date(ev.event_date).toLocaleDateString('es-AR', { month: 'short' })}
+                        {['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date(ev.event_date).getUTCMonth()]}
                       </div>
                     </div>
                   )}

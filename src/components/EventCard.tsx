@@ -13,7 +13,9 @@ const STATUS_COLOR: Record<string, string> = {
 
 function formatDate(d: string | null) {
   if (!d) return null
-  return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+  const date = new Date(d)
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+  return `${date.getUTCDate().toString().padStart(2,'0')} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`
 }
 
 export default function EventCard({ event: ev }: { event: Event }) {

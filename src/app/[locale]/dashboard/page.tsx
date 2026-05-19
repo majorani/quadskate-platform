@@ -191,7 +191,11 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    {ev.event_date ? new Date(ev.event_date).toLocaleDateString('es-AR') : t('noDate')}
+                    {ev.event_date ? (() => {
+                      const d = new Date(ev.event_date!)
+                      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+                      return `${d.getUTCDate().toString().padStart(2,'0')} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`
+                    })() : t('noDate')}
                     {ev.city ? ' · ' + ev.city : ''}
                   </div>
                 </div>
