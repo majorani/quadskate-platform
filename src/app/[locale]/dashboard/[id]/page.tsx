@@ -9,6 +9,7 @@ import Nav from '@/components/Nav'
 import type { User } from '@supabase/supabase-js'
 import type { Event, Category, Participant } from '@/lib/supabase'
 import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
+import { validateFileMagicBytes } from '@/lib/utils'
 
 const GOLD = '#C9A84C'
 
@@ -237,6 +238,8 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
     if (!file) return
     if (file.size > 5 * 1024 * 1024) { showToast(t('toastFlyerSizeError')); return }
     if (!file.type.startsWith('image/')) { showToast(t('toastFlyerTypeError')); return }
+    const validMime = await validateFileMagicBytes(file, 'image')
+    if (!validMime) { showToast(t('toastFlyerTypeError')); return }
     setUploadingFlyer(true)
     const ext = file.name.split('.').pop()
     const path = `${eventId}/flyer.${ext}`
@@ -775,6 +778,8 @@ function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
     if (!file) return
     if (file.size > 10 * 1024 * 1024) { showToast(t('toastReglamentoSizeError')); return }
     if (file.type !== 'application/pdf') { showToast(t('toastReglamentoTypeError')); return }
+    const validMime = await validateFileMagicBytes(file, 'pdf')
+    if (!validMime) { showToast(t('toastReglamentoTypeError')); return }
     setUploading(true)
     const path = `${eventId}/reglamento.pdf`
     const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })

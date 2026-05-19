@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
+import { validateFileMagicBytes } from '@/lib/utils'
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#111', border: '1px solid #2a2a2a',
@@ -76,6 +77,8 @@ export default function PerfilPage() {
     if (!file) return
     if (file.size > 3 * 1024 * 1024) { showToast(t('toastSizeError')); return }
     if (!file.type.startsWith('image/')) { showToast(t('toastTypeError')); return }
+    const validMime = await validateFileMagicBytes(file, 'image')
+    if (!validMime) { showToast(t('toastTypeError')); return }
 
     setUploadingAvatar(true)
     const { data: { user } } = await supabase.auth.getUser()
