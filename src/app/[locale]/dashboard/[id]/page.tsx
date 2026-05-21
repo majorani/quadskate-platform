@@ -149,7 +149,7 @@ export default function ManageEventPage() {
       { id: 'cats',   label: t('tabCats') },
       { id: 'parts',  label: t('tabParts') },
       { id: 'judges', label: t('tabJudges') },
-      { id: 'rounds', label: 'Rondas' },
+      { id: 'rounds', label: t('roundsTitle') },
     ]
 
   const statusOptions = [
@@ -210,7 +210,7 @@ export default function ManageEventPage() {
         {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} setCats={setCats} judges={judges} scores={scores} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
-        {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} showToast={showToast} />}
+        {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
         {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
@@ -404,11 +404,10 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
   function FinalConfig({ hasFinal, setHasFinal, finalistsCount, setFinalistsCount, hasBestTrickFinal, setHasBestTrickFinal }: any) {
     return (
       <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '14px 16px', marginBottom: 16 }}>
-        {/* Toggle final */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasFinal ? 14 : 0 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>¿Tiene final?</div>
-            <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>Activa la fase de final con finalistas</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>{t('catsFinalToggleLabel')}</div>
+            <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{t('catsFinalToggleHint')}</div>
           </div>
           <button onClick={() => setHasFinal(!hasFinal)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
             <div style={{ width: 44, height: 24, background: hasFinal ? '#1e3a5f' : '#2a2a2a', position: 'relative', transition: 'background .2s' }}>
@@ -419,9 +418,8 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
 
         {hasFinal && (
           <>
-            {/* Cantidad de finalistas */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Cantidad de finalistas</div>
+              <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('catsFinalCountLabel')}</div>
               <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
                 {[4, 6, 8, 10, 12].map(n => (
                   <button key={n} onClick={() => setFinalistsCount(n)}
@@ -432,11 +430,10 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
               </div>
             </div>
 
-            {/* Toggle best trick en final */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>¿Best trick en final?</div>
-                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>Agrega 4 intentos de best trick después de la pasada</div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>{t('catsBestTrickFinalLabel')}</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{t('catsBestTrickFinalHint')}</div>
               </div>
               <button onClick={() => setHasBestTrickFinal(!hasBestTrickFinal)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 <div style={{ width: 44, height: 24, background: hasBestTrickFinal ? '#1e3a5f' : '#2a2a2a', position: 'relative', transition: 'background .2s' }}>
@@ -452,7 +449,6 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
 
   return (
     <div>
-      {/* Modal edición */}
       {editingCat && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', maxWidth: 500, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -520,9 +516,9 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
               <div style={{ color: '#444', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <span>{fmtL[cat.format] ?? cat.format}</span>
                 {cat.format === 'formal' && <span>· {cat.max_runs} pasada{cat.max_runs !== 1 ? 's' : ''}</span>}
-                {cat.has_final && <span style={{ color: GOLD }}>· Final ({cat.finalists_count} finalistas)</span>}
-                {cat.has_best_trick_final && <span style={{ color: GOLD }}>· BT Final</span>}
-                {cat.phase === 'final' && <span style={{ color: '#4CAF50' }}>· EN FINAL</span>}
+                {cat.has_final && <span style={{ color: GOLD }}>· {t('phaseFinal')} ({cat.finalists_count})</span>}
+                {cat.has_best_trick_final && <span style={{ color: GOLD }}>· BT {t('phaseFinal')}</span>}
+                {cat.phase === 'final' && <span style={{ color: '#4CAF50' }}>{t('roundInFinal')}</span>}
               </div>
             </div>
             <button onClick={() => startEdit(cat)}
@@ -639,13 +635,11 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
     showToast(t('toastPartOrderUpdated'))
   }
 
-  // Verificar si todos los participantes de una categoría tienen puntaje run=1 de al menos 1 juez
   function allScored(catId: string): boolean {
     const cat = cats.find((c: any) => c.id === catId)
     const catParts = parts.filter((p: any) => p.category_id === catId)
     if (!catParts.length || !judges.length) return false
     if (cat?.format === 'jam') {
-      // JAM: necesita run=1 Y run=2 para todos los participantes
       return catParts.every((p: any) =>
         scores.some((s: any) => s.participant_id === p.id && s.category_id === catId && s.run === 1) &&
         scores.some((s: any) => s.participant_id === p.id && s.category_id === catId && s.run === 2)
@@ -656,31 +650,24 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
     )
   }
 
-  // Calcular score de clasificación para ordenar finalistas
   function qualScore(partId: string, catId: string): number {
     const partScores = scores.filter((s: any) => s.participant_id === partId && s.category_id === catId && s.run === 1)
     if (!partScores.length) return -1
-    // Promedio entre jueces (simplificado para ordenar)
     return partScores.length
   }
 
   async function activateFinal(cat: any) {
     setActivatingFinal(true)
     const catParts = parts.filter((p: any) => p.category_id === cat.id)
-
-    // Ordenar por cantidad de scorecards run=1 (proxy de puntaje — el puntaje real lo calcula eventos/[id])
-    // Para el pase a final usamos el orden actual sort_order o el que tenga más scorecards
     const sorted = [...catParts].sort((a, b) => qualScore(b.id, cat.id) - qualScore(a.id, cat.id))
     const finalistIds = sorted.slice(0, cat.finalists_count).map((p: any) => p.id)
     const nonFinalistIds = sorted.slice(cat.finalists_count).map((p: any) => p.id)
-
     try {
       await Promise.all([
         ...finalistIds.map((id: string) => supabase.from('participants').update({ is_finalist: true }).eq('id', id)),
         ...nonFinalistIds.map((id: string) => supabase.from('participants').update({ is_finalist: false }).eq('id', id)),
       ])
       await supabase.from('categories').update({ phase: 'final' }).eq('id', cat.id)
-
       setParts((prev: any) => prev.map((p: any) => ({
         ...p,
         is_finalist: finalistIds.includes(p.id) ? true : nonFinalistIds.includes(p.id) ? false : p.is_finalist
@@ -701,7 +688,6 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
 
   return (
     <div>
-      {/* Modal confirmación final */}
       {showFinalConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#0a0a0a', border: `2px solid ${GOLD}`, maxWidth: 400, width: '100%', padding: 32, textAlign: 'center' }}>
@@ -727,7 +713,6 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
         </div>
       )}
 
-      {/* Modal lista */}
       {showList && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', maxWidth: 700, width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
@@ -774,7 +759,6 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
         </div>
       )}
 
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase' }}>{t('partsTitle')}</div>
         {parts.length > 0 && (
@@ -794,14 +778,12 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
 
         return (
           <div key={cat.id} style={{ marginBottom: 32 }}>
-            {/* Header categoría */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>
                 {cat.name}
                 {cat.phase === 'final' && <span style={{ color: '#4CAF50', marginLeft: 8 }}>· {t('phaseFinal')}</span>}
                 {cat.phase === 'qualification' && cat.has_final && <span style={{ color: '#555', marginLeft: 8 }}>· {t('phaseQualification')}</span>}
               </div>
-              {/* Botón pasar a final */}
               {(isFormal || isJam) && cat.has_final && cat.phase === 'qualification' && (
                 <button
                   onClick={() => canActivateFinal ? setShowFinalConfirm(cat.id) : null}
@@ -834,16 +816,13 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
               {catParts.length === 0 && <div style={{ background: '#0a0a0a', padding: '14px 16px', color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('partsEmpty')}</div>}
               {catParts.map((p: any, idx: number) => (
                 <div key={p.id} className="participant-row">
-                  {/* Orden */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
                     <button onClick={() => moveOrder(catParts, idx, 'up')} disabled={idx === 0}
                       style={{ width: 22, height: 22, border: '1px solid #2a2a2a', background: 'transparent', color: idx === 0 ? '#222' : '#666', cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
                     <button onClick={() => moveOrder(catParts, idx, 'down')} disabled={idx === catParts.length - 1}
                       style={{ width: 22, height: 22, border: '1px solid #2a2a2a', background: 'transparent', color: idx === catParts.length - 1 ? '#222' : '#666', cursor: idx === catParts.length - 1 ? 'default' : 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</button>
                   </div>
-
                   <div style={{ fontSize: 11, color: '#333', fontWeight: 700, width: 20, textAlign: 'center', flexShrink: 0 }}>{idx + 1}</div>
-
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profiles?.full_name || p.display_name}</div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3 }}>
@@ -857,13 +836,10 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
                       )}
                     </div>
                   </div>
-
-                  {/* Recategorizar */}
                   <select value={p.category_id} onChange={e => recategorize(p.id, e.target.value)}
                     style={{ background: '#111', border: '1px solid #2a2a2a', color: '#888', fontSize: 10, padding: '4px 8px', cursor: 'pointer', flexShrink: 0, maxWidth: 120 }}>
                     {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-
                   {isJam && (
                     <div className="battery-selector">
                       <span style={{ fontSize: 9, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>BAT</span>
@@ -1024,7 +1000,6 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
-
   const [addEmail, setAddEmail] = useState('')
   const [addName, setAddName] = useState('')
   const [addSaving, setAddSaving] = useState(false)
@@ -1165,7 +1140,7 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
   )
 }
 
-function RoundsTab({ eventId, cats, judges, showToast }: any) {
+function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
   const [confirmations, setConfirmations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1189,12 +1164,12 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
 
   async function revokeConfirmation(confirmId: string) {
     const { error } = await supabase.from('round_confirmations').delete().eq('id', confirmId)
-    if (error) { showToast('❌ Error al revertir'); return }
+    if (error) { showToast(t('roundsToastRevokeError')); return }
     setConfirmations(prev => prev.filter(c => c.id !== confirmId))
-    showToast('✅ Confirmación revertida')
+    showToast(t('roundsToastRevoked'))
   }
 
-  if (loading) return <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>
+  if (loading) return <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('loading')}</div>
 
   const formalCats = cats.filter((c: any) => c.format === 'formal' || c.format === 'jam')
   const acceptedJudges = judges.filter((j: any) => j.status === 'accepted')
@@ -1202,10 +1177,10 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
-        Estado de rondas
+        {t('roundsTitle')}
       </div>
       {formalCats.length === 0 && (
-        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Sin categorías formales</div>
+        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('roundsNone')}</div>
       )}
       {formalCats.map((cat: any) => {
         const catConfirms = confirmations.filter(c => c.category_id === cat.id)
@@ -1216,7 +1191,7 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
           <div key={cat.id} style={{ marginBottom: 40 }}>
             <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>
               {cat.name}
-              {cat.phase === 'final' && <span style={{ color: '#4CAF50', marginLeft: 8 }}>· EN FINAL</span>}
+              {cat.phase === 'final' && <span style={{ color: '#4CAF50', marginLeft: 8 }}>{t('roundInFinal')}</span>}
             </div>
             {runs.map(run => {
               const runConfirms = catConfirms.filter(c => c.run === run)
@@ -1228,19 +1203,19 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>
                       {cat.format === 'jam'
-                        ? (run === 3 ? 'Final' : `Pasada ${run}`)
-                        : (run === 2 && cat.has_final ? 'Final' : `Pasada ${run}`)
+                        ? (run === 3 ? t('roundLabelFinal') : t('roundLabelRun', { n: run }))
+                        : (run === 2 && cat.has_final ? t('roundLabelFinal') : t('roundLabelRun', { n: run }))
                       }
                     </div>
                     {allConfirmed && (
                       <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>
-                        ✓ Todos confirmaron
+                        {t('roundsAllConfirmed')}
                       </span>
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
                     {acceptedJudges.length === 0 && (
-                      <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>Sin jueces aceptados</div>
+                      <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>{t('roundsNoJudges')}</div>
                     )}
                     {acceptedJudges.map((j: any) => {
                       const confirm = runConfirms.find(c => c.judge_id === j.profile_id)
@@ -1252,15 +1227,15 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
                           </div>
                           {confirm ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontSize: 10, color: '#4CAF50', letterSpacing: 1 }}>Confirmado</span>
+                              <span style={{ fontSize: 10, color: '#4CAF50', letterSpacing: 1 }}>{t('roundsConfirmed')}</span>
                               <button
                                 onClick={() => revokeConfirmation(confirm.id)}
                                 style={{ background: 'transparent', border: '1px solid #333', padding: '4px 10px', color: '#ef4444', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
-                                Revertir
+                                {t('roundsRevoke')}
                               </button>
                             </div>
                           ) : (
-                            <span style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>Pendiente</span>
+                            <span style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>{t('roundsPending')}</span>
                           )}
                         </div>
                       )
@@ -1320,28 +1295,19 @@ function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>
         {t('reglamentoTitle')}
       </div>
-
       <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-        <button
-          onClick={() => toggleCustom(false)}
-          style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: !useCustom ? GOLD : '#0a0a0a', color: !useCustom ? '#000' : '#444' }}
-        >
+        <button onClick={() => toggleCustom(false)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: !useCustom ? GOLD : '#0a0a0a', color: !useCustom ? '#000' : '#444' }}>
           {t('reglamentoUseStandard')}
         </button>
-        <button
-          onClick={() => toggleCustom(true)}
-          style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: useCustom ? GOLD : '#0a0a0a', color: useCustom ? '#000' : '#444' }}
-        >
+        <button onClick={() => toggleCustom(true)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: useCustom ? GOLD : '#0a0a0a', color: useCustom ? '#000' : '#444' }}>
           {t('reglamentoUseCustom')}
         </button>
       </div>
-
       {!useCustom && (
         <div style={{ background: '#111', borderLeft: '3px solid #2a2a2a', padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5 }}>
           {t('reglamentoHintStandard')}
         </div>
       )}
-
       {useCustom && (
         <div>
           <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5, marginBottom: 16 }}>
