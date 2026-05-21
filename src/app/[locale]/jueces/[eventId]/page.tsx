@@ -388,7 +388,7 @@ function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: a
         <div style={{ fontSize: 10, fontWeight: 900, color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{data.name}</div>
         <div style={{ fontSize: 28, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{total.toFixed(1)}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: '#555' }}>{tricksTotal.toFixed(1)} {t('tricksLabel', { count: '' }).trim()}</span>
+          <span style={{ fontSize: 10, color: '#555' }}>{tricksTotal.toFixed(1)} trucos</span>
           {modifier !== 0 && <span style={{ fontSize: 10, fontWeight: 700, color: modColor }}>{modifier > 0 ? '+' : ''}{modifier} mod</span>}
         </div>
         {data.dirty && <div style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{t('unsaved')}</div>}
@@ -430,20 +430,23 @@ function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: a
   )
 }
 
-function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, t }: any) {
+// ─────────────────────────────────────────────────────────────
+// JamRunView: grilla de participantes para una pasada JAM (run=1 o run=2)
+// ─────────────────────────────────────────────────────────────
+function JamRunMultiView({ parts, jId, cat, eventId, run, scorecards, dispatch, toast, event, t }: any) {
   const [data, setData] = useState(() =>
     parts.map((p: any) => {
-      const parsed = parseJamData(scorecards[jId]?.[p.id]?.[1])
+      const parsed = parseJamData(scorecards[jId]?.[p.id]?.[run])
       return { pId: p.id, name: p.display_name, ...parsed, dirty: false }
     })
   )
 
   useEffect(() => {
     setData(parts.map((p: any) => {
-      const parsed = parseJamData(scorecards[jId]?.[p.id]?.[1])
+      const parsed = parseJamData(scorecards[jId]?.[p.id]?.[run])
       return { pId: p.id, name: p.display_name, ...parsed, dirty: false }
     }))
-  }, [parts.map((p: any) => p.id).join(',')])
+  }, [parts.map((p: any) => p.id).join(','), run, scorecards])
 
   function updateData(idx: number, fn: any) {
     setData((prev: any) => prev.map((d: any, i: number) => i === idx ? { ...fn(d), dirty: true } : d))
@@ -461,14 +464,14 @@ function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, e
       if (!d.dirty) continue
       const payload = { tricks: d.tricks, fluidez: d.fluidez, creatividad: d.creatividad }
       try {
-        const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1).maybeSingle()
+        const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', d.pId).eq('run', run).maybeSingle()
         if (existing.data) {
-          await supabase.from('scorecards').update({ tricks: payload, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', d.pId).eq('run', 1)
+          await supabase.from('scorecards').update({ tricks: payload, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', d.pId).eq('run', run)
         } else {
-          await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: d.pId, run: 1, tricks: payload })
+          await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: d.pId, run, tricks: payload })
         }
         const sc = scorecards
-        const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), 1: payload } } }
+        const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [d.pId]: { ...((sc[jId] || {})[d.pId] || {}), [run]: payload } } }
         dispatch({ type: 'SET_SC', sc: newSc })
         ok++
       } catch { toast(t('toastError')) }
@@ -496,7 +499,117 @@ function JamMultiView({ parts, jId, cat, eventId, scorecards, dispatch, toast, e
   )
 }
 
-function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, t }: any) {
+// ─────────────────────────────────────────────────────────────
+// JamBestTrickFinalView: best trick final para finalistas JAM
+// Cada participante individualmente (navega entre ellos)
+// ─────────────────────────────────────────────────────────────
+function JamBestTrickFinalView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, confirmations, judges, setConfirmations, t }: any) {
+  const [partIdx, setPartIdx] = useState(0)
+  const participant = parts[partIdx]
+
+  // Confirmación de ronda final (run=3)
+  function judgeConfirmed(): boolean {
+    return confirmations.some((c: any) => c.judge_id === jId && c.category_id === cat?.id && c.run === 3)
+  }
+  function allJudgesConfirmed(): boolean {
+    if (!judges.length) return false
+    return judges.every((j: any) =>
+      confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === 3)
+    )
+  }
+
+  async function confirmRound() {
+    try {
+      await supabase.from('round_confirmations').insert({
+        event_id: eventId, category_id: cat.id, judge_id: jId, run: 3,
+      })
+      setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run: 3 }])
+      toast('✅ Final confirmada')
+    } catch { toast('❌ Error al confirmar') }
+  }
+
+  const myConfirmed = judgeConfirmed()
+  const allConfirmed = allJudgesConfirmed()
+
+  if (!participant) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+    </div>
+  )
+
+  // Pantalla de bloqueo si ya confirmó
+  if (myConfirmed) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+      <div style={{ fontSize: 48 }}>🔒</div>
+      <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
+        Best Trick Final confirmado
+      </div>
+      <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
+        {allConfirmed ? 'Todos los jueces confirmaron.' : 'Esperando que los demás jueces confirmen...'}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        {judges.map((j: any) => {
+          const confirmed = confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === 3)
+          return (
+            <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>
+              {confirmed ? '✓' : '?'}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      {/* Nav participantes */}
+      <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => setPartIdx(Math.max(0, partIdx - 1))} disabled={partIdx === 0}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{partIdx + 1} / {parts.length}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant.display_name}</div>
+            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>Best Trick Final · 4 intentos</div>
+          </div>
+          <button onClick={() => setPartIdx(Math.min(parts.length - 1, partIdx + 1))} disabled={partIdx === parts.length - 1}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === parts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === parts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <BestTrickScorerFinal
+          key={participant.id}
+          eventId={eventId}
+          catId={cat.id}
+          participantId={participant.id}
+          jId={jId}
+          scorecards={scorecards}
+          dispatch={dispatch}
+          toast={toast}
+          event={event}
+          t={t}
+        />
+      </div>
+      {/* Footer con botón confirmar */}
+      <div style={{ padding: '10px 16px', background: '#0a0a0a', borderTop: '1px solid #1a1a1a', flexShrink: 0 }}>
+        <button
+          onClick={confirmRound}
+          style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
+          ✓ Confirmar Best Trick Final
+        </button>
+        <div style={{ fontSize: 10, color: '#333', textAlign: 'center', letterSpacing: 1, marginTop: 8 }}>
+          Confirmá cuando hayas puntuado a todos los finalistas
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// JamQualBatteryView: navegador de baterías para clasificación JAM
+// Maneja run=1 y run=2 internamente con selector de pasada
+// ─────────────────────────────────────────────────────────────
+function JamQualBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, confirmations, judges, setConfirmations, t }: any) {
   const batteryMap: Record<number, any[]> = {}
   for (const p of parts) {
     const b = p.battery || 1
@@ -505,30 +618,308 @@ function JamBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, toast,
   }
   const batteryNums = Object.keys(batteryMap).map(Number).sort((a, b) => a - b)
   const [batIdx, setBatIdx] = useState(0)
+  const [jamRun, setJamRun] = useState(1) // pasada activa: 1 o 2
   const currentBatNum = batteryNums[batIdx]
   const battery = batteryMap[currentBatNum] || []
 
+  // Confirmación de ronda JAM
+  function judgeConfirmedRun(run: number): boolean {
+    return confirmations.some((c: any) => c.judge_id === jId && c.category_id === cat?.id && c.run === run)
+  }
+  function allJudgesConfirmedRun(run: number): boolean {
+    if (!judges.length) return false
+    return judges.every((j: any) =>
+      confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
+    )
+  }
+
+  // run=2 solo disponible si todos confirmaron run=1
+  const run2Available = allJudgesConfirmedRun(1)
+  const myConfirmedCurrentRun = judgeConfirmedRun(jamRun)
+  const allConfirmedCurrentRun = allJudgesConfirmedRun(jamRun)
+
+  async function confirmRound(run: number) {
+    try {
+      await supabase.from('round_confirmations').insert({
+        event_id: eventId, category_id: cat.id, judge_id: jId, run,
+      })
+      setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run }])
+      toast('✅ Pasada confirmada')
+    } catch { toast('❌ Error al confirmar') }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={() => setBatIdx(Math.max(0, batIdx - 1))} disabled={batIdx === 0} style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{t('batteryNav', { current: batIdx + 1, total: batteryNums.length })}</div>
-            <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: GOLD }}>{t('batteryTitle', { n: currentBatNum })}</div>
-            <div style={{ fontSize: 10, color: '#444', marginTop: 2 }}>{battery.map((p: any) => p.display_name).join(' · ')}</div>
-          </div>
-          <button onClick={() => setBatIdx(Math.min(batteryNums.length - 1, batIdx + 1))} disabled={batIdx === batteryNums.length - 1} style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === batteryNums.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === batteryNums.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+      {/* Selector pasada JAM */}
+      <div style={{ background: '#0a0a0a', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 10 }}>
+          <button onClick={() => setJamRun(1)}
+            style={{ flex: 1, padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: jamRun === 1 ? GOLD : '#0a0a0a', color: jamRun === 1 ? '#000' : '#444' }}>
+            Pasada 1
+            {judgeConfirmedRun(1) && <span style={{ marginLeft: 6, fontSize: 9 }}>✓</span>}
+          </button>
+          <button onClick={() => run2Available && setJamRun(2)} disabled={!run2Available}
+            style={{ flex: 1, padding: '10px', border: 'none', cursor: run2Available ? 'pointer' : 'default', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: jamRun === 2 ? GOLD : '#0a0a0a', color: jamRun === 2 ? '#000' : run2Available ? '#888' : '#2a2a2a', opacity: run2Available ? 1 : 0.5 }}>
+            Pasada 2
+            {judgeConfirmedRun(2) && <span style={{ marginLeft: 6, fontSize: 9 }}>✓</span>}
+          </button>
         </div>
-        {batteryNums.length > 1 && (
-          <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginTop: 8 }}>
-            {batteryNums.map((bn, i) => (
-              <button key={bn} onClick={() => setBatIdx(i)} style={{ flex: 1, padding: '6px', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 11, background: batIdx === i ? GOLD : '#0a0a0a', color: batIdx === i ? '#000' : '#444' }}>B{bn}</button>
-            ))}
+        {!run2Available && (
+          <div style={{ fontSize: 9, color: '#333', letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center' }}>
+            Pasada 2 disponible cuando todos confirmen pasada 1
           </div>
         )}
       </div>
-      <JamMultiView key={batIdx} parts={battery} jId={jId} cat={cat} eventId={eventId} scorecards={scorecards} dispatch={dispatch} toast={toast} event={event} t={t} />
+
+      {/* Contenido bloqueado si ya confirmó */}
+      {myConfirmedCurrentRun ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+          <div style={{ fontSize: 48 }}>🔒</div>
+          <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
+            Pasada {jamRun} confirmada
+          </div>
+          <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
+            {allConfirmedCurrentRun
+              ? 'Todos los jueces confirmaron.'
+              : 'Esperando que los demás jueces confirmen...'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {judges.map((j: any) => {
+              const confirmed = confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === jamRun)
+              return (
+                <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>
+                  {confirmed ? '✓' : '?'}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Nav baterías */}
+          <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => setBatIdx(Math.max(0, batIdx - 1))} disabled={batIdx === 0}
+                style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>Batería {batIdx + 1} de {batteryNums.length}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: GOLD }}>Batería {currentBatNum}</div>
+                <div style={{ fontSize: 10, color: '#444', marginTop: 2 }}>{battery.map((p: any) => p.display_name).join(' · ')}</div>
+              </div>
+              <button onClick={() => setBatIdx(Math.min(batteryNums.length - 1, batIdx + 1))} disabled={batIdx === batteryNums.length - 1}
+                style={{ width: 36, height: 36, border: '1px solid #2a2a2a', background: 'transparent', color: batIdx === batteryNums.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 18, cursor: batIdx === batteryNums.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+            </div>
+            {batteryNums.length > 1 && (
+              <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginTop: 8 }}>
+                {batteryNums.map((bn, i) => (
+                  <button key={bn} onClick={() => setBatIdx(i)}
+                    style={{ flex: 1, padding: '6px', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 11, background: batIdx === i ? GOLD : '#0a0a0a', color: batIdx === i ? '#000' : '#444' }}>B{bn}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Grilla de puntaje */}
+          <JamRunMultiView
+            key={`${batIdx}-${jamRun}`}
+            parts={battery}
+            jId={jId}
+            cat={cat}
+            eventId={eventId}
+            run={jamRun}
+            scorecards={scorecards}
+            dispatch={dispatch}
+            toast={toast}
+            event={event}
+            t={t}
+          />
+
+          {/* Confirmar pasada */}
+          <div style={{ padding: '10px 16px', background: '#0a0a0a', borderTop: '1px solid #1a1a1a', flexShrink: 0 }}>
+            <button
+              onClick={() => confirmRound(jamRun)}
+              style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
+              ✓ Confirmar pasada {jamRun}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// JamFinalRunView: pasada final JAM (run=3 cuando no hay best trick)
+// Participantes individuales (navega entre finalistas)
+// ─────────────────────────────────────────────────────────────
+function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, confirmations, judges, setConfirmations, t }: any) {
+  const [partIdx, setPartIdx] = useState(0)
+  const [tricks, setTricks] = useState<any[]>([])
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const participant = parts[partIdx]
+
+  // Confirmación de ronda final (run=3)
+  function judgeConfirmed(): boolean {
+    return confirmations.some((c: any) => c.judge_id === jId && c.category_id === cat?.id && c.run === 3)
+  }
+  function allJudgesConfirmed(): boolean {
+    if (!judges.length) return false
+    return judges.every((j: any) =>
+      confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === 3)
+    )
+  }
+
+  async function confirmRound() {
+    try {
+      await supabase.from('round_confirmations').insert({
+        event_id: eventId, category_id: cat.id, judge_id: jId, run: 3,
+      })
+      setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run: 3 }])
+      toast('✅ Final confirmada')
+    } catch { toast('❌ Error al confirmar') }
+  }
+
+  useEffect(() => {
+    if (!participant) return
+    const saved = parseJamData(scorecards[jId]?.[participant.id]?.[3])
+    setTricks(saved.tricks)
+    setDirty(false)
+  }, [partIdx, scorecards, participant?.id])
+
+  function addTrick(nivel: number) { setTricks(prev => [...prev, { nivel }]); setDirty(true) }
+  function removeLast() { setTricks(prev => prev.slice(0, -1)); setDirty(true) }
+
+  const exitosos = tricks.filter((t: any) => t.nivel > 0)
+  const score = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) / exitosos.length : 0
+
+  async function save() {
+    if (!participant || saving) return
+    if (event?.status !== 'active') { toast(t('toastNotStarted')); return }
+    setSaving(true)
+    const payload = { tricks, fluidez: 5, creatividad: 5 }
+    try {
+      const existing = await supabase.from('scorecards').select('id').eq('judge_id', jId).eq('participant_id', participant.id).eq('run', 3).maybeSingle()
+      if (existing.data) {
+        await supabase.from('scorecards').update({ tricks: payload, updated_at: new Date().toISOString() }).eq('judge_id', jId).eq('participant_id', participant.id).eq('run', 3)
+      } else {
+        await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: jId, participant_id: participant.id, run: 3, tricks: payload })
+      }
+      const sc = scorecards
+      const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [participant.id]: { ...((sc[jId] || {})[participant.id] || {}), 3: payload } } }
+      dispatch({ type: 'SET_SC', sc: newSc })
+      setDirty(false)
+      toast(t('toastSaved'))
+    } catch { toast(t('toastError')) } finally { setSaving(false) }
+  }
+
+  if (!participant) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+    </div>
+  )
+
+  // Pantalla de bloqueo si ya confirmó
+  if (judgeConfirmed()) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+      <div style={{ fontSize: 48 }}>🔒</div>
+      <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
+        Final confirmada
+      </div>
+      <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
+        {allJudgesConfirmed() ? 'Todos los jueces confirmaron.' : 'Esperando que los demás jueces confirmen...'}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        {judges.map((j: any) => {
+          const confirmed = confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === 3)
+          return (
+            <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>
+              {confirmed ? '✓' : '?'}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      {/* Nav participantes */}
+      <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => setPartIdx(Math.max(0, partIdx - 1))} disabled={partIdx === 0}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{partIdx + 1} / {parts.length}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant.display_name}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: GOLD }}>{score.toFixed(2)}</span>
+              {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>{t('unsavedLabel')}</span>}
+            </div>
+            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>Final · Pasada única</div>
+          </div>
+          <button onClick={() => setPartIdx(Math.min(parts.length - 1, partIdx + 1))} disabled={partIdx === parts.length - 1}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === parts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === parts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+        </div>
+      </div>
+
+      {/* Scorer JAM */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+        <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 900, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Pasada final</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
+            {JAM_NIVELES.map(n => {
+              const count = tricks.filter((t: any) => t.nivel === n.val).length
+              return (
+                <button key={n.val} onClick={() => addTrick(n.val)} style={{ width: '100%', padding: '12px 16px', border: 'none', cursor: 'pointer', background: n.color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', width: 24 }}>{n.short}</span>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: '#ffffff99', textTransform: 'uppercase', letterSpacing: 1 }}>{n.label}</span>
+                  <span style={{ background: count > 0 ? '#ffffff30' : '#00000030', color: count > 0 ? '#fff' : '#ffffff50', padding: '2px 10px', fontSize: 15, fontWeight: 900, minWidth: 32, textAlign: 'center' }}>{count}</span>
+                </button>
+              )
+            })}
+          </div>
+          <button onClick={removeLast} disabled={!tricks.length}
+            style={{ width: '100%', padding: '10px', border: '1px solid #1e1e1e', background: tricks.length ? '#161616' : 'transparent', color: tricks.length ? '#888' : '#2a2a2a', cursor: tricks.length ? 'pointer' : 'default', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>
+            {t('undo')}
+          </button>
+          <div style={{ marginTop: 14, borderTop: '1px solid #2a2a2a', paddingTop: 14 }}>
+            <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>Puntaje pasada</div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: GOLD }}>{score.toFixed(2)}</div>
+            <div style={{ fontSize: 10, color: '#444', marginTop: 4 }}>{exitosos.length} trucos exitosos</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          {[...tricks].reverse().map((t: any, i: number) => {
+            const nObj = JAM_NIVELES.find(n => n.val === t.nivel)
+            return (
+              <div key={i} style={{ background: nObj?.colorDark, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: '#fff', fontSize: 12, fontWeight: 900 }}>{nObj?.short}</span>
+                <span style={{ color: GOLD, fontSize: 10, fontWeight: 700 }}>{t.nivel}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={save} disabled={saving || !dirty}
+          style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
+          {saving ? t('saving') : dirty ? t('savePlanilla') : t('savedPlanilla')}
+        </button>
+        {!dirty && (
+          <button
+            onClick={confirmRound}
+            style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
+            ✓ Confirmar Final
+          </button>
+        )}
+        {dirty && (
+          <div style={{ fontSize: 10, color: '#555', textAlign: 'center', letterSpacing: 1 }}>
+            Guardá antes de confirmar la final
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -564,7 +955,6 @@ export default function JuecesPage() {
       setLoading(false)
     })
 
-    // Realtime para confirmaciones
     const confirmChannel = supabase.channel(`judge-confirms-${eventId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'round_confirmations', filter: `event_id=eq.${eventId}` },
         async () => {
@@ -601,28 +991,28 @@ export default function JuecesPage() {
   const phase = cat?.phase ?? 'qualification'
   const hasBestTrickFinal = cat?.has_best_trick_final ?? false
   const isFinalPhase = phase === 'final'
+  const format = cat?.format || 'formal'
+  const isJam = format === 'jam'
+
   const catParts = cat
     ? (isFinalPhase
-        ? parts.filter(p => p.category_id === cat.id && p.is_finalist)
-        : parts.filter(p => p.category_id === cat.id))
+        ? parts.filter((p: any) => p.category_id === cat.id && p.is_finalist)
+        : parts.filter((p: any) => p.category_id === cat.id))
     : []
+
   const participant = catParts[partIdx] || null
   const jId = user?.id || ''
-  const format = cat?.format || 'formal'
   const maxRuns = cat?.max_runs || 2
 
-  // Helpers de confirmación
   function judgeConfirmed(run: number): boolean {
     return confirmations.some(c => c.judge_id === jId && c.category_id === cat?.id && c.run === run)
   }
-
   function allJudgesConfirmed(run: number): boolean {
     if (!judges.length) return false
     return judges.every((j: any) =>
       confirmations.some(c => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
     )
   }
-
   function currentEnabledRun(): number {
     if (isFinalPhase) return 2
     if (maxRuns >= 2 && allJudgesConfirmed(1)) return 2
@@ -636,10 +1026,7 @@ export default function JuecesPage() {
     if (!cat || !jId) return
     try {
       await supabase.from('round_confirmations').insert({
-        event_id: eventId,
-        category_id: cat.id,
-        judge_id: jId,
-        run,
+        event_id: eventId, category_id: cat.id, judge_id: jId, run,
       })
       setConfirmations(prev => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run }])
       toast('✅ Ronda confirmada')
@@ -647,11 +1034,11 @@ export default function JuecesPage() {
   }
 
   useEffect(() => {
-    if (!participant || !cat) return
+    if (!participant || !cat || isJam) return
     const saved = state.scorecards[jId]?.[participant.id]?.[isFinalPhase ? 2 : enabledRun]
     const arr = Array.isArray(saved) ? saved : (saved?.tricks ?? [])
     setTricks(arr); setDirty(false)
-  }, [catIdx, partIdx, run, state.scorecards, isFinalPhase, enabledRun])
+  }, [catIdx, partIdx, run, state.scorecards, isFinalPhase, enabledRun, isJam])
 
   function addTrick(trick: any) { setTricks(prev => [...prev, trick]); setDirty(true) }
   function removeTrick(i: number) { setTricks(prev => prev.filter((_, idx) => idx !== i)); setDirty(true) }
@@ -676,10 +1063,7 @@ export default function JuecesPage() {
   }
 
   const totalScore = format === 'jam'
-    ? (() => {
-        const exitosos = tricks.filter((t: any) => t.nivel > 0)
-        return exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) / exitosos.length : 0
-      })()
+    ? 0 // JAM maneja su propio score internamente
     : format === 'best_trick'
     ? (tricks.filter((t: any) => t.intencion === true).length
         ? Math.max(...tricks.filter((t: any) => t.intencion === true).map((t: any) => t._score || 0))
@@ -710,6 +1094,7 @@ export default function JuecesPage() {
       <div style={{ ...gs.screen, display: 'flex', flexDirection: 'column' }}>
         <Toast />
 
+        {/* Header */}
         <div style={{ background: '#0a0a0a', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
@@ -733,9 +1118,63 @@ export default function JuecesPage() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
           </div>
-        ) : format === 'jam' ? (
-          <JamBatteryView parts={catParts} jId={jId} cat={cat} eventId={eventId} scorecards={state.scorecards} dispatch={dispatch} toast={toast} event={event} t={t} />
+
+        ) : isJam ? (
+          // ─── RAMA JAM ───────────────────────────────────────────────
+          isFinalPhase ? (
+            hasBestTrickFinal ? (
+              // JAM final con best trick
+              <JamBestTrickFinalView
+                parts={catParts}
+                jId={jId}
+                cat={cat}
+                eventId={eventId}
+                scorecards={state.scorecards}
+                dispatch={dispatch}
+                toast={toast}
+                event={event}
+                confirmations={confirmations}
+                judges={judges}
+                setConfirmations={setConfirmations}
+                t={t}
+              />
+            ) : (
+              // JAM final con pasada única
+              <JamFinalRunView
+                parts={catParts}
+                jId={jId}
+                cat={cat}
+                eventId={eventId}
+                scorecards={state.scorecards}
+                dispatch={dispatch}
+                toast={toast}
+                event={event}
+                confirmations={confirmations}
+                judges={judges}
+                setConfirmations={setConfirmations}
+                t={t}
+              />
+            )
+          ) : (
+            // JAM clasificación: pasada 1 y pasada 2
+            <JamQualBatteryView
+              parts={catParts}
+              jId={jId}
+              cat={cat}
+              eventId={eventId}
+              scorecards={state.scorecards}
+              dispatch={dispatch}
+              toast={toast}
+              event={event}
+              confirmations={confirmations}
+              judges={judges}
+              setConfirmations={setConfirmations}
+              t={t}
+            />
+          )
+
         ) : (
+          // ─── RAMA FORMAL / BEST_TRICK ────────────────────────────────
           <>
             <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

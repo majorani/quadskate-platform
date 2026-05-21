@@ -35,27 +35,47 @@ async function tryAutoActivate(ev: any): Promise<boolean> {
   } catch { return false }
 }
 
-// Puntaje clasificación (run=1)
+// ─────────────────────────────────────────────────────────────
+// Helpers de puntaje JAM por pasada
+// ─────────────────────────────────────────────────────────────
+function calcJamRunScore(participantId: string, scores: any[], run: number): number | null {
+  const judgeIds = [...new Set(scores.filter((s: any) => s.run === run).map((s: any) => s.judge_id))] as string[]
+  const jScores = judgeIds.map(jId => {
+    const sc = scores.find((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === run)
+    if (!sc) return null
+    const tricks = Array.isArray(sc.tricks) ? sc.tricks : (sc.tricks?.tricks ?? [])
+    const fluidez = sc.tricks?.fluidez ?? 5
+    const creatividad = sc.tricks?.creatividad ?? 5
+    const exitosos = tricks.filter((t: any) => t.nivel > 0)
+    const total = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t.nivel || 0), 0) / exitosos.length : 0
+    return total + (fluidez - 5) + (creatividad - 5)
+  }).filter((x): x is number => x !== null)
+  if (!jScores.length) return null
+  return jScores.reduce((a, b) => a + b, 0) / jScores.length
+}
+
+// ─────────────────────────────────────────────────────────────
+// Puntaje clasificación (run=1 para formal/best_trick; mejor de run=1 y run=2 para JAM)
+// ─────────────────────────────────────────────────────────────
 function calcQualScore(participantId: string, scores: any[], cat: any): number | null {
+  // JAM: mejor pasada entre run=1 y run=2
+  if (cat.format === 'jam') {
+    const run1 = calcJamRunScore(participantId, scores, 1)
+    const run2 = calcJamRunScore(participantId, scores, 2)
+    if (run1 === null && run2 === null) return null
+    return Math.max(run1 ?? -Infinity, run2 ?? -Infinity)
+  }
+
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === 1).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
     const runs = scores.filter((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === 1)
     if (!runs.length) return null
-    if (cat.format === 'jam') {
-      return runs.reduce((sum: number, r: any) => {
-        const tricks = Array.isArray(r.tricks) ? r.tricks : (r.tricks?.tricks ?? [])
-        const fluidez = r.tricks?.fluidez ?? 5
-        const creatividad = r.tricks?.creatividad ?? 5
-        const exitosos = tricks.filter((t: any) => t.nivel > 0)
-        const total = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t.nivel || 0), 0) / exitosos.length : 0
-        return sum + total + (fluidez - 5) + (creatividad - 5)
-      }, 0)
-    }
     if (cat.format === 'best_trick') {
       const allTricks = runs.flatMap((r: any) => r.tricks || [])
       const exitosos = allTricks.filter((t: any) => t.intencion === true)
       return exitosos.length ? Math.max(...exitosos.map((t: any) => t._score || 0)) : null
     }
+    // Formal
     const totals = runs.map((r: any) => {
       const tricks = r.tricks || []
       const exitosos = tricks.filter((t: any) => t.intencion === true)
@@ -69,7 +89,7 @@ function calcQualScore(participantId: string, scores: any[], cat: any): number |
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
 }
 
-// Puntaje pasada final (run=2)
+// Puntaje pasada final formal (run=2)
 function calcFinalRunScore(participantId: string, scores: any[]): number | null {
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === 2).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
@@ -85,6 +105,11 @@ function calcFinalRunScore(participantId: string, scores: any[]): number | null 
   }).filter((x): x is number => x !== null)
   if (!jScores.length) return null
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
+}
+
+// Puntaje pasada final JAM (run=3 cuando no hay best trick)
+function calcJamFinalScore(participantId: string, scores: any[]): number | null {
+  return calcJamRunScore(participantId, scores, 3)
 }
 
 // Puntaje best trick final (run=3)
@@ -122,11 +147,6 @@ function calcBestTrickFinalScore(participantId: string, scores: any[]): {
   return { score: totalScore, meetsRequirement, successfulTricks: validTricks.length }
 }
 
-// Compatibilidad con JAM y Best Trick sin fases
-function calcScore(participantId: string, scores: any[], cat: any): number | null {
-  return calcQualScore(participantId, scores, cat)
-}
-
 function getBestTricksFinal(participantId: string, scores: any[]) {
   const judgeScores = scores.filter((s: any) => s.participant_id === participantId && s.run === 3)
   const trickMap: Record<string, number[]> = {}
@@ -150,6 +170,61 @@ function getBestTricks(participantId: string, scores: any[]) {
     .filter((t: any) => t.nombre && t.intencion === true)
     .sort((a: any, b: any) => (b._score || 0) - (a._score || 0))
     .slice(0, 5)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Ranking clasificación JAM: muestra mejor pasada de cada uno
+// ─────────────────────────────────────────────────────────────
+function JamQualRanking({ parts, scores, cat }: any) {
+  const ranked = parts
+    .map((p: any) => {
+      const run1 = calcJamRunScore(p.id, scores, 1)
+      const run2 = calcJamRunScore(p.id, scores, 2)
+      const bestRun = run1 !== null || run2 !== null ? Math.max(run1 ?? -Infinity, run2 ?? -Infinity) : null
+      const bestRunNum = bestRun !== null
+        ? ((run1 ?? -Infinity) >= (run2 ?? -Infinity) ? 1 : 2)
+        : null
+      return { ...p, run1, run2, bestRun, bestRunNum }
+    })
+    .sort((a: any, b: any) => (b.bestRun ?? -1) - (a.bestRun ?? -1))
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+      {ranked.map((p: any, i: number) => (
+        <div key={p.id} style={{ background: '#0a0a0a', padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 ? GOLD : i === 1 ? '#94a3b8' : i === 2 ? '#f97316' : '#333', flexShrink: 0 }}>
+              {p.bestRun !== null ? i + 1 : '—'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                {p.run1 !== null && (
+                  <span style={{ fontSize: 10, color: p.bestRunNum === 1 ? GOLD : '#444' }}>
+                    P1: {p.run1.toFixed(2)}{p.bestRunNum === 1 ? ' ★' : ''}
+                  </span>
+                )}
+                {p.run2 !== null && (
+                  <span style={{ fontSize: 10, color: p.bestRunNum === 2 ? GOLD : '#444' }}>
+                    P2: {p.run2.toFixed(2)}{p.bestRunNum === 2 ? ' ★' : ''}
+                  </span>
+                )}
+                {p.run1 === null && p.run2 === null && (
+                  <span style={{ fontSize: 10, color: '#333' }}>Sin puntaje</span>
+                )}
+              </div>
+              {cat.phase === 'final' && p.is_finalist && (
+                <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Finalista</div>
+              )}
+            </div>
+            <div style={{ fontSize: p.bestRun !== null ? 24 : 16, fontWeight: 900, color: p.bestRun !== null ? GOLD : '#333', flexShrink: 0 }}>
+              {p.bestRun !== null ? p.bestRun.toFixed(2) : '—'}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default function EventoDetailPage() {
@@ -285,7 +360,7 @@ export default function EventoDetailPage() {
         </div>
       </div>
 
-      {/* JURADO / ORGANIZADORES */}
+      {/* JURADO */}
       {judges.length > 0 && (
         <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -368,10 +443,139 @@ export default function EventoDetailPage() {
                 </div>
               )}
               {cats.map(cat => {
+                const isJam = cat.format === 'jam'
                 const isFinalPhase = cat.phase === 'final'
                 const hasBTFinal = cat.has_best_trick_final
                 const allCatParts = parts.filter((p: any) => p.category_id === cat.id)
 
+                // ─── RAMA JAM ───────────────────────────────────────────────
+                if (isJam) {
+                  const finalistParts = isFinalPhase
+                    ? allCatParts.filter((p: any) => p.is_finalist)
+                    : []
+
+                  // Ranking final JAM con best trick
+                  const jamFinalBTRanking = isFinalPhase && hasBTFinal
+                    ? finalistParts
+                        .map((p: any) => {
+                          const qualScore = calcQualScore(p.id, scores, cat) ?? 0
+                          const btResult = calcBestTrickFinalScore(p.id, scores)
+                          const totalScore = qualScore + btResult.score
+                          return { ...p, qualScore, btScore: btResult.score, meetsRequirement: btResult.meetsRequirement, successfulTricks: btResult.successfulTricks, totalScore }
+                        })
+                        .sort((a: any, b: any) => {
+                          if (a.meetsRequirement && !b.meetsRequirement) return -1
+                          if (!a.meetsRequirement && b.meetsRequirement) return 1
+                          return b.totalScore - a.totalScore
+                        })
+                    : []
+
+                  // Ranking final JAM con pasada única (run=3)
+                  const jamFinalRunRanking = isFinalPhase && !hasBTFinal
+                    ? finalistParts
+                        .map((p: any) => ({ ...p, finalScore: calcJamFinalScore(p.id, scores) }))
+                        .sort((a: any, b: any) => (b.finalScore ?? -1) - (a.finalScore ?? -1))
+                    : []
+
+                  return (
+                    <div key={cat.id} style={{ marginBottom: 64 }}>
+                      {/* Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                        {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>FINAL</span>}
+                      </div>
+
+                      {/* Ranking clasificación JAM (siempre visible) */}
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
+                        {isFinalPhase ? 'Clasificación' : 'Ranking'}
+                      </div>
+                      {allCatParts.length === 0
+                        ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 32 }}>{t('noParticipants')}</div>
+                        : <JamQualRanking parts={allCatParts} scores={scores} cat={cat} />
+                      }
+
+                      {/* Ranking final JAM */}
+                      {isFinalPhase && (
+                        <div style={{ marginTop: 40 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>
+                            Final {hasBTFinal ? '· Mejor pasada + Best Trick' : '· Pasada final'}
+                          </div>
+
+                          {hasBTFinal ? (
+                            // Final JAM con best trick
+                            jamFinalBTRanking.length === 0
+                              ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+                              : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                                  {jamFinalBTRanking.map((p: any, i: number) => (
+                                    <div key={p.id} style={{ background: '#0a0a0a', padding: '16px 20px', borderLeft: p.meetsRequirement ? `3px solid #4CAF50` : '3px solid #333' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                        <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 && p.meetsRequirement ? GOLD : i === 1 && p.meetsRequirement ? '#94a3b8' : i === 2 && p.meetsRequirement ? '#f97316' : '#333', flexShrink: 0 }}>
+                                          {p.totalScore > 0 ? i + 1 : '—'}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+                                          <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: 10, color: '#555' }}>Mejor pasada: {p.qualScore.toFixed(2)}</span>
+                                            <span style={{ fontSize: 10, color: p.meetsRequirement ? '#4CAF50' : '#ef4444' }}>
+                                              BT: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
+                                            </span>
+                                            {!p.meetsRequirement && (
+                                              <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>No cumple requisito</span>
+                                            )}
+                                          </div>
+                                          {p.meetsRequirement && (
+                                            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                              {getBestTricksFinal(p.id, scores).map((trick: any, ti: number) => (
+                                                <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                  <span style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flex: 1 }}>{trick.nombre}</span>
+                                                  <span style={{ fontSize: 11, fontWeight: 700, color: ti === 0 ? GOLD : '#666' }}>{trick.score.toFixed(2)}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div style={{ fontSize: p.totalScore > 0 ? 24 : 16, fontWeight: 900, color: p.totalScore > 0 ? (p.meetsRequirement ? GOLD : '#555') : '#333', flexShrink: 0 }}>
+                                          {p.totalScore > 0 ? p.totalScore.toFixed(2) : '—'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                          ) : (
+                            // Final JAM con pasada única
+                            jamFinalRunRanking.length === 0
+                              ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+                              : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                                  {jamFinalRunRanking.map((p: any, i: number) => (
+                                    <div key={p.id} style={{ background: '#0a0a0a', padding: '16px 20px', borderLeft: `3px solid #4CAF50` }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                        <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: i === 0 ? GOLD : i === 1 ? '#94a3b8' : i === 2 ? '#f97316' : '#333', flexShrink: 0 }}>
+                                          {p.finalScore !== null ? i + 1 : '—'}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+                                          <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>Pasada final</div>
+                                        </div>
+                                        <div style={{ fontSize: p.finalScore !== null ? 24 : 16, fontWeight: 900, color: p.finalScore !== null ? GOLD : '#333', flexShrink: 0 }}>
+                                          {p.finalScore !== null ? p.finalScore.toFixed(2) : '—'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                // ─── RAMA FORMAL / BEST_TRICK ────────────────────────────────
                 const qualParts = allCatParts
                   .map((p: any) => ({ ...p, score: calcQualScore(p.id, scores, cat) }))
                   .sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))
@@ -394,14 +598,12 @@ export default function EventoDetailPage() {
 
                 return (
                   <div key={cat.id} style={{ marginBottom: 64 }}>
-                    {/* Header categoría */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                       {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>FINAL</span>}
                     </div>
 
-                    {/* RANKING CLASIFICACIÓN */}
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
                       {isFinalPhase ? 'Clasificación' : 'Ranking'}
                     </div>
@@ -440,12 +642,9 @@ export default function EventoDetailPage() {
                         </div>
                       )}
 
-                    {/* RANKING FINAL */}
                     {isFinalPhase && (
                       <>
-                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>
-                          Final
-                        </div>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>Final</div>
                         {finalParts.length === 0
                           ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
                           : (

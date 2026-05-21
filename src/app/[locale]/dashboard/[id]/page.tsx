@@ -354,9 +354,9 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
     const { error } = await supabase.from('categories').update({
       format: editFormat,
       max_runs: editMaxRuns,
-      has_final: editFormat === 'formal' ? editHasFinal : false,
-      finalists_count: editFormat === 'formal' ? editFinalistsCount : null,
-      has_best_trick_final: editFormat === 'formal' ? editHasBestTrickFinal : false,
+      has_final: (editFormat === 'formal' || editFormat === 'jam') ? editHasFinal : false,
+      finalists_count: (editFormat === 'formal' || editFormat === 'jam') ? editFinalistsCount : null,
+      has_best_trick_final: (editFormat === 'formal' || editFormat === 'jam') ? editHasBestTrickFinal : false,
       weights,
     }).eq('id', editingCat.id)
     setEditSaving(false)
@@ -380,9 +380,9 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
       max_runs: format === 'jam' ? 1 : maxRuns,
       consolidation: 'best_run',
       weights,
-      has_final: format === 'formal' ? hasFinal : false,
-      finalists_count: format === 'formal' ? finalistsCount : null,
-      has_best_trick_final: format === 'formal' ? hasBestTrickFinal : false,
+      has_final: format === 'formal' || format === 'jam' ? hasFinal : false,
+      finalists_count: (format === 'formal' || format === 'jam') ? finalistsCount : null,
+      has_best_trick_final: (format === 'formal' || format === 'jam') ? hasBestTrickFinal : false,
       phase: 'qualification',
     }).select().single()
     setSaving(false)
@@ -488,6 +488,13 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
                   />
                 </>
               )}
+              {editFormat === 'jam' && (
+                <FinalConfig
+                  hasFinal={editHasFinal} setHasFinal={setEditHasFinal}
+                  finalistsCount={editFinalistsCount} setFinalistsCount={setEditFinalistsCount}
+                  hasBestTrickFinal={editHasBestTrickFinal} setHasBestTrickFinal={setEditHasBestTrickFinal}
+                />
+              )}
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
                 <button onClick={saveEdit} disabled={editSaving}
                   style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 24px', opacity: editSaving ? 0.7 : 1 }}>
@@ -553,6 +560,13 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
               hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal}
             />
           </>
+        )}
+        {format === 'jam' && (
+          <FinalConfig
+            hasFinal={hasFinal} setHasFinal={setHasFinal}
+            finalistsCount={finalistsCount} setFinalistsCount={setFinalistsCount}
+            hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal}
+          />
         )}
         <button onClick={addCat} disabled={saving}
           style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
@@ -627,8 +641,16 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
 
   // Verificar si todos los participantes de una categoría tienen puntaje run=1 de al menos 1 juez
   function allScored(catId: string): boolean {
+    const cat = cats.find((c: any) => c.id === catId)
     const catParts = parts.filter((p: any) => p.category_id === catId)
     if (!catParts.length || !judges.length) return false
+    if (cat?.format === 'jam') {
+      // JAM: necesita run=1 Y run=2 para todos los participantes
+      return catParts.every((p: any) =>
+        scores.some((s: any) => s.participant_id === p.id && s.category_id === catId && s.run === 1) &&
+        scores.some((s: any) => s.participant_id === p.id && s.category_id === catId && s.run === 2)
+      )
+    }
     return catParts.every((p: any) =>
       scores.some((s: any) => s.participant_id === p.id && s.category_id === catId && s.run === 1)
     )
@@ -768,7 +790,7 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
         const isJam = cat.format === 'jam'
         const isFormal = cat.format === 'formal'
         const maxBattery = isJam ? Math.max(1, ...catParts.map((p: any) => p.battery || 1)) : 1
-        const canActivateFinal = isFormal && cat.has_final && cat.phase === 'qualification' && allScored(cat.id) && catParts.length >= cat.finalists_count
+        const canActivateFinal = (isFormal || isJam) && cat.has_final && cat.phase === 'qualification' && allScored(cat.id) && catParts.length >= cat.finalists_count
 
         return (
           <div key={cat.id} style={{ marginBottom: 32 }}>
@@ -780,7 +802,7 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
                 {cat.phase === 'qualification' && cat.has_final && <span style={{ color: '#555', marginLeft: 8 }}>· {t('phaseQualification')}</span>}
               </div>
               {/* Botón pasar a final */}
-              {isFormal && cat.has_final && cat.phase === 'qualification' && (
+              {(isFormal || isJam) && cat.has_final && cat.phase === 'qualification' && (
                 <button
                   onClick={() => canActivateFinal ? setShowFinalConfirm(cat.id) : null}
                   disabled={!canActivateFinal}
@@ -1174,7 +1196,7 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
 
   if (loading) return <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Cargando...</div>
 
-  const formalCats = cats.filter((c: any) => c.format === 'formal')
+  const formalCats = cats.filter((c: any) => c.format === 'formal' || c.format === 'jam')
   const acceptedJudges = judges.filter((j: any) => j.status === 'accepted')
 
   return (
@@ -1187,7 +1209,9 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
       )}
       {formalCats.map((cat: any) => {
         const catConfirms = confirmations.filter(c => c.category_id === cat.id)
-        const runs = cat.has_final ? [1, 2] : [1, ...(cat.max_runs >= 2 ? [2] : [])]
+        const runs = cat.format === 'jam'
+            ? (cat.has_final ? [1, 2, 3] : [1, 2])
+            : (cat.has_final ? [1, 2] : [1, ...(cat.max_runs >= 2 ? [2] : [])])
         return (
           <div key={cat.id} style={{ marginBottom: 40 }}>
             <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>
@@ -1203,7 +1227,10 @@ function RoundsTab({ eventId, cats, judges, showToast }: any) {
                 <div key={run} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>
-                      {run === 2 && cat.has_final ? 'Final' : `Pasada ${run}`}
+                      {cat.format === 'jam'
+                        ? (run === 3 ? 'Final' : `Pasada ${run}`)
+                        : (run === 2 && cat.has_final ? 'Final' : `Pasada ${run}`)
+                      }
                     </div>
                     {allConfirmed && (
                       <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>
