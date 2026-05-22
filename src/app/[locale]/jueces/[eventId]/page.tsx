@@ -524,8 +524,8 @@ function JamBestTrickFinalView({ parts, jId, cat, eventId, scorecards, dispatch,
         event_id: eventId, category_id: cat.id, judge_id: jId, run: 3,
       })
       setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run: 3 }])
-      toast('✅ Final confirmada')
-    } catch { toast('❌ Error al confirmar') }
+      toast(t('toastFinalConfirmed'))
+    } catch { toast(t('toastConfirmError')) }
   }
 
   const myConfirmed = judgeConfirmed()
@@ -542,10 +542,10 @@ function JamBestTrickFinalView({ parts, jId, cat, eventId, scorecards, dispatch,
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
       <div style={{ fontSize: 48 }}>🔒</div>
       <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
-        Best Trick Final confirmado
+        {t('jamBestTrickFinalConfirmed')}
       </div>
       <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
-        {allConfirmed ? 'Todos los jueces confirmaron.' : 'Esperando que los demás jueces confirmen...'}
+        {allConfirmed ? t('jamAllConfirmed') : t('jamWaitingConfirm')}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         {judges.map((j: any) => {
@@ -570,7 +570,7 @@ function JamBestTrickFinalView({ parts, jId, cat, eventId, scorecards, dispatch,
           <div style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{partIdx + 1} / {parts.length}</div>
             <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant.display_name}</div>
-            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>Best Trick Final · 4 intentos</div>
+            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>{t('jamBestTrickFinalLabel')}</div>
           </div>
           <button onClick={() => setPartIdx(Math.min(parts.length - 1, partIdx + 1))} disabled={partIdx === parts.length - 1}
             style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === parts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === parts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
@@ -595,10 +595,10 @@ function JamBestTrickFinalView({ parts, jId, cat, eventId, scorecards, dispatch,
         <button
           onClick={confirmRound}
           style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-          ✓ Confirmar Best Trick Final
+          {t('jamConfirmBestTrick')}
         </button>
         <div style={{ fontSize: 10, color: '#333', textAlign: 'center', letterSpacing: 1, marginTop: 8 }}>
-          Confirmá cuando hayas puntuado a todos los finalistas
+          {t('jamConfirmBestTrickHint')}
         </div>
       </div>
     </div>
@@ -644,8 +644,8 @@ function JamQualBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, to
         event_id: eventId, category_id: cat.id, judge_id: jId, run,
       })
       setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run }])
-      toast('✅ Pasada confirmada')
-    } catch { toast('❌ Error al confirmar') }
+      toast(t('toastRunConfirmed'))
+    } catch { toast(t('toastConfirmError')) }
   }
 
   return (
@@ -655,18 +655,18 @@ function JamQualBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, to
         <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 10 }}>
           <button onClick={() => setJamRun(1)}
             style={{ flex: 1, padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: jamRun === 1 ? GOLD : '#0a0a0a', color: jamRun === 1 ? '#000' : '#444' }}>
-            Pasada 1
+            {t('jamRun1')}
             {judgeConfirmedRun(1) && <span style={{ marginLeft: 6, fontSize: 9 }}>✓</span>}
           </button>
           <button onClick={() => run2Available && setJamRun(2)} disabled={!run2Available}
             style={{ flex: 1, padding: '10px', border: 'none', cursor: run2Available ? 'pointer' : 'default', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: jamRun === 2 ? GOLD : '#0a0a0a', color: jamRun === 2 ? '#000' : run2Available ? '#888' : '#2a2a2a', opacity: run2Available ? 1 : 0.5 }}>
-            Pasada 2
+            {t('jamRun2')}
             {judgeConfirmedRun(2) && <span style={{ marginLeft: 6, fontSize: 9 }}>✓</span>}
           </button>
         </div>
         {!run2Available && (
           <div style={{ fontSize: 9, color: '#333', letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center' }}>
-            Pasada 2 disponible cuando todos confirmen pasada 1
+            {t('jamRun2Locked')}
           </div>
         )}
       </div>
@@ -676,12 +676,10 @@ function JamQualBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, to
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
           <div style={{ fontSize: 48 }}>🔒</div>
           <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
-            Pasada {jamRun} confirmada
+            {t('jamRunConfirmed', { n: jamRun })}
           </div>
           <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
-            {allConfirmedCurrentRun
-              ? 'Todos los jueces confirmaron.'
-              : 'Esperando que los demás jueces confirmen...'}
+            {allConfirmedCurrentRun ? t('jamAllConfirmed') : t('jamWaitingConfirm')}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             {judges.map((j: any) => {
@@ -739,7 +737,7 @@ function JamQualBatteryView({ parts, jId, cat, eventId, scorecards, dispatch, to
             <button
               onClick={() => confirmRound(jamRun)}
               style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-              ✓ Confirmar pasada {jamRun}
+              {t('jamConfirmRun', { n: jamRun })}
             </button>
           </div>
         </>
@@ -776,8 +774,8 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
         event_id: eventId, category_id: cat.id, judge_id: jId, run: 3,
       })
       setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run: 3 }])
-      toast('✅ Final confirmada')
-    } catch { toast('❌ Error al confirmar') }
+      toast(t('toastFinalConfirmed'))
+    } catch { toast(t('toastConfirmError')) }
   }
 
   useEffect(() => {
@@ -824,10 +822,10 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
       <div style={{ fontSize: 48 }}>🔒</div>
       <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
-        Final confirmada
+        {t('jamFinalConfirmed')}
       </div>
       <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
-        {allJudgesConfirmed() ? 'Todos los jueces confirmaron.' : 'Esperando que los demás jueces confirmen...'}
+        {allJudgesConfirmed() ? t('jamAllConfirmed') : t('jamWaitingConfirm')}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         {judges.map((j: any) => {
@@ -856,7 +854,7 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
               <span style={{ fontSize: 11, fontWeight: 900, color: GOLD }}>{score.toFixed(2)}</span>
               {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>{t('unsavedLabel')}</span>}
             </div>
-            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>Final · Pasada única</div>
+            <div style={{ fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginTop: 2 }}>{t('jamFinalRunLabel')}</div>
           </div>
           <button onClick={() => setPartIdx(Math.min(parts.length - 1, partIdx + 1))} disabled={partIdx === parts.length - 1}
             style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === parts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === parts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
@@ -866,7 +864,7 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
       {/* Scorer JAM */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
         <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: 14, marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 900, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Pasada final</div>
+          <div style={{ fontSize: 10, fontWeight: 900, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>{t('jamFinalPassLabel')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 12 }}>
             {JAM_NIVELES.map(n => {
               const count = tricks.filter((t: any) => t.nivel === n.val).length
@@ -884,9 +882,9 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
             {t('undo')}
           </button>
           <div style={{ marginTop: 14, borderTop: '1px solid #2a2a2a', paddingTop: 14 }}>
-            <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>Puntaje pasada</div>
+            <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>{t('jamFinalScoreLabel')}</div>
             <div style={{ fontSize: 36, fontWeight: 900, color: GOLD }}>{score.toFixed(2)}</div>
-            <div style={{ fontSize: 10, color: '#444', marginTop: 4 }}>{exitosos.length} trucos exitosos</div>
+            <div style={{ fontSize: 10, color: '#444', marginTop: 4 }}>{t('jamSuccessfulTricks', { count: exitosos.length })}</div>
           </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -911,15 +909,348 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
           <button
             onClick={confirmRound}
             style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-            ✓ Confirmar Final
+            {t('jamConfirmFinal')}
           </button>
         )}
         {dirty && (
           <div style={{ fontSize: 10, color: '#555', textAlign: 'center', letterSpacing: 1 }}>
-            Guardá antes de confirmar la final
+            {t('jamConfirmBeforeSaveFinal')}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// BestTrickQualView: clasificación Best Trick (run=1 y run=2)
+// Navega entre participantes, con confirmación entre pasadas
+// ─────────────────────────────────────────────────────────────
+function BestTrickQualView({ parts, jId, cat, eventId, scorecards, dispatch, toast, event, confirmations, judges, setConfirmations, t }: any) {
+  const [partIdx, setPartIdx] = useState(0)
+  const [tricks, setTricks] = useState<any[]>([])
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const maxRuns = cat?.max_runs ?? 1
+  const participant = parts[partIdx]
+
+  function allJudgesConfirmedRun(run: number): boolean {
+    if (!judges.length) return false
+    return judges.every((j: any) =>
+      confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
+    )
+  }
+  function judgeConfirmedRun(run: number): boolean {
+    return confirmations.some((c: any) => c.judge_id === jId && c.category_id === cat?.id && c.run === run)
+  }
+
+  const enabledRun = (maxRuns >= 2 && allJudgesConfirmedRun(1)) ? 2 : 1
+  const myConfirmed = judgeConfirmedRun(enabledRun)
+  const allConfirmed = allJudgesConfirmedRun(enabledRun)
+
+  useEffect(() => {
+    if (!participant) return
+    const saved = scorecards[jId]?.[participant.id]?.[enabledRun]
+    const arr = Array.isArray(saved) ? saved : (saved?.tricks ?? [])
+    setTricks(arr)
+    setDirty(false)
+  }, [partIdx, enabledRun, scorecards, participant?.id])
+
+  function addTrick(trick: any) { setTricks(prev => [...prev, trick]); setDirty(true) }
+  function removeTrick(i: number) { setTricks(prev => prev.filter((_, idx) => idx !== i)); setDirty(true) }
+
+  const bestScore = tricks.filter((t: any) => t.intencion === true).length
+    ? Math.max(...tricks.filter((t: any) => t.intencion === true).map((t: any) => t._score || 0))
+    : 0
+
+  async function save() {
+    if (!participant || saving) return
+    if (event?.status !== 'active') { toast(t('toastNotStarted')); return }
+    setSaving(true)
+    try {
+      const existing = await supabase.from('scorecards').select('id')
+        .eq('judge_id', jId).eq('participant_id', participant.id).eq('run', enabledRun).maybeSingle()
+      if (existing.data) {
+        await supabase.from('scorecards').update({ tricks, updated_at: new Date().toISOString() })
+          .eq('judge_id', jId).eq('participant_id', participant.id).eq('run', enabledRun)
+      } else {
+        await supabase.from('scorecards').insert({
+          event_id: eventId, category_id: cat.id, judge_id: jId,
+          participant_id: participant.id, run: enabledRun, tricks
+        })
+      }
+      const sc = scorecards
+      const newSc = { ...sc, [jId]: { ...(sc[jId] || {}), [participant.id]: { ...((sc[jId] || {})[participant.id] || {}), [enabledRun]: tricks } } }
+      dispatch({ type: 'SET_SC', sc: newSc })
+      setDirty(false)
+      toast(t('toastSaved'))
+    } catch { toast(t('toastError')) } finally { setSaving(false) }
+  }
+
+  async function confirmRound() {
+    try {
+      await supabase.from('round_confirmations').insert({
+        event_id: eventId, category_id: cat.id, judge_id: jId, run: enabledRun,
+      })
+      setConfirmations((prev: any) => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run: enabledRun }])
+      toast(t('toastRunConfirmed'))
+    } catch { toast(t('toastConfirmError')) }
+  }
+
+  if (!participant) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+    </div>
+  )
+
+  if (myConfirmed) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+      <div style={{ fontSize: 48 }}>🔒</div>
+      <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
+        {t('jamRunConfirmed', { n: enabledRun })}
+      </div>
+      <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
+        {allConfirmed
+          ? (maxRuns >= 2 && enabledRun === 1 ? t('btRun2Starting') : t('jamAllConfirmed'))
+          : t('jamWaitingConfirm')}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        {judges.map((j: any) => {
+          const confirmed = confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === enabledRun)
+          return (
+            <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>
+              {confirmed ? '✓' : '?'}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      {maxRuns >= 2 && (
+        <div style={{ background: '#0a0a0a', borderBottom: '1px solid #2a2a2a', padding: '8px 16px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
+            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: enabledRun === 1 ? GOLD : '#0a0a0a', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: enabledRun === 1 ? '#000' : '#444' }}>
+              {t('jamRun1')} {judgeConfirmedRun(1) ? '✓' : ''}
+            </div>
+            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: enabledRun === 2 ? GOLD : '#0a0a0a', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: enabledRun === 2 ? '#000' : (allJudgesConfirmedRun(1) ? '#888' : '#2a2a2a') }}>
+              {t('jamRun2')} {judgeConfirmedRun(2) ? '✓' : ''}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => setPartIdx(Math.max(0, partIdx - 1))} disabled={partIdx === 0}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === 0 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === 0 ? 'default' : 'pointer', fontWeight: 900 }}>‹</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>{t('partNav', { current: partIdx + 1, total: parts.length })}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{participant.display_name}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: GOLD }}>
+                {bestScore > 0 ? `${t('bestPrefix')}${bestScore.toFixed(2)}` : '—'}
+              </span>
+              {dirty && <span style={{ fontSize: 10, color: '#ef4444', letterSpacing: 1 }}>{t('unsavedLabel')}</span>}
+            </div>
+          </div>
+          <button onClick={() => setPartIdx(Math.min(parts.length - 1, partIdx + 1))} disabled={partIdx === parts.length - 1}
+            style={{ width: 40, height: 40, border: '1px solid #2a2a2a', background: 'transparent', color: partIdx === parts.length - 1 ? '#2a2a2a' : '#e8e8e8', fontSize: 20, cursor: partIdx === parts.length - 1 ? 'default' : 'pointer', fontWeight: 900 }}>›</button>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <BestTrickScorer
+          tricks={tricks}
+          onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }}
+          onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }}
+          t={t}
+        />
+      </div>
+
+      <div style={{ padding: '12px 16px', background: '#0a0a0a', borderTop: '1px solid #2a2a2a', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={save} disabled={saving || !dirty}
+          style={gs.btnGold({ background: dirty ? GOLD : '#1a1a1a', color: dirty ? '#000' : '#444', opacity: saving ? 0.7 : 1 })}>
+          {saving ? t('saving') : dirty ? t('savePlanilla') : t('savedPlanilla')}
+        </button>
+        {!dirty && (
+          <button onClick={confirmRound}
+            style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
+            {t('jamConfirmRun', { n: enabledRun })}
+          </button>
+        )}
+        {dirty && (
+          <div style={{ fontSize: 10, color: '#555', textAlign: 'center', letterSpacing: 1 }}>
+            {t('jamConfirmBeforeSave')}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// BestTrickVoteView: votación del podio entre los top 3
+// ─────────────────────────────────────────────────────────────
+function BestTrickVoteView({ parts, jId, cat, eventId, scorecards, judges, toast, event, t }: any) {
+  const [votes, setVotes] = useState<Record<number, string | null>>({ 1: null, 2: null, 3: null })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // Top 3 por mejor truco promediado entre jueces
+  const ranked = parts.map((p: any) => {
+    const trickMap: Record<string, number[]> = {}
+    for (const jKey of Object.keys(scorecards)) {
+      const runs = scorecards[jKey]?.[p.id] ?? {}
+      for (const runKey of Object.keys(runs)) {
+        const runData = runs[runKey]
+        const trickArr = Array.isArray(runData) ? runData : (runData?.tricks ?? [])
+        for (const trick of trickArr) {
+          if (!trick.nombre || trick.intencion !== true) continue
+          if (!trickMap[trick.nombre]) trickMap[trick.nombre] = []
+          trickMap[trick.nombre].push(trick._score || 0)
+        }
+      }
+    }
+    const judgeCount = judges.length || 1
+    const bestTrick = Object.entries(trickMap)
+      .map(([nombre, scores]) => ({ nombre, score: scores.reduce((a, b) => a + b, 0) / judgeCount }))
+      .sort((a, b) => b.score - a.score)[0] ?? null
+    return { ...p, bestTrick, bestScore: bestTrick?.score ?? 0 }
+  }).sort((a: any, b: any) => b.bestScore - a.bestScore).slice(0, 3)
+
+  useEffect(() => {
+    async function loadVotes() {
+      const { data } = await supabase.from('best_trick_votes')
+        .select('rank, participant_id')
+        .eq('category_id', cat.id)
+        .eq('judge_id', jId)
+      if (data && data.length > 0) {
+        const v: Record<number, string> = {}
+        data.forEach((d: any) => { v[d.rank] = d.participant_id })
+        setVotes(v as any)
+        setSaved(true)
+      }
+    }
+    loadVotes()
+  }, [cat.id, jId])
+
+  function assign(rank: number, participantId: string) {
+    setVotes(prev => {
+      const next = { ...prev }
+      for (const r of [1, 2, 3]) {
+        if (next[r] === participantId && r !== rank) next[r] = null
+      }
+      next[rank] = participantId
+      return next
+    })
+    setSaved(false)
+  }
+
+  const allAssigned = votes[1] && votes[2] && votes[3] && new Set([votes[1], votes[2], votes[3]]).size === 3
+
+  async function saveVotes() {
+    if (!allAssigned || saving) return
+    if (event?.status !== 'active') { toast(t('toastNotStarted')); return }
+    setSaving(true)
+    try {
+      await supabase.from('best_trick_votes').delete()
+        .eq('category_id', cat.id).eq('judge_id', jId)
+      await supabase.from('best_trick_votes').insert([
+        { event_id: eventId, category_id: cat.id, judge_id: jId, rank: 1, participant_id: votes[1] },
+        { event_id: eventId, category_id: cat.id, judge_id: jId, rank: 2, participant_id: votes[2] },
+        { event_id: eventId, category_id: cat.id, judge_id: jId, rank: 3, participant_id: votes[3] },
+      ])
+      setSaved(true)
+      toast(t('btToastVoteSaved'))
+    } catch { toast(t('toastError')) } finally { setSaving(false) }
+  }
+
+  const rankColors: Record<number, string> = { 1: GOLD, 2: '#94a3b8', 3: '#f97316' }
+  const rankLabels: Record<number, string> = { 1: '1°', 2: '2°', 3: '3°' }
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+      <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: '16px', marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: GOLD, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>
+          {t('btVoteTitle')}
+        </div>
+        <div style={{ fontSize: 10, color: '#555', letterSpacing: 1 }}>
+          {t('btVoteHint')}
+        </div>
+      </div>
+
+      {/* Top 3 con sus mejores trucos */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>{t('btTop3Label')}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+          {ranked.map((p: any, i: number) => (
+            <div key={p.id} style={{ background: '#0a0a0a', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 700, width: 20, textAlign: 'center' }}>{i + 1}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase' }}>{p.display_name || p.profiles?.full_name}</div>
+                {p.bestTrick && (
+                  <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>
+                    {p.bestTrick.nombre}
+                    <span style={{ color: '#444', fontSize: 10 }}> — {p.bestTrick.score.toFixed(2)} pts</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Asignador de posiciones */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>{t('btYourVoteLabel')}</div>
+        {[1, 2, 3].map(rank => (
+          <div key={rank} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: rankColors[rank], fontWeight: 900, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+              {t('btRankPlace', { rank })}
+            </div>
+            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
+              {ranked.map((p: any) => {
+                const isSelected = votes[rank] === p.id
+                const usedInOther = [1, 2, 3].some(r => r !== rank && votes[r] === p.id)
+                return (
+                  <button key={p.id} onClick={() => assign(rank, p.id)} disabled={usedInOther}
+                    style={{ flex: 1, padding: '12px 8px', border: 'none', cursor: usedInOther ? 'default' : 'pointer', background: isSelected ? rankColors[rank] : usedInOther ? '#0d0d0d' : '#0a0a0a', color: isSelected ? '#000' : usedInOther ? '#222' : '#666', fontWeight: 900, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', textAlign: 'center' }}>
+                    {p.display_name || p.profiles?.full_name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Resumen */}
+      {allAssigned && (
+        <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 9, color: '#444', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{t('btYourVoteSummary')}</div>
+          {[1, 2, 3].map(rank => {
+            const p = ranked.find((r: any) => r.id === votes[rank])
+            return (
+              <div key={rank} style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: rankColors[rank], width: 28 }}>{rankLabels[rank]}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', color: '#e8e8e8' }}>{p?.display_name || p?.profiles?.full_name}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <button onClick={saveVotes} disabled={!allAssigned || saving}
+        style={gs.btnGold({
+          background: allAssigned && !saved ? GOLD : allAssigned && saved ? '#14532d' : '#1a1a1a',
+          color: allAssigned ? (saved ? '#4CAF50' : '#000') : '#444',
+          opacity: saving ? 0.7 : 1
+        })}>
+        {saving ? t('btSaving') : saved ? t('btVoteSaved') : allAssigned ? t('btVoteSave') : t('btVoteAssign')}
+      </button>
     </div>
   )
 }
@@ -1029,8 +1360,8 @@ export default function JuecesPage() {
         event_id: eventId, category_id: cat.id, judge_id: jId, run,
       })
       setConfirmations(prev => [...prev, { event_id: eventId, category_id: cat.id, judge_id: jId, run }])
-      toast('✅ Ronda confirmada')
-    } catch { toast('❌ Error al confirmar') }
+      toast(t('toastRunConfirmed'))
+    } catch { toast(t('toastConfirmError')) }
   }
 
   useEffect(() => {
@@ -1119,6 +1450,48 @@ export default function JuecesPage() {
             <div style={{ fontSize: 10, color: '#333', letterSpacing: 4, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
           </div>
 
+        ) : format === 'best_trick' ? (
+          // ─── RAMA BEST TRICK ─────────────────────────────────────────
+          (() => {
+            const maxRuns = cat?.max_runs ?? 1
+            const lastRun = maxRuns >= 2 ? 2 : 1
+            function allJudgesConfirmedRun(run: number): boolean {
+              if (!judges.length) return false
+              return judges.every((j: any) =>
+                confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
+              )
+            }
+            const qualDone = allJudgesConfirmedRun(lastRun)
+            return qualDone ? (
+              <BestTrickVoteView
+                parts={catParts}
+                jId={jId}
+                cat={cat}
+                eventId={eventId}
+                scorecards={state.scorecards}
+                judges={judges}
+                toast={toast}
+                event={event}
+                t={t}
+              />
+            ) : (
+              <BestTrickQualView
+                parts={catParts}
+                jId={jId}
+                cat={cat}
+                eventId={eventId}
+                scorecards={state.scorecards}
+                dispatch={dispatch}
+                toast={toast}
+                event={event}
+                confirmations={confirmations}
+                judges={judges}
+                setConfirmations={setConfirmations}
+                t={t}
+              />
+            )
+          })()
+
         ) : isJam ? (
           // ─── RAMA JAM ───────────────────────────────────────────────
           isFinalPhase ? (
@@ -1191,7 +1564,7 @@ export default function JuecesPage() {
                   <div style={{ marginTop: 4, fontSize: 9, color: GOLD, letterSpacing: 3, textTransform: 'uppercase' }}>
                     {isFinalPhase
                       ? (hasBestTrickFinal ? 'Final · Pasada 2 + Best Trick' : 'Final · Pasada 2')
-                      : `Clasificación · Pasada ${enabledRun}`}
+                      : t('run', { n: enabledRun })}
                   </div>
                 </div>
                 <button onClick={() => { setPartIdx(Math.min(catParts.length - 1, partIdx + 1)); setRun(1) }} disabled={partIdx === catParts.length - 1}
@@ -1203,12 +1576,12 @@ export default function JuecesPage() {
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
                 <div style={{ fontSize: 48 }}>🔒</div>
                 <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, color: '#4CAF50' }}>
-                  Pasada {isFinalPhase ? 2 : enabledRun} confirmada
+                  {t('jamRunConfirmed', { n: isFinalPhase ? 2 : enabledRun })}
                 </div>
                 <div style={{ fontSize: 11, color: '#444', textAlign: 'center', letterSpacing: 1 }}>
                   {allJudgesConfirmed(isFinalPhase ? 2 : enabledRun)
-                    ? 'Todos los jueces confirmaron.'
-                    : 'Esperando que los demás jueces confirmen...'}
+                    ? t('jamAllConfirmed')
+                    : t('jamWaitingConfirm')}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   {judges.map((j: any) => {
@@ -1229,7 +1602,7 @@ export default function JuecesPage() {
                     : isFinalPhase && hasBestTrickFinal
                     ? <>
                         <div style={{ padding: '10px 14px', background: '#111', borderBottom: '1px solid #2a2a2a' }}>
-                          <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>Pasada 2</div>
+                          <div style={{ fontSize: 9, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' }}>{t('run', { n: 2 })}</div>
                         </div>
                         <FormalScorer weights={cat?.weights || DEFAULT_W} tricks={tricks} onAdd={(trick: any) => { addTrick(trick); toast(t('toastTrickAdded')) }} onRemove={(i: number) => { removeTrick(i); toast(t('toastTrickRemoved')) }} t={t} />
                         <div style={{ padding: '10px 14px', background: '#111', borderBottom: '1px solid #2a2a2a', borderTop: '2px solid #2a2a2a' }}>
@@ -1250,12 +1623,12 @@ export default function JuecesPage() {
                     <button
                       onClick={() => confirmRound(isFinalPhase ? 2 : enabledRun)}
                       style={{ background: 'transparent', border: '1px solid #4CAF50', padding: '12px 24px', color: '#4CAF50', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase', width: '100%' }}>
-                      ✓ Confirmar pasada {isFinalPhase ? 2 : enabledRun}
+                      {t('jamConfirmRun', { n: isFinalPhase ? 2 : enabledRun })}
                     </button>
                   )}
                   {dirty && (
                     <div style={{ fontSize: 10, color: '#555', textAlign: 'center', letterSpacing: 1 }}>
-                      Guardá antes de confirmar la ronda
+                      {t('jamConfirmBeforeSave')}
                     </div>
                   )}
                 </div>

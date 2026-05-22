@@ -175,7 +175,7 @@ function getBestTricks(participantId: string, scores: any[]) {
 // ─────────────────────────────────────────────────────────────
 // Ranking clasificación JAM: muestra mejor pasada de cada uno
 // ─────────────────────────────────────────────────────────────
-function JamQualRanking({ parts, scores, cat }: any) {
+function JamQualRanking({ parts, scores, cat, t }: any) {
   const ranked = parts
     .map((p: any) => {
       const run1 = calcJamRunScore(p.id, scores, 1)
@@ -210,11 +210,11 @@ function JamQualRanking({ parts, scores, cat }: any) {
                   </span>
                 )}
                 {p.run1 === null && p.run2 === null && (
-                  <span style={{ fontSize: 10, color: '#333' }}>Sin puntaje</span>
+                  <span style={{ fontSize: 10, color: '#333' }}>{t('evNoScore')}</span>
                 )}
               </div>
               {cat.phase === 'final' && p.is_finalist && (
-                <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Finalista</div>
+                <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>{t('evFinalist')}</div>
               )}
             </div>
             <div style={{ fontSize: p.bestRun !== null ? 24 : 16, fontWeight: 900, color: p.bestRun !== null ? GOLD : '#333', flexShrink: 0 }}>
@@ -236,6 +236,7 @@ export default function EventoDetailPage() {
   const [parts, setParts]     = useState<any[]>([])
   const [judges, setJudges]   = useState<any[]>([])
   const [scores, setScores]   = useState<any[]>([])
+  const [btVotes, setBtVotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const STATUS_COLOR: Record<string, string> = { draft: '#333', published: GOLD, active: '#4CAF50', finished: '#666' }
@@ -256,12 +257,13 @@ export default function EventoDetailPage() {
   useEffect(() => {
     if (!params?.id) return
     async function load() {
-      const [evRes, catsRes, partsRes, judgesRes, scRes] = await Promise.all([
+      const [evRes, catsRes, partsRes, judgesRes, scRes, btVotesRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', params.id).single(),
         supabase.from('categories').select('*').eq('event_id', params.id),
         supabase.from('participants').select('*, profiles(full_name)').eq('event_id', params.id),
         supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', params.id),
         supabase.from('scorecards').select('*').eq('event_id', params.id),
+        supabase.from('best_trick_votes').select('*').eq('event_id', params.id),
       ])
       let eventData = evRes.data
       if (eventData?.status === 'published') {
@@ -269,7 +271,9 @@ export default function EventoDetailPage() {
         if (activated) eventData = { ...eventData, status: 'active' }
       }
       setEv(eventData); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
-      setJudges(judgesRes.data ?? []); setScores(scRes.data ?? []); setLoading(false)
+      setJudges(judgesRes.data ?? []); setScores(scRes.data ?? [])
+      setBtVotes(btVotesRes.data ?? [])
+      setLoading(false)
     }
     load()
 
@@ -483,23 +487,23 @@ export default function EventoDetailPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                         <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
-                        {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>FINAL</span>}
+                        {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                       </div>
 
                       {/* Ranking clasificación JAM (siempre visible) */}
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
-                        {isFinalPhase ? 'Clasificación' : 'Ranking'}
+                        {isFinalPhase ? t('evQualification') : t('evRanking')}
                       </div>
                       {allCatParts.length === 0
                         ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 32 }}>{t('noParticipants')}</div>
-                        : <JamQualRanking parts={allCatParts} scores={scores} cat={cat} />
+                        : <JamQualRanking parts={allCatParts} scores={scores} cat={cat} t={t} />
                       }
 
                       {/* Ranking final JAM */}
                       {isFinalPhase && (
                         <div style={{ marginTop: 40 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>
-                            Final {hasBTFinal ? '· Mejor pasada + Best Trick' : '· Pasada final'}
+                            {hasBTFinal ? t('evFinalLabelBT') : t('evFinalLabelRun')}
                           </div>
 
                           {hasBTFinal ? (
@@ -517,12 +521,12 @@ export default function EventoDetailPage() {
                                         <div style={{ flex: 1 }}>
                                           <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
                                           <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-                                            <span style={{ fontSize: 10, color: '#555' }}>Mejor pasada: {p.qualScore.toFixed(2)}</span>
+                                            <span style={{ fontSize: 10, color: '#555' }}>{t('evBestRunLabel')}: {p.qualScore.toFixed(2)}</span>
                                             <span style={{ fontSize: 10, color: p.meetsRequirement ? '#4CAF50' : '#ef4444' }}>
-                                              BT: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
+                                              {t('evBTScoreLabel')}: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
                                             </span>
                                             {!p.meetsRequirement && (
-                                              <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>No cumple requisito</span>
+                                              <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>{t('evNoMeetsReq')}</span>
                                             )}
                                           </div>
                                           {p.meetsRequirement && (
@@ -558,7 +562,7 @@ export default function EventoDetailPage() {
                                         </div>
                                         <div style={{ flex: 1 }}>
                                           <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
-                                          <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>Pasada final</div>
+                                          <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>{t('evFinalRunLabel')}</div>
                                         </div>
                                         <div style={{ fontSize: p.finalScore !== null ? 24 : 16, fontWeight: 900, color: p.finalScore !== null ? GOLD : '#333', flexShrink: 0 }}>
                                           {p.finalScore !== null ? p.finalScore.toFixed(2) : '—'}
@@ -569,6 +573,94 @@ export default function EventoDetailPage() {
                                 </div>
                               )
                           )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                // ─── RAMA BEST TRICK ─────────────────────────────────────────
+                if (cat.format === 'best_trick') {
+                  const catVotes = btVotes.filter((v: any) => v.category_id === cat.id)
+                  const judgeCount = judges.filter((j: any) => j.status === 'accepted').length || 1
+
+                  // Ranking por puntaje (mejor truco promediado entre jueces)
+                  const btRanked = allCatParts.map((p: any) => {
+                    const trickMap: Record<string, number[]> = {}
+                    for (const sc of scores.filter((s: any) => s.participant_id === p.id)) {
+                      const tricks = Array.isArray(sc.tricks) ? sc.tricks : (sc.tricks?.tricks ?? [])
+                      for (const trick of tricks) {
+                        if (!trick.nombre || trick.intencion !== true) continue
+                        if (!trickMap[trick.nombre]) trickMap[trick.nombre] = []
+                        trickMap[trick.nombre].push(trick._score || 0)
+                      }
+                    }
+                    const bestTrick = Object.entries(trickMap)
+                      .map(([nombre, sc]) => ({ nombre, score: sc.reduce((a: number, b: number) => a + b, 0) / judgeCount }))
+                      .sort((a, b) => b.score - a.score)[0] ?? null
+                    return { ...p, bestTrick, bestScore: bestTrick?.score ?? 0 }
+                  }).sort((a: any, b: any) => b.bestScore - a.bestScore)
+
+                  // Podio por votación (si hay votos suficientes)
+                  const votingDone = catVotes.length > 0
+                  let podioRanked = btRanked
+
+                  if (votingDone) {
+                    // Sumar votos por posición: rank=1 → 3pts, rank=2 → 2pts, rank=3 → 1pt
+                    const scoreMap: Record<string, number> = {}
+                    const voteCountMap: Record<number, Record<string, number>> = { 1: {}, 2: {}, 3: {} }
+                    for (const v of catVotes) {
+                      const pts = v.rank === 1 ? 3 : v.rank === 2 ? 2 : 1
+                      scoreMap[v.participant_id] = (scoreMap[v.participant_id] ?? 0) + pts
+                      voteCountMap[v.rank][v.participant_id] = (voteCountMap[v.rank][v.participant_id] ?? 0) + 1
+                    }
+                    // Top 3 por votos, empate desempata por bestScore
+                    const top3Ids = btRanked.slice(0, 3).map((p: any) => p.id)
+                    const top3 = btRanked
+                      .filter((p: any) => top3Ids.includes(p.id))
+                      .sort((a: any, b: any) => {
+                        const diff = (scoreMap[b.id] ?? 0) - (scoreMap[a.id] ?? 0)
+                        return diff !== 0 ? diff : b.bestScore - a.bestScore
+                      })
+                    // Resto sin cambio
+                    const rest = btRanked.filter((p: any) => !top3Ids.includes(p.id))
+                    podioRanked = [...top3, ...rest]
+                  }
+
+                  return (
+                    <div key={cat.id} style={{ marginBottom: 64 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                      </div>
+
+                      {podioRanked.length === 0 ? (
+                        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                          {podioRanked.map((p: any, i: number) => {
+                            const isPodio = i < 3
+                            const podioColors: Record<number, string> = { 0: GOLD, 1: '#94a3b8', 2: '#f97316' }
+                            return (
+                              <div key={p.id} style={{ background: isPodio ? '#0f0f0f' : '#0a0a0a', padding: '16px 20px', borderLeft: isPodio ? `3px solid ${podioColors[i] ?? '#333'}` : '3px solid transparent' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                  <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: isPodio ? podioColors[i] : '#333', flexShrink: 0 }}>
+                                    {i + 1}
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>
+                                      {p.profiles?.full_name || p.display_name}
+                                    </div>
+                                    {isPodio && p.bestTrick && (
+                                      <div style={{ fontSize: 12, color: podioColors[i] ?? GOLD, marginTop: 4, fontWeight: 700 }}>
+                                        {p.bestTrick.nombre}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -601,11 +693,11 @@ export default function EventoDetailPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
-                      {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>FINAL</span>}
+                      {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                     </div>
 
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
-                      {isFinalPhase ? 'Clasificación' : 'Ranking'}
+                      {isFinalPhase ? t('evQualification') : t('evRanking')}
                     </div>
                     {qualParts.length === 0
                       ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 32 }}>{t('noParticipants')}</div>
@@ -620,7 +712,7 @@ export default function EventoDetailPage() {
                                 <div style={{ flex: 1 }}>
                                   <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
                                   {isFinalPhase && p.is_finalist && (
-                                    <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Finalista</div>
+                                    <div style={{ fontSize: 9, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>{t('evFinalist')}</div>
                                   )}
                                   {cat.format === 'best_trick' && (
                                     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -658,14 +750,14 @@ export default function EventoDetailPage() {
                                     <div style={{ flex: 1 }}>
                                       <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
                                       <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-                                        {p.runScore > 0 && <span style={{ fontSize: 10, color: '#555' }}>Pasada: {p.runScore.toFixed(2)}</span>}
+                                        {p.runScore > 0 && <span style={{ fontSize: 10, color: '#555' }}>{t('evRunScoreLabel')}: {p.runScore.toFixed(2)}</span>}
                                         {hasBTFinal && (
                                           <span style={{ fontSize: 10, color: p.meetsRequirement ? '#4CAF50' : '#ef4444' }}>
-                                            BT: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
+                                            {t('evBTScoreLabel')}: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
                                           </span>
                                         )}
                                         {hasBTFinal && !p.meetsRequirement && (
-                                          <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>No cumple requisito</span>
+                                          <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>{t('evNoMeetsReq')}</span>
                                         )}
                                       </div>
                                       {hasBTFinal && p.meetsRequirement && (

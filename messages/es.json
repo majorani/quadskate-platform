@@ -112,7 +112,19 @@
     "reglamentoTitle": "Reglamento",
     "reglamentoStandardBadge": "Estándar",
     "reglamentoCustomBadge": "Personalizado",
-    "reglamentoView": "Ver reglamento →"
+    "reglamentoView": "Ver reglamento →",
+    "evNoScore": "Sin puntaje",
+    "evFinalist": "Finalista",
+    "evFinal": "FINAL",
+    "evQualification": "Clasificación",
+    "evRanking": "Ranking",
+    "evFinalLabelBT": "Final · Mejor pasada + Best Trick",
+    "evFinalLabelRun": "Final · Pasada final",
+    "evNoMeetsReq": "No cumple requisito",
+    "evFinalRunLabel": "Pasada final",
+    "evBestRunLabel": "Mejor pasada",
+    "evRunScoreLabel": "Pasada",
+    "evBTScoreLabel": "BT"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Cómo funciona",
@@ -490,7 +502,19 @@
     "jamBestTrickFinalLabel": "Best Trick Final · 4 intentos",
     "jamFinalPassLabel": "Pasada final",
     "jamFinalScoreLabel": "Puntaje pasada",
-    "jamSuccessfulTricks": "{count} trucos exitosos"
+    "jamSuccessfulTricks": "{count} trucos exitosos",
+    "btVoteTitle": "Votación del podio",
+    "btVoteHint": "Elegí quién queda en 1°, 2° y 3°. Podés cambiar tu voto antes de que cierre.",
+    "btTop3Label": "Top 3 — Mejores trucos",
+    "btYourVoteLabel": "Tu voto",
+    "btYourVoteSummary": "Tu voto actual",
+    "btRankPlace": "{rank}° Lugar",
+    "btSaving": "Guardando...",
+    "btVoteSaved": "✓ Voto guardado",
+    "btVoteSave": "Guardar voto",
+    "btVoteAssign": "Asigná los 3 puestos",
+    "btToastVoteSaved": "✅ Voto guardado",
+    "btRun2Starting": "Comenzando pasada 2..."
   },
   "NotificacionesPage": {
     "eyebrow": "Centro de",

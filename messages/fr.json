@@ -112,7 +112,19 @@
     "reglamentoTitle": "Règlement",
     "reglamentoStandardBadge": "Standard",
     "reglamentoCustomBadge": "Personnalisé",
-    "reglamentoView": "Voir le règlement →"
+    "reglamentoView": "Voir le règlement →",
+    "evNoScore": "Sans score",
+    "evFinalist": "Finaliste",
+    "evFinal": "FINALE",
+    "evQualification": "Qualification",
+    "evRanking": "Classement",
+    "evFinalLabelBT": "Finale · Meilleur passage + Best Trick",
+    "evFinalLabelRun": "Finale · Passage final",
+    "evNoMeetsReq": "Ne remplit pas le critère",
+    "evFinalRunLabel": "Passage final",
+    "evBestRunLabel": "Meilleur passage",
+    "evRunScoreLabel": "Passage",
+    "evBTScoreLabel": "BT"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Comment ça marche",
@@ -490,7 +502,19 @@
     "jamBestTrickFinalLabel": "Best Trick Final · 4 tentatives",
     "jamFinalPassLabel": "Passage final",
     "jamFinalScoreLabel": "Score du passage",
-    "jamSuccessfulTricks": "{count} tricks réussis"
+    "jamSuccessfulTricks": "{count} tricks réussis",
+    "btVoteTitle": "Vote pour le podium",
+    "btVoteHint": "Choisissez qui obtient la 1ère, 2ème et 3ème place. Vous pouvez changer votre vote avant la clôture.",
+    "btTop3Label": "Top 3 — Meilleurs tricks",
+    "btYourVoteLabel": "Votre vote",
+    "btYourVoteSummary": "Votre vote actuel",
+    "btRankPlace": "{rank}e place",
+    "btSaving": "Sauvegarde...",
+    "btVoteSaved": "✓ Vote sauvegardé",
+    "btVoteSave": "Sauvegarder le vote",
+    "btVoteAssign": "Assignez les 3 places",
+    "btToastVoteSaved": "✅ Vote sauvegardé",
+    "btRun2Starting": "Début du passage 2..."
   },
   "NotificacionesPage": {
     "eyebrow": "Centre de",
