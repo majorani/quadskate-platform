@@ -21,7 +21,8 @@ export default function HomePageClient({ events }: { events: Event[] }) {
               {t('hero.eyebrow')}
             </div>
             <h1 style={{ fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 900, lineHeight: 1, letterSpacing: -2, textTransform: 'uppercase', marginBottom: 32 }}>
-              <span style={{ color: '#C9A84C' }}>QSKT</span><br />
+              <span style={{ color: '#e8e8e8' }}>QUAD</span><br />
+              <span style={{ color: '#C9A84C' }}>SKATE</span><br />
               <span style={{ color: '#e8e8e8' }}>PLATFORM.</span>
             </h1>
             <p style={{ color: '#666', fontSize: 16, maxWidth: 480, lineHeight: 1.7, marginBottom: 40 }}>
@@ -134,6 +135,9 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                 </div>
                 <div style={{ fontSize: 10, color: '#333', letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginTop: 8 }}>
                   {t('brand.previewLabel')}
+                </div>
+                <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, textAlign: 'center', marginTop: 6 }}>
+                  {t('brand.credit')}
                 </div>
               </div>
 
