@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import Nav from '@/components/Nav'
 
-const GOLD = '#C9A227'
-const GOLD_L = '#E2BC4A'
+const GOLD = '#D4B45A'
+const GOLD_L = '#DBBE6A'
 const MAX_W = 1100
 
 export default function ComoFuncionaPage() {
