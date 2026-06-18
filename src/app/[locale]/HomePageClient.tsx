@@ -17,19 +17,19 @@ export default function HomePageClient({ events }: { events: Event[] }) {
         {/* HERO */}
         <div style={{ borderBottom: '1px solid #2a2a2a', padding: '80px 24px 72px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 24, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 24, textTransform: 'uppercase' }}>
               {t('hero.eyebrow')}
             </div>
             <h1 style={{ fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 900, lineHeight: 1, letterSpacing: -2, textTransform: 'uppercase', marginBottom: 32 }}>
               <span style={{ color: '#e8e8e8' }}>QUAD</span><br />
-              <span style={{ color: '#C9A84C' }}>SKATE</span><br />
+              <span style={{ color: '#D4B45A' }}>SKATE</span><br />
               <span style={{ color: '#e8e8e8' }}>PLATFORM.</span>
             </h1>
             <p style={{ color: '#666', fontSize: 16, maxWidth: 480, lineHeight: 1.7, marginBottom: 40 }}>
               {t('hero.subtitle')}
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <a href="/eventos" style={{ background: '#C9A84C', border: 'none', padding: '14px 32px', color: '#000', fontWeight: 900, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}>
+              <a href="/eventos" style={{ background: '#D4B45A', border: 'none', padding: '14px 32px', color: '#000', fontWeight: 900, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}>
                 {t('hero.ctaEvents')}
               </a>
               <a href="/auth" style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '14px 32px', color: '#e8e8e8', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}>
@@ -49,7 +49,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
               [t('stats.originValue'),       t('stats.originLabel')],
             ] as [string, string][]).map(([val, label]) => (
               <div key={label} style={{ flex: '1 1 200px', padding: '28px 24px', borderRight: '1px solid #2a2a2a' }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#C9A84C', letterSpacing: -1 }}>{val}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#D4B45A', letterSpacing: -1 }}>{val}</div>
                 <div style={{ fontSize: 11, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginTop: 4 }}>{label}</div>
               </div>
             ))}
@@ -62,10 +62,10 @@ export default function HomePageClient({ events }: { events: Event[] }) {
             <div style={{ maxWidth: 1100, margin: '0 auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>{t('events.eyebrow')}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>{t('events.eyebrow')}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{t('events.title')}</div>
                 </div>
-                <a href="/eventos" style={{ color: '#C9A84C', fontSize: 11, fontWeight: 700, letterSpacing: 2, textDecoration: 'none', textTransform: 'uppercase' }}>
+                <a href="/eventos" style={{ color: '#D4B45A', fontSize: 11, fontWeight: 700, letterSpacing: 2, textDecoration: 'none', textTransform: 'uppercase' }}>
                   {t('events.seeAll')}
                 </a>
               </div>
@@ -79,7 +79,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
         {/* FEATURES */}
         <div style={{ padding: '64px 24px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 40, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 40, textTransform: 'uppercase' }}>
               {t('features.eyebrow')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 1, background: '#2a2a2a' }}>
@@ -106,7 +106,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
 
               {/* Texto */}
               <div style={{ flex: 1, minWidth: 260 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>
                   {t('brand.eyebrow')}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 12 }}>
@@ -118,7 +118,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                 <a
                   href="/logo-qskt.png"
                   download="QSKT_Platform_Logo.png"
-                  style={{ background: 'transparent', border: '1px solid #C9A84C', padding: '12px 24px', color: '#C9A84C', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
+                  style={{ background: 'transparent', border: '1px solid #D4B45A', padding: '12px 24px', color: '#D4B45A', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
                 >
                   {t('brand.download')}
                 </a>
@@ -150,7 +150,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
               <div style={{ flex: 1, minWidth: 260 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>
                   {t('reglamento.eyebrow')}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 12 }}>
@@ -162,7 +162,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                 <a href={REGLAMENTO_ESTANDAR_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ background: 'transparent', border: '1px solid #C9A84C', padding: '12px 24px', color: '#C9A84C', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
+                  style={{ background: 'transparent', border: '1px solid #D4B45A', padding: '12px 24px', color: '#D4B45A', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
                 >
                   {t('reglamento.btn')}
                 </a>

@@ -58,7 +58,7 @@ export default function InvitacionPage() {
   }
   const boxStyle: React.CSSProperties = { maxWidth: 480, width: '100%', textAlign: 'center' }
   const btnStyle: React.CSSProperties = {
-    display: 'inline-block', background: '#C9A84C', color: '#0a0a0a',
+    display: 'inline-block', background: '#D4B45A', color: '#0a0a0a',
     fontWeight: 900, textTransform: 'uppercase', padding: '14px 28px',
     textDecoration: 'none', letterSpacing: '1px',
   }
@@ -66,7 +66,7 @@ export default function InvitacionPage() {
   return (
     <div style={containerStyle}>
       <div style={boxStyle}>
-        <h1 style={{ color: '#C9A84C', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '3px', fontSize: '1.2rem', marginBottom: 32 }}>
+        <h1 style={{ color: '#D4B45A', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '3px', fontSize: '1.2rem', marginBottom: 32 }}>
           {t('brand')}
         </h1>
 
@@ -90,8 +90,8 @@ export default function InvitacionPage() {
 
         {status === 'success' && (
           <div>
-            <div style={{ fontSize: 48, marginBottom: 16, color: '#C9A84C' }}>✓</div>
-            <h2 style={{ color: '#C9A84C', textTransform: 'uppercase', fontWeight: 900, marginBottom: 16 }}>
+            <div style={{ fontSize: 48, marginBottom: 16, color: '#D4B45A' }}>✓</div>
+            <h2 style={{ color: '#D4B45A', textTransform: 'uppercase', fontWeight: 900, marginBottom: 16 }}>
               {t('successTitle')}
             </h2>
             <p style={{ color: '#aaaaaa' }}>{message}</p>

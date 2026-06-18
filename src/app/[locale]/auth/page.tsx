@@ -72,8 +72,8 @@ export default function AuthPage() {
       <div style={{ position: 'absolute', top: 20, right: 20 }}>
         <LanguageSwitcher />
       </div>
-      <div style={{ textAlign: 'center', maxWidth: 380, borderTop: '2px solid #C9A84C', paddingTop: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>
+      <div style={{ textAlign: 'center', maxWidth: 380, borderTop: '2px solid #D4B45A', paddingTop: 32 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>
           {t('confirmTitle')}
         </div>
         <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 16 }}>
@@ -104,8 +104,8 @@ export default function AuthPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
 
         {/* Header */}
-        <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 28, marginBottom: 32 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
+        <div style={{ borderTop: '2px solid #D4B45A', paddingTop: 28, marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>
             {mode === 'login' ? t('loginLabel') : t('registerLabel')}
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>
@@ -120,8 +120,8 @@ export default function AuthPage() {
               flex: 1, padding: '12px', border: 'none', cursor: 'pointer', fontWeight: 700,
               fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
               background: 'transparent',
-              color: mode === m ? '#C9A84C' : '#444',
-              borderBottom: mode === m ? '2px solid #C9A84C' : '2px solid transparent',
+              color: mode === m ? '#D4B45A' : '#444',
+              borderBottom: mode === m ? '2px solid #D4B45A' : '2px solid transparent',
               marginBottom: -1,
             }}>
               {m === 'login' ? t('tabLogin') : t('tabRegister')}
@@ -157,7 +157,7 @@ export default function AuthPage() {
         {err && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 12, letterSpacing: 1 }}>{err}</div>}
 
         <button onClick={handleSubmit} disabled={loading} style={{
-          width: '100%', background: '#C9A84C', border: 'none',
+          width: '100%', background: '#D4B45A', border: 'none',
           padding: '14px', color: '#000', fontWeight: 900, fontSize: 11,
           cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase',
           opacity: loading ? 0.7 : 1,

@@ -56,7 +56,7 @@ export default function NotificacionesPage() {
 
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
           <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{t('title')}</div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function NotificacionesPage() {
             <div
               key={n.id}
               onClick={() => n.link && router.push(n.link)}
-              style={{ background: n.read ? '#0a0a0a' : '#111', padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'flex-start', cursor: n.link ? 'pointer' : 'default', borderLeft: n.read ? '2px solid transparent' : '2px solid #C9A84C' }}
+              style={{ background: n.read ? '#0a0a0a' : '#111', padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'flex-start', cursor: n.link ? 'pointer' : 'default', borderLeft: n.read ? '2px solid transparent' : '2px solid #D4B45A' }}
             >
               <div style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{typeIcon(n.type)}</div>
               <div style={{ flex: 1 }}>
@@ -87,7 +87,7 @@ export default function NotificacionesPage() {
                   <div style={{ fontSize: 10, color: '#444', letterSpacing: 1, textTransform: 'uppercase', flexShrink: 0 }}>{timeAgo(n.created_at)}</div>
                 </div>
                 {n.body && <div style={{ color: '#666', fontSize: 13, lineHeight: 1.6 }}>{n.body}</div>}
-                {n.link && <div style={{ color: '#C9A84C', fontSize: 11, fontWeight: 700, marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>{t('viewEvent')}</div>}
+                {n.link && <div style={{ color: '#D4B45A', fontSize: 11, fontWeight: 700, marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>{t('viewEvent')}</div>}
               </div>
             </div>
           ))}

@@ -108,15 +108,15 @@ export async function POST(req: NextRequest) {
       subject: `[PARA: ${email}] Te invitaron como ${roleLabel} a ${event.name}`,
       html: `
         <div style="background:#0a0a0a;color:#ffffff;font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto;">
-          <h1 style="color:#C9A84C;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
+          <h1 style="color:#D4B45A;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
           <h2 style="color:#ffffff;text-transform:uppercase;">HOLA ${displayName.toUpperCase()}</h2>
           <p style="color:#aaaaaa;font-size:16px;">
-            Fuiste invitado a <strong style="color:#ffffff;">${event.name}</strong> como <strong style="color:#C9A84C;">${roleLabel}</strong>.
+            Fuiste invitado a <strong style="color:#ffffff;">${event.name}</strong> como <strong style="color:#D4B45A;">${roleLabel}</strong>.
           </p>
           <p style="color:#aaaaaa;font-size:16px;">
             Creá tu cuenta para confirmar tu participación:
           </p>
-          <a href="${inviteUrl}" style="display:inline-block;background:#C9A84C;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
+          <a href="${inviteUrl}" style="display:inline-block;background:#D4B45A;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
             CREAR CUENTA
           </a>
           <p style="color:#555555;font-size:12px;margin-top:40px;">Si no esperabas este mail, podés ignorarlo.</p>

@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 import type { User } from '@supabase/supabase-js'
 
-const GOLD = '#C9A84C'
+const GOLD = '#D4B45A'
 const JAM_NIVELES = [
   { val: 0.5, label: 'Intento',  short: '½', color: '#92400e', colorDark: '#78350f' },
   { val: 1,   label: 'Entrada',  short: 'E', color: '#166534', colorDark: '#14532d' },

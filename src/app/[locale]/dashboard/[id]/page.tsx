@@ -11,7 +11,7 @@ import type { Event, Category, Participant } from '@/lib/supabase'
 import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 import { validateFileMagicBytes } from '@/lib/utils'
 
-const GOLD = '#C9A84C'
+const GOLD = '#D4B45A'
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#111', border: '1px solid #2a2a2a',

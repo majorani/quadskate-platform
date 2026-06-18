@@ -31,7 +31,7 @@ export default function DashboardPage() {
   })
 
   const statusColor: Record<string, string> = {
-    draft: '#444', published: '#C9A84C', active: '#4CAF50', finished: '#444',
+    draft: '#444', published: '#D4B45A', active: '#4CAF50', finished: '#444',
   }
   const statusLabel: Record<string, string> = {
     draft: t('statusDraft'), published: t('statusPublished'),
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       `}</style>
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#D4B45A', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
           {toast}
         </div>
       )}
@@ -110,12 +110,12 @@ export default function DashboardPage() {
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 16px' }}>
         <div className="dash-header-inner">
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
             <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>
               {user?.user_metadata?.full_name?.split(' ')[0] ?? t('defaultName')}
             </div>
           </div>
-          <button onClick={() => setShowCreate(!showCreate)} className="dash-create-btn" style={{ background: '#C9A84C', border: 'none', padding: '12px 24px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase' }}>
+          <button onClick={() => setShowCreate(!showCreate)} className="dash-create-btn" style={{ background: '#D4B45A', border: 'none', padding: '12px 24px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase' }}>
             {t('createButton')}
           </button>
         </div>
@@ -125,13 +125,13 @@ export default function DashboardPage() {
 
         {/* Formulario crear evento */}
         {showCreate && (
-          <div style={{ borderTop: '2px solid #C9A84C', padding: '28px 0', marginBottom: 40 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>{t('formTitle')}</div>
+          <div style={{ borderTop: '2px solid #D4B45A', padding: '28px 0', marginBottom: 40 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>{t('formTitle')}</div>
 
             <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t('typeLabel')}</div>
             <div className="type-btns">
               <button className="type-btn" onClick={() => setForm(f => ({ ...f, event_type: 'competition' }))}
-                style={{ background: form.event_type === 'competition' ? '#C9A84C' : '#0a0a0a', color: form.event_type === 'competition' ? '#000' : '#444' }}>
+                style={{ background: form.event_type === 'competition' ? '#D4B45A' : '#0a0a0a', color: form.event_type === 'competition' ? '#000' : '#444' }}>
                 {t('typeCompetition')}
               </button>
               <button className="type-btn" onClick={() => setForm(f => ({ ...f, event_type: 'encuentro' }))}
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 {t('typeEncuentro')}
               </button>
             </div>
-            <div style={{ background: '#111', borderLeft: `3px solid ${form.event_type === 'competition' ? '#C9A84C' : '#555'}`, padding: '10px 14px', marginBottom: 20, fontSize: 11, color: '#555', letterSpacing: 0.5, lineHeight: 1.5 }}>
+            <div style={{ background: '#111', borderLeft: `3px solid ${form.event_type === 'competition' ? '#D4B45A' : '#555'}`, padding: '10px 14px', marginBottom: 20, fontSize: 11, color: '#555', letterSpacing: 0.5, lineHeight: 1.5 }}>
               {form.event_type === 'competition' ? t('hintCompetition') : t('hintEncuentro')}
             </div>
 
@@ -159,7 +159,7 @@ export default function DashboardPage() {
             <textarea placeholder={t('placeholderDescription')} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
             <div className="form-action-row">
-              <button onClick={createEvent} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={createEvent} disabled={saving} style={{ background: '#D4B45A', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
                 {saving ? t('creating') : t('submitCreate')}
               </button>
               <button onClick={() => setShowCreate(false)} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 28px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         )}
 
         {/* Lista eventos */}
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionMyEvents')}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionMyEvents')}</div>
         {loading && <div style={{ color: '#444', padding: 20, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('loadingEvents')}</div>}
         {!loading && events.length === 0 && (
           <div style={{ borderTop: '1px solid #2a2a2a', padding: '48px 0', textAlign: 'center' }}>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{ev.name}</div>
-                    <span className="event-type-badge" style={{ color: isEncuentro ? '#666' : '#C9A84C' }}>
+                    <span className="event-type-badge" style={{ color: isEncuentro ? '#666' : '#D4B45A' }}>
                       {isEncuentro ? t('badgeEncuentro') : t('badgeCompetition')}
                     </span>
                   </div>

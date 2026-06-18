@@ -38,7 +38,7 @@ export default function JudgeButton({ eventId, ownerId }: { eventId: string, own
   return (
     <button
       onClick={() => router.push('/jueces/' + eventId)}
-      style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase' }}
+      style={{ background: '#D4B45A', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase' }}
     >
       {t('label')}
     </button>

@@ -6,7 +6,7 @@ import type { Event } from '@/lib/supabase'
 
 const STATUS_COLOR: Record<string, string> = {
   draft: '#333',
-  published: '#C9A84C',
+  published: '#D4B45A',
   active: '#4CAF50',
   finished: '#444',
 }
@@ -39,8 +39,8 @@ export default function EventCard({ event: ev }: { event: Event }) {
       position: 'absolute', top: 10, left: 10,
       fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
       padding: '3px 8px', background: '#0a0a0a',
-      color: isEncuentro ? '#888' : '#C9A84C',
-      border: `1px solid ${isEncuentro ? '#333' : '#C9A84C55'}`,
+      color: isEncuentro ? '#888' : '#D4B45A',
+      border: `1px solid ${isEncuentro ? '#333' : '#D4B45A55'}`,
     }}>
       {isEncuentro ? t('badgeEncuentro') : t('badgeCompetencia')}
     </span>
@@ -84,7 +84,7 @@ export default function EventCard({ event: ev }: { event: Event }) {
             </div>
           )}
         </div>
-        <div style={{ position: 'absolute', bottom: 24, right: 24, color: '#C9A84C', fontSize: 18, fontWeight: 900 }}>→</div>
+        <div style={{ position: 'absolute', bottom: 24, right: 24, color: '#D4B45A', fontSize: 18, fontWeight: 900 }}>→</div>
       </div>
     </div>
   )

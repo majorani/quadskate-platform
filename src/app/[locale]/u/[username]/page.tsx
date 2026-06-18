@@ -7,7 +7,7 @@ import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 
-const GOLD = '#C9A84C'
+const GOLD = '#D4B45A'
 
 export default function PublicProfilePage() {
   const t = useTranslations('PublicProfilePage')
@@ -26,7 +26,7 @@ export default function PublicProfilePage() {
     finished: t('statusFinished'),
   }
   const statusColor: Record<string, string> = {
-    draft: '#333', published: '#C9A84C', active: '#4CAF50', finished: '#555',
+    draft: '#333', published: '#D4B45A', active: '#4CAF50', finished: '#555',
   }
 
   useEffect(() => {

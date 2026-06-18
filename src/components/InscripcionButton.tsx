@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 
-const GOLD = '#C9A84C'
+const GOLD = '#D4B45A'
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#111', border: '1px solid #2a2a2a',

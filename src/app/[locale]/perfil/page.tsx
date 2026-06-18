@@ -121,7 +121,7 @@ export default function PerfilPage() {
       <Nav />
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#C9A84C', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
+        <div style={{ position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.startsWith('❌') ? '#ef4444' : '#D4B45A', color: toast.startsWith('❌') ? '#fff' : '#000', padding: '11px 28px', fontWeight: 900, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', pointerEvents: 'none' }}>
           {toast}
         </div>
       )}
@@ -130,7 +130,7 @@ export default function PerfilPage() {
       <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 10, textTransform: 'uppercase' }}>{t('eyebrow')}</div>
             <div style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{t('title')}</div>
           </div>
           {publicUrl && (
@@ -148,7 +148,7 @@ export default function PerfilPage() {
 
         {/* Avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40, flexWrap: 'wrap' }}>
-          <div style={{ width: 80, height: 80, background: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+          <div style={{ width: 80, height: 80, background: '#D4B45A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
             {f.avatar_url
               ? <img src={f.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <span style={{ fontSize: 28, fontWeight: 900, color: '#000' }}>{initials}</span>
@@ -165,8 +165,8 @@ export default function PerfilPage() {
         </div>
 
         {/* Formulario */}
-        <div style={{ borderTop: '2px solid #C9A84C', paddingTop: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionTitle')}</div>
+        <div style={{ borderTop: '2px solid #D4B45A', paddingTop: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionTitle')}</div>
 
           <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>{t('labelName')}</div>
           <input
@@ -185,7 +185,7 @@ export default function PerfilPage() {
           />
           {f.username && (
             <div style={{ fontSize: 10, color: '#444', marginBottom: 10, letterSpacing: 1 }}>
-              {t('publicProfileUrl', { url: '' })}<span style={{ color: '#C9A84C' }}>quadskate-platform.vercel.app/u/{f.username}</span>
+              {t('publicProfileUrl', { url: '' })}<span style={{ color: '#D4B45A' }}>quadskate-platform.vercel.app/u/{f.username}</span>
             </div>
           )}
 
@@ -205,7 +205,7 @@ export default function PerfilPage() {
           />
           <div style={{ fontSize: 11, color: '#333', marginBottom: 20, letterSpacing: 1 }}>{t('emailNote')}</div>
 
-          <button onClick={save} disabled={saving} style={{ background: '#C9A84C', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
+          <button onClick={save} disabled={saving} style={{ background: '#D4B45A', border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
             {saving ? t('saving') : t('saveButton')}
           </button>
         </div>

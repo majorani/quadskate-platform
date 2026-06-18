@@ -73,16 +73,16 @@ export async function POST(req: NextRequest) {
       subject: `Nuevo evento: ${event.name}`,
       html: `
         <div style="background:#0a0a0a;color:#ffffff;font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto;">
-          <h1 style="color:#C9A84C;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
+          <h1 style="color:#D4B45A;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
           <h2 style="color:#ffffff;text-transform:uppercase;">NUEVO EVENTO PUBLICADO</h2>
-          <h3 style="color:#C9A84C;text-transform:uppercase;">${event.name}</h3>
+          <h3 style="color:#D4B45A;text-transform:uppercase;">${event.name}</h3>
           <p style="color:#aaaaaa;">
             📍 ${event.city}${event.country ? `, ${event.country}` : ''}<br/>
             📅 ${new Date(event.event_date).toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
           ${event.description ? `<p style="color:#cccccc;">${event.description}</p>` : ''}
           <a href="${process.env.NEXT_PUBLIC_SITE_URL}/eventos/${event.id}"
-             style="display:inline-block;background:#C9A84C;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
+             style="display:inline-block;background:#D4B45A;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
             VER EVENTO
           </a>
         </div>

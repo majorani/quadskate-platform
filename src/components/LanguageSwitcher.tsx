@@ -30,7 +30,7 @@ export default function LanguageSwitcher() {
           onClick={() => switchLocale(l.code)}
           disabled={isPending}
           style={{
-            background: locale === l.code ? '#C9A84C' : 'transparent',
+            background: locale === l.code ? '#D4B45A' : 'transparent',
             border: 'none',
             padding: '4px 8px',
             color: locale === l.code ? '#000' : '#555',
