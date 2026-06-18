@@ -76,4 +76,4 @@ export type Notification = {
 }
 
 export const REGLAMENTO_ESTANDAR_URL =
-  'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/Reglamento_Quad_Skate_v1.4_LucasMajorana.pdf'
+  'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/ReglamentoQuadSkatePlatform-v1.6.4.pdf'

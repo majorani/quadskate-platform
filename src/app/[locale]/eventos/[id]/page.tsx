@@ -9,7 +9,7 @@ import JudgeButton from '@/components/JudgeButton'
 import InscripcionButton from '@/components/InscripcionButton'
 import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 
-const GOLD = '#D4B45A'
+const GOLD = '#C9A84C'
 
 function formatDate(d: string | null) {
   if (!d) return null
@@ -163,6 +163,33 @@ function getBestTricksFinal(participantId: string, scores: any[]) {
     .sort((a, b) => b.score - a.score)
 }
 
+// ─────────────────────────────────────────────────────────────
+// Art. 19 — Desempate por criterio (Ejecución → Dificultad → Estilo)
+// Promedia el criterio entre jueces del mejor truco o pasada (run=1)
+// ─────────────────────────────────────────────────────────────
+function tiebreakScore(participantId: string, scores: any[], criterion: 'ejecucion' | 'dificultad' | 'estilo'): number {
+  const judgeIds = [...new Set(scores.filter((s: any) => s.run === 1).map((s: any) => s.judge_id))] as string[]
+  const jScores = judgeIds.map(jId => {
+    const sc = scores.find((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === 1)
+    if (!sc) return null
+    const tricks = Array.isArray(sc.tricks) ? sc.tricks : (sc.tricks?.tricks ?? [])
+    const exitosos = tricks.filter((t: any) => t.intencion === true)
+    if (!exitosos.length) return 0
+    const best = exitosos.reduce((best: any, t: any) => (t._score || 0) > (best._score || 0) ? t : best, exitosos[0])
+    return best[criterion] ?? 0
+  }).filter((x): x is number => x !== null)
+  if (!jScores.length) return 0
+  return jScores.reduce((a, b) => a + b, 0) / jScores.length
+}
+
+function compareTiebreak(aId: string, bId: string, scores: any[]): number {
+  for (const criterion of ['ejecucion', 'dificultad', 'estilo'] as const) {
+    const diff = tiebreakScore(bId, scores, criterion) - tiebreakScore(aId, scores, criterion)
+    if (Math.abs(diff) > 0.0001) return diff
+  }
+  return 0
+}
+
 function getBestTricks(participantId: string, scores: any[]) {
   return scores
     .filter((s: any) => s.participant_id === participantId && s.run === 1)
@@ -186,7 +213,11 @@ function JamQualRanking({ parts, scores, cat, t }: any) {
         : null
       return { ...p, run1, run2, bestRun, bestRunNum }
     })
-    .sort((a: any, b: any) => (b.bestRun ?? -1) - (a.bestRun ?? -1))
+    .sort((a: any, b: any) => {
+      const diff = (b.bestRun ?? -1) - (a.bestRun ?? -1)
+      if (Math.abs(diff) > 0.0001) return diff
+      return compareTiebreak(a.id, b.id, scores)
+    })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
@@ -327,7 +358,7 @@ export default function EventoDetailPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                 {isLive && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4CAF50', display: 'inline-block' }} />}
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color, textTransform: 'uppercase' }}>{label}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '2px 7px', border: `1px solid ${isEncuentro ? '#333' : '#D4B45A44'}`, color: isEncuentro ? '#666' : GOLD }}>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '2px 7px', border: `1px solid ${isEncuentro ? '#333' : '#C9A84C44'}`, color: isEncuentro ? '#666' : GOLD }}>
                   {isEncuentro ? t('badgeEncuentro') : t('badgeCompetencia')}
                 </span>
               </div>
@@ -345,7 +376,7 @@ export default function EventoDetailPage() {
                     style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 10, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}>
                     <span>📄</span>
                     <span>{t('reglamentoTitle')}</span>
-                    <span style={{ fontSize: 9, color: isCustom ? GOLD : '#444', border: `1px solid ${isCustom ? '#D4B45A44' : '#333'}`, padding: '1px 6px', letterSpacing: 2 }}>
+                    <span style={{ fontSize: 9, color: isCustom ? GOLD : '#444', border: `1px solid ${isCustom ? '#C9A84C44' : '#333'}`, padding: '1px 6px', letterSpacing: 2 }}>
                       {isCustom ? t('reglamentoCustomBadge') : t('reglamentoStandardBadge')}
                     </span>
                     <span style={{ color: GOLD }}>→</span>
@@ -486,7 +517,7 @@ export default function EventoDetailPage() {
                       {/* Header */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                         <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
-                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #D4B45A44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                         {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                       </div>
 
@@ -631,7 +662,7 @@ export default function EventoDetailPage() {
                     <div key={cat.id} style={{ marginBottom: 64 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                         <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
-                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #D4B45A44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                       </div>
 
                       {podioRanked.length === 0 ? (
@@ -670,7 +701,11 @@ export default function EventoDetailPage() {
                 // ─── RAMA FORMAL / BEST_TRICK ────────────────────────────────
                 const qualParts = allCatParts
                   .map((p: any) => ({ ...p, score: calcQualScore(p.id, scores, cat) }))
-                  .sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))
+                  .sort((a: any, b: any) => {
+                    const diff = (b.score ?? -1) - (a.score ?? -1)
+                    if (Math.abs(diff) > 0.0001) return diff
+                    return compareTiebreak(a.id, b.id, scores)
+                  })
 
                 const finalParts = isFinalPhase
                   ? allCatParts
@@ -684,7 +719,9 @@ export default function EventoDetailPage() {
                       .sort((a: any, b: any) => {
                         if (a.meetsRequirement && !b.meetsRequirement) return -1
                         if (!a.meetsRequirement && b.meetsRequirement) return 1
-                        return b.totalScore - a.totalScore
+                        const diff = b.totalScore - a.totalScore
+                        if (Math.abs(diff) > 0.0001) return diff
+                        return compareTiebreak(a.id, b.id, scores)
                       })
                   : []
 
@@ -692,7 +729,7 @@ export default function EventoDetailPage() {
                   <div key={cat.id} style={{ marginBottom: 64 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
-                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #D4B45A44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                       {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                     </div>
 
