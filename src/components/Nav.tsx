@@ -62,10 +62,10 @@ export default function Nav() {
         position: 'sticky', top: 0, zIndex: 100,
         width: '100%', overflow: 'hidden',
       }}>
-        <button onClick={() => go('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#e8e8e8', whiteSpace: 'nowrap' }}>QUAD</span>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: '#C9A84C', whiteSpace: 'nowrap' }}>CIRCUIT</span>
-          <span className="nav-by" style={{ fontSize: 11, fontWeight: 400, letterSpacing: 2, color: '#444', marginLeft: 2, whiteSpace: 'nowrap' }}>BY MAJORANI</span>
+        <button onClick={() => go('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: 0, flexShrink: 0, minWidth: 0, padding: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: '#C9A84C', whiteSpace: 'nowrap' }}>QSKT</span>
+          <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: '#e8e8e8', whiteSpace: 'nowrap', marginLeft: 5 }}>PLATFORM</span>
+          <span className="nav-by" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#444', marginLeft: 7, whiteSpace: 'nowrap' }}>BY MAJORANI</span>
         </button>
 
         {/* Desktop */}

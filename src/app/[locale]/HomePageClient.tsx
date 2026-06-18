@@ -21,8 +21,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
               {t('hero.eyebrow')}
             </div>
             <h1 style={{ fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 900, lineHeight: 1, letterSpacing: -2, textTransform: 'uppercase', marginBottom: 32 }}>
-              <span style={{ color: '#e8e8e8' }}>QUAD</span><br />
-              <span style={{ color: '#C9A84C' }}>SKATE</span><br />
+              <span style={{ color: '#C9A84C' }}>QSKT</span><br />
               <span style={{ color: '#e8e8e8' }}>PLATFORM.</span>
             </h1>
             <p style={{ color: '#666', fontSize: 16, maxWidth: 480, lineHeight: 1.7, marginBottom: 40 }}>
@@ -99,6 +98,49 @@ export default function HomePageClient({ events }: { events: Event[] }) {
           </div>
         </div>
 
+        {/* KIT DE MARCA */}
+        <div style={{ borderTop: '1px solid #2a2a2a', padding: '64px 24px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 40 }}>
+
+              {/* Texto */}
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#C9A84C', marginBottom: 10, textTransform: 'uppercase' }}>
+                  {t('brand.eyebrow')}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5, marginBottom: 12 }}>
+                  {t('brand.title')}
+                </div>
+                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, maxWidth: 420, marginBottom: 28 }}>
+                  {t('brand.desc')}
+                </p>
+                <a
+                  href="/logo-qskt.png"
+                  download="QSKT_Platform_Logo.png"
+                  style={{ background: 'transparent', border: '1px solid #C9A84C', padding: '12px 24px', color: '#C9A84C', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
+                >
+                  {t('brand.download')}
+                </a>
+              </div>
+
+              {/* Preview del logo */}
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ background: '#111', border: '1px solid #2a2a2a', padding: '28px 36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src="/logo-qskt.png"
+                    alt="QSKT Platform Logo"
+                    style={{ width: 220, height: 'auto', display: 'block' }}
+                  />
+                </div>
+                <div style={{ fontSize: 10, color: '#333', letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginTop: 8 }}>
+                  {t('brand.previewLabel')}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         {/* REGLAMENTO */}
         <div style={{ borderTop: '1px solid #2a2a2a', padding: '64px 24px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -113,7 +155,6 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                 <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, maxWidth: 420, marginBottom: 24 }}>
                   {t('reglamento.desc')}
                 </p>
-                
                 <a href={REGLAMENTO_ESTANDAR_URL}
                   target="_blank"
                   rel="noopener noreferrer"

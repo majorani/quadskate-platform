@@ -46,6 +46,13 @@
       "copyright": "© 2025 QuadSkate Platform · Argentine",
       "powered": "Powered by Majorani"
     },
+    "brand": {
+      "eyebrow": "Kit de marque",
+      "title": "Ajoutez-le à votre flyer",
+      "desc": "Si vous organisez un événement sur la plateforme, vous pouvez utiliser le logo officiel QSKT Platform sur votre flyer. Fond transparent, prêt à l'emploi.",
+      "download": "↓ Télécharger le logo PNG",
+      "previewLabel": "Logo officiel · PNG transparent"
+    },
     "reglamento": {
       "eyebrow": "Règlement officiel",
       "title": "Règlement standard",
