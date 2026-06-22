@@ -545,7 +545,10 @@
     "successRedirect": "Redirecting to event...",
     "errorTitle": "ERROR",
     "errorFallback": "The invitation is invalid or has already been used.",
-    "errorBtn": "GO TO HOME"
+    "errorBtn": "GO TO HOME",
+    "pendingTitle": "ACCESS RESTRICTED",
+    "pendingDesc": "You must accept the jury invitation to access the judges app. Check your email and click the invitation link.",
+    "pendingBtn": "BACK TO HOME"
   },
   "EventCard": {
     "noFlyer": "No flyer",

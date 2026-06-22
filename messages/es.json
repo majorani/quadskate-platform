@@ -545,7 +545,10 @@
     "successRedirect": "Redirigiendo al evento...",
     "errorTitle": "ERROR",
     "errorFallback": "La invitación es inválida o ya fue usada.",
-    "errorBtn": "IR AL INICIO"
+    "errorBtn": "IR AL INICIO",
+    "pendingTitle": "ACCESO RESTRINGIDO",
+    "pendingDesc": "Debés aceptar la invitación al jurado para poder acceder a la app de jueces. Revisá tu correo y hacé clic en el link de invitación.",
+    "pendingBtn": "VOLVER AL INICIO"
   },
   "EventCard": {
     "noFlyer": "Sin flyer",

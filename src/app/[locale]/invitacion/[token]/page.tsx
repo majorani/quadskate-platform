@@ -16,10 +16,19 @@ export default function InvitacionPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount'>('loading')
+  const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount' | 'pending'>('loading')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    // Caso: redirigido desde app de jueces por invitación pendiente
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('error') === 'pending') {
+        setStatus('pending')
+        return
+      }
+    }
+
     async function handleInvitation() {
       const { data: { session } } = await supabase.auth.getSession()
       const { data: { user } } = await supabase.auth.getUser()
@@ -76,6 +85,19 @@ export default function InvitacionPage() {
 
         {status === 'accepting' && (
           <p style={{ color: '#aaaaaa', textTransform: 'uppercase', letterSpacing: 1 }}>{t('accepting')}</p>
+        )}
+
+        {status === 'pending' && (
+          <div>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+            <h2 style={{ color: '#ffffff', textTransform: 'uppercase', fontWeight: 900, marginBottom: 16 }}>
+              {t('pendingTitle')}
+            </h2>
+            <p style={{ color: '#aaaaaa', marginBottom: 32, lineHeight: 1.7 }}>
+              {t('pendingDesc')}
+            </p>
+            <a href="/" style={btnStyle}>{t('pendingBtn')}</a>
+          </div>
         )}
 
         {status === 'needsAccount' && (

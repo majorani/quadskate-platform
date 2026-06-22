@@ -545,7 +545,10 @@
     "successRedirect": "Redirection vers l'événement...",
     "errorTitle": "ERREUR",
     "errorFallback": "L'invitation est invalide ou a déjà été utilisée.",
-    "errorBtn": "ALLER À L'ACCUEIL"
+    "errorBtn": "ALLER À L'ACCUEIL",
+    "pendingTitle": "ACCÈS RESTREINT",
+    "pendingDesc": "Vous devez accepter l'invitation du jury pour accéder à l'application des juges. Vérifiez votre email et cliquez sur le lien d'invitation.",
+    "pendingBtn": "RETOUR À L'ACCUEIL"
   },
   "EventCard": {
     "noFlyer": "Sans flyer",
