@@ -1306,6 +1306,20 @@ export default function JuecesPage() {
       supabase.from('scorecards').select('*').eq('event_id', eventId),
       supabase.from('round_confirmations').select('*').eq('event_id', eventId),
     ])
+
+    // Verificar que el usuario es juez aceptado de este evento
+    const myJudgeRecord = judgesRes.data?.find((j: any) => j.profile_id === userId)
+    if (!myJudgeRecord) {
+      // Verificar si está invitado pero no aceptado
+      const { data: invitedCheck } = await supabase.from('judges').select('status').eq('event_id', eventId).eq('profile_id', userId).maybeSingle()
+      if (invitedCheck?.status === 'invited') {
+        router.push(`/invitacion?error=pending`)
+      } else {
+        router.push('/dashboard')
+      }
+      return
+    }
+
     setEvent(evRes.data); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
     setJudges(judgesRes.data ?? []); setConfirmations(confirmsRes.data ?? [])
     const scMap: any = {}
