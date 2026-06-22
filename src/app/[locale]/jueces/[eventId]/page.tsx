@@ -388,7 +388,7 @@ function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: a
         <div style={{ fontSize: 10, fontWeight: 900, color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{data.name}</div>
         <div style={{ fontSize: 28, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{total.toFixed(1)}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: '#555' }}>{tricksTotal.toFixed(1)} trucos</span>
+          <span style={{ fontSize: 10, color: '#555' }}>{tricksExitosos.length} trucos</span>
           {modifier !== 0 && <span style={{ fontSize: 10, fontWeight: 700, color: modColor }}>{modifier > 0 ? '+' : ''}{modifier} mod</span>}
         </div>
         {data.dirty && <div style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{t('unsaved')}</div>}
