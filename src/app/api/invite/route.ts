@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
     const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth?invite=${invitation?.token}`
 
     await resend.emails.send({
-      from: 'Quad Skate Platform <onboarding@resend.dev>',
-      to: 'info.majorani@gmail.com', // temporal sin dominio
-      subject: `[PARA: ${email}] Te invitaron como ${roleLabel} a ${event.name}`,
+      from: 'QSKT Platform <noreply@quadskateplatform.com.ar>',
+      to: email,
+      subject: `Invitación como ${roleLabel} a ${event.name}`,
       html: `
         <div style="background:#0a0a0a;color:#ffffff;font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto;">
           <h1 style="color:#D4B45A;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
