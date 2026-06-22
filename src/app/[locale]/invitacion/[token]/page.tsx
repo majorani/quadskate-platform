@@ -4,18 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from '@/lib/supabase'
 
 export default function InvitacionPage() {
   const t = useTranslations('InvitacionPage')
   const params = useParams()
   const token = params.token as string
   const router = useRouter()
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
   const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount' | 'pending'>('loading')
   const [message, setMessage] = useState('')
 
