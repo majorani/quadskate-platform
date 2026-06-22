@@ -19,6 +19,23 @@ export default function InvitacionPage() {
   const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'needsAccount' | 'pending'>('loading')
   const [message, setMessage] = useState('')
 
+  async function acceptInvitation(accessToken: string) {
+    setStatus('accepting')
+    const res = await fetch(`/api/invite/accept/${token}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    })
+    const data = await res.json()
+    if (data.success) {
+      setStatus('success')
+      setMessage(data.role === 'judge' ? t('successRoleJudge') : t('successRoleParticipant'))
+      setTimeout(() => router.push(`/eventos/${data.eventId}`), 2500)
+    } else {
+      setStatus('error')
+      setMessage(data.error || t('errorFallback'))
+    }
+  }
+
   useEffect(() => {
     // Caso: redirigido desde app de jueces por invitación pendiente
     if (typeof window !== 'undefined') {
@@ -29,46 +46,29 @@ export default function InvitacionPage() {
       }
     }
 
-    async function handleInvitation() {
-      // Esperar hasta 3 segundos a que la sesión esté disponible
-      let session = null
-      let user = null
-      for (let i = 0; i < 6; i++) {
-        const s = await supabase.auth.getSession()
-        const u = await supabase.auth.getUser()
-        if (s.data.session && u.data.user) {
-          session = s.data.session
-          user = u.data.user
-          break
-        }
-        await new Promise(r => setTimeout(r, 500))
+    // Escuchar cambios de sesión (cubre el caso de redirect post-login)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.access_token) {
+        localStorage.removeItem('pendingInvitationToken')
+        await acceptInvitation(session.access_token)
       }
+    })
 
-      if (!user || !session) {
-        localStorage.setItem('pendingInvitationToken', token)
-        setStatus('needsAccount')
-        return
-      }
-
-      localStorage.removeItem('pendingInvitationToken')
-      setStatus('accepting')
-      const res = await fetch(`/api/invite/accept/${token}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        setStatus('success')
-        setMessage(data.role === 'judge' ? t('successRoleJudge') : t('successRoleParticipant'))
-        setTimeout(() => router.push(`/eventos/${data.eventId}`), 2500)
+    // También verificar sesión existente inmediatamente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) {
+        localStorage.removeItem('pendingInvitationToken')
+        acceptInvitation(session.access_token)
       } else {
-        setStatus('error')
-        setMessage(data.error || t('errorFallback'))
+        // No hay sesión — esperar al listener o mostrar needsAccount tras timeout
+        setTimeout(() => {
+          setStatus(prev => prev === 'loading' ? 'needsAccount' : prev)
+        }, 2000)
+        localStorage.setItem('pendingInvitationToken', token)
       }
-    }
+    })
 
-    handleInvitation()
+    return () => { subscription.unsubscribe() }
   }, [token])
 
   const containerStyle: React.CSSProperties = {
