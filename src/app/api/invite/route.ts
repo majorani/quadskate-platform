@@ -52,12 +52,27 @@ export async function POST(req: NextRequest) {
   }
 
   // Buscar si el email ya tiene cuenta
-  const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
   const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
 
   const roleLabel = role === 'judge' ? 'juez' : 'participante'
 
+  // Crear invitación con token (siempre, para ambos casos)
+  const { data: invitation } = await supabaseAdmin
+    .from('invitations')
+    .insert({
+      event_id: eventId,
+      email,
+      role,
+      category_id: categoryId || null,
+    })
+    .select()
+    .single()
+
+  const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/invitacion/${invitation?.token}`
+
   if (role === 'participant') {
+    // Participantes: se agregan directo como confirmed si tienen cuenta
     await supabaseAdmin.from('participants').insert({
       event_id: eventId,
       category_id: categoryId || null,
@@ -66,64 +81,67 @@ export async function POST(req: NextRequest) {
       profile_id: authUser?.id ?? null,
       status: authUser ? 'confirmed' : 'pending',
     })
+
+    if (authUser) {
+      // Notificación en app
+      await supabaseAdmin.from('notifications').insert({
+        user_id: authUser.id,
+        type: 'participant_added',
+        title: `Invitación a ${event.name}`,
+        body: `Fuiste agregado como participante al evento "${event.name}".`,
+        link: `/eventos/${eventId}`,
+        read: false,
+      })
+      return NextResponse.json({ success: true, hadAccount: true })
+    }
   } else {
+    // Jueces: siempre status 'invited', necesitan aceptar
     await supabaseAdmin.from('judges').insert({
       event_id: eventId,
       display_name: displayName,
       email: email,
       profile_id: authUser?.id ?? null,
-      status: authUser ? 'confirmed' : 'pending',
+      status: 'invited',
     })
-  }
 
-  if (authUser) {
-    // Tiene cuenta → notificación en app
-    await supabaseAdmin.from('notifications').insert({
-      user_id: authUser.id,
-      type: role === 'judge' ? 'judge_invite' : 'participant_added',
-      title: `Invitación a ${event.name}`,
-      body: `Fuiste agregado como ${roleLabel} al evento "${event.name}".`,
-      link: `/eventos/${eventId}`,
-      read: false,
-    })
-    return NextResponse.json({ success: true, hadAccount: true })
-  } else {
-    // No tiene cuenta → crear invitación y mandar email
-    const { data: invitation } = await supabaseAdmin
-      .from('invitations')
-      .insert({
-        event_id: eventId,
-        email,
-        role,
-        category_id: categoryId || null,
+    if (authUser) {
+      // Tiene cuenta → notificación en app + mail con link para aceptar
+      await supabaseAdmin.from('notifications').insert({
+        user_id: authUser.id,
+        type: 'judge_invite',
+        title: `Invitación al jurado de ${event.name}`,
+        body: `Fuiste invitado como juez al evento "${event.name}". Aceptá la invitación para acceder.`,
+        link: `/invitacion/${invitation?.token}`,
+        read: false,
       })
-      .select()
-      .single()
-
-    const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth?invite=${invitation?.token}`
-
-    await resend.emails.send({
-      from: 'QSKT Platform <noreply@quadskateplatform.com.ar>',
-      to: email,
-      subject: `Invitación como ${roleLabel} a ${event.name}`,
-      html: `
-        <div style="background:#0a0a0a;color:#ffffff;font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto;">
-          <h1 style="color:#D4B45A;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QUAD SKATE PLATFORM</h1>
-          <h2 style="color:#ffffff;text-transform:uppercase;">HOLA ${displayName.toUpperCase()}</h2>
-          <p style="color:#aaaaaa;font-size:16px;">
-            Fuiste invitado a <strong style="color:#ffffff;">${event.name}</strong> como <strong style="color:#D4B45A;">${roleLabel}</strong>.
-          </p>
-          <p style="color:#aaaaaa;font-size:16px;">
-            Creá tu cuenta para confirmar tu participación:
-          </p>
-          <a href="${inviteUrl}" style="display:inline-block;background:#D4B45A;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
-            CREAR CUENTA
-          </a>
-          <p style="color:#555555;font-size:12px;margin-top:40px;">Si no esperabas este mail, podés ignorarlo.</p>
-        </div>
-      `,
-    })
-
-    return NextResponse.json({ success: true, hadAccount: false })
+    }
   }
+
+  // Mandar mail siempre (tanto si tiene cuenta como si no)
+  const btnLabel = authUser ? 'ACEPTAR INVITACIÓN' : 'CREAR CUENTA'
+  const descLabel = authUser
+    ? 'Hacé clic para aceptar la invitación y acceder al evento:'
+    : 'Creá tu cuenta para confirmar tu participación:'
+
+  await resend.emails.send({
+    from: 'QSKT Platform <noreply@quadskateplatform.com.ar>',
+    to: email,
+    subject: `Invitación como ${roleLabel} a ${event.name}`,
+    html: `
+      <div style="background:#0a0a0a;color:#ffffff;font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto;">
+        <h1 style="color:#D4B45A;font-weight:900;text-transform:uppercase;letter-spacing:2px;">QSKT PLATFORM</h1>
+        <h2 style="color:#ffffff;text-transform:uppercase;">HOLA ${displayName.toUpperCase()}</h2>
+        <p style="color:#aaaaaa;font-size:16px;">
+          Fuiste invitado a <strong style="color:#ffffff;">${event.name}</strong> como <strong style="color:#D4B45A;">${roleLabel}</strong>.
+        </p>
+        <p style="color:#aaaaaa;font-size:16px;">${descLabel}</p>
+        <a href="${inviteUrl}" style="display:inline-block;background:#D4B45A;color:#0a0a0a;font-weight:900;text-transform:uppercase;padding:14px 28px;text-decoration:none;letter-spacing:1px;margin-top:16px;">
+          ${btnLabel}
+        </a>
+        <p style="color:#555555;font-size:12px;margin-top:40px;">Si no esperabas este mail, podés ignorarlo.</p>
+      </div>
+    `,
+  })
+
+  return NextResponse.json({ success: true, hadAccount: !!authUser })
 }

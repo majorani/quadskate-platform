@@ -29,24 +29,61 @@ export async function POST(
     return NextResponse.json({ error: 'Invitación inválida o ya usada' }, { status: 404 })
   }
 
+  // Marcar invitación como aceptada
   await supabaseAdmin
     .from('invitations')
     .update({ status: 'accepted', accepted_at: new Date().toISOString() })
     .eq('token', token)
 
   if (invitation.role === 'judge') {
-    await supabaseAdmin.from('judges').insert({
-      event_id: invitation.event_id,
-      profile_id: user.id,
-      status: 'confirmed',
-    })
+    // Buscar si ya existe el registro del juez (creado al invitar)
+    const { data: existing } = await supabaseAdmin
+      .from('judges')
+      .select('id')
+      .eq('event_id', invitation.event_id)
+      .eq('email', invitation.email)
+      .maybeSingle()
+
+    if (existing) {
+      // Actualizar el registro existente a accepted
+      await supabaseAdmin
+        .from('judges')
+        .update({ status: 'accepted', profile_id: user.id })
+        .eq('id', existing.id)
+    } else {
+      // Fallback: insertar si no existe
+      await supabaseAdmin.from('judges').insert({
+        event_id: invitation.event_id,
+        profile_id: user.id,
+        email: invitation.email,
+        display_name: user.user_metadata?.full_name ?? invitation.email,
+        status: 'accepted',
+      })
+    }
   } else {
-    await supabaseAdmin.from('participants').insert({
-      event_id: invitation.event_id,
-      profile_id: user.id,
-      category_id: invitation.category_id,
-      status: 'confirmed',
-    })
+    // Participantes: buscar si ya existe y actualizar
+    const { data: existing } = await supabaseAdmin
+      .from('participants')
+      .select('id')
+      .eq('event_id', invitation.event_id)
+      .eq('email', invitation.email)
+      .maybeSingle()
+
+    if (existing) {
+      await supabaseAdmin
+        .from('participants')
+        .update({ status: 'confirmed', profile_id: user.id })
+        .eq('id', existing.id)
+    } else {
+      await supabaseAdmin.from('participants').insert({
+        event_id: invitation.event_id,
+        profile_id: user.id,
+        category_id: invitation.category_id,
+        email: invitation.email,
+        display_name: user.user_metadata?.full_name ?? invitation.email,
+        status: 'confirmed',
+      })
+    }
   }
 
   return NextResponse.json({ success: true, role: invitation.role, eventId: invitation.event_id })
