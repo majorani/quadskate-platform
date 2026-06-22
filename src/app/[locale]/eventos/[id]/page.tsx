@@ -47,7 +47,7 @@ function calcJamRunScore(participantId: string, scores: any[], run: number): num
     const fluidez = sc.tricks?.fluidez ?? 5
     const creatividad = sc.tricks?.creatividad ?? 5
     const exitosos = tricks.filter((t: any) => t.nivel > 0)
-    const total = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t.nivel || 0), 0) / exitosos.length : 0
+    const total = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + (t.nivel || 0), 0) : 0
     return total + (fluidez - 5) + (creatividad - 5)
   }).filter((x): x is number => x !== null)
   if (!jScores.length) return null

@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 import type { User } from '@supabase/supabase-js'
 
-const GOLD = '#D4B45A'
+const GOLD = '#C9A84C'
 const JAM_NIVELES = [
   { val: 0.5, label: 'Intento',  short: '½', color: '#92400e', colorDark: '#78350f' },
   { val: 1,   label: 'Entrada',  short: 'E', color: '#166534', colorDark: '#14532d' },
@@ -376,7 +376,7 @@ function BestTrickScorerFinal({ eventId, catId, participantId, jId, scorecards, 
 function JamColumn({ data, onAdd, onRemoveLast, onFluidez, onCreatividad, t }: any) {
   const tricksExitosos = data.tricks.filter((trick: any) => trick.nivel > 0)
   const tricksTotal = tricksExitosos.length > 0
-    ? tricksExitosos.reduce((s: number, trick: any) => s + jamScore(trick), 0) / tricksExitosos.length
+    ? tricksExitosos.reduce((s: number, trick: any) => s + jamScore(trick), 0)
     : 0
   const modifier = (data.fluidez - 5) + (data.creatividad - 5)
   const total = tricksTotal + modifier
@@ -789,7 +789,7 @@ function JamFinalRunView({ parts, jId, cat, eventId, scorecards, dispatch, toast
   function removeLast() { setTricks(prev => prev.slice(0, -1)); setDirty(true) }
 
   const exitosos = tricks.filter((t: any) => t.nivel > 0)
-  const score = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) / exitosos.length : 0
+  const score = exitosos.length > 0 ? exitosos.reduce((s: number, t: any) => s + t.nivel, 0) : 0
 
   async function save() {
     if (!participant || saving) return
