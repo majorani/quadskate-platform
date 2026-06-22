@@ -105,8 +105,13 @@ export default function InvitacionPage() {
             <h2 style={{ color: '#ffffff', textTransform: 'uppercase', fontWeight: 900, marginBottom: 16 }}>
               {t('needsAccountTitle')}
             </h2>
-            <p style={{ color: '#aaaaaa', marginBottom: 32 }}>{t('needsAccountDesc')}</p>
-            <a href={`/auth?invite=${token}`} style={btnStyle}>{t('needsAccountBtn')}</a>
+            <p style={{ color: '#aaaaaa', marginBottom: 16 }}>{t('needsAccountDesc')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href={`/auth?invite=${token}`} style={btnStyle}>{t('needsAccountBtn')}</a>
+              <a href={`/auth?invite=${token}&mode=login`} style={{ ...btnStyle, background: 'transparent', color: '#D4B45A', border: '1px solid #D4B45A' }}>
+                {t('needsAccountLoginBtn')}
+              </a>
+            </div>
           </div>
         )}
 

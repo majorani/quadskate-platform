@@ -548,7 +548,8 @@
     "errorBtn": "GO TO HOME",
     "pendingTitle": "ACCESS RESTRICTED",
     "pendingDesc": "You must accept the jury invitation to access the judges app. Check your email and click the invitation link.",
-    "pendingBtn": "BACK TO HOME"
+    "pendingBtn": "BACK TO HOME",
+    "needsAccountLoginBtn": "I HAVE AN ACCOUNT — LOG IN"
   },
   "EventCard": {
     "noFlyer": "No flyer",

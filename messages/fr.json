@@ -548,7 +548,8 @@
     "errorBtn": "ALLER À L'ACCUEIL",
     "pendingTitle": "ACCÈS RESTREINT",
     "pendingDesc": "Vous devez accepter l'invitation du jury pour accéder à l'application des juges. Vérifiez votre email et cliquez sur le lien d'invitation.",
-    "pendingBtn": "RETOUR À L'ACCUEIL"
+    "pendingBtn": "RETOUR À L'ACCUEIL",
+    "needsAccountLoginBtn": "J'AI UN COMPTE — SE CONNECTER"
   },
   "EventCard": {
     "noFlyer": "Sans flyer",

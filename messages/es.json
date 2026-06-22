@@ -548,7 +548,8 @@
     "errorBtn": "IR AL INICIO",
     "pendingTitle": "ACCESO RESTRINGIDO",
     "pendingDesc": "Debés aceptar la invitación al jurado para poder acceder a la app de jueces. Revisá tu correo y hacé clic en el link de invitación.",
-    "pendingBtn": "VOLVER AL INICIO"
+    "pendingBtn": "VOLVER AL INICIO",
+    "needsAccountLoginBtn": "YA TENGO CUENTA — INICIAR SESIÓN"
   },
   "EventCard": {
     "noFlyer": "Sin flyer",

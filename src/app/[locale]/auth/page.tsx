@@ -22,6 +22,8 @@ export default function AuthPage() {
     const params = new URLSearchParams(window.location.search)
     const invite = params.get('invite')
     if (invite) setInviteToken(invite)
+    const mode = params.get('mode')
+    if (mode === 'login') setMode('login')  
     const stored = localStorage.getItem('pendingInvitationToken')
     if (stored) setInviteToken(stored)
   }, [])
