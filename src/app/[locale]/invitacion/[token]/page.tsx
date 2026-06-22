@@ -30,8 +30,19 @@ export default function InvitacionPage() {
     }
 
     async function handleInvitation() {
-      const { data: { session } } = await supabase.auth.getSession()
-      const { data: { user } } = await supabase.auth.getUser()
+      // Esperar hasta 3 segundos a que la sesión esté disponible
+      let session = null
+      let user = null
+      for (let i = 0; i < 6; i++) {
+        const s = await supabase.auth.getSession()
+        const u = await supabase.auth.getUser()
+        if (s.data.session && u.data.user) {
+          session = s.data.session
+          user = u.data.user
+          break
+        }
+        await new Promise(r => setTimeout(r, 500))
+      }
 
       if (!user || !session) {
         localStorage.setItem('pendingInvitationToken', token)

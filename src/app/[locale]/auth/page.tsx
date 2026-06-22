@@ -23,7 +23,7 @@ export default function AuthPage() {
     const invite = params.get('invite')
     if (invite) setInviteToken(invite)
     const mode = params.get('mode')
-    if (mode === 'login') setMode('login')  
+    if (mode === 'login') setMode('login')
     const stored = localStorage.getItem('pendingInvitationToken')
     if (stored) setInviteToken(stored)
   }, [])
@@ -46,6 +46,8 @@ export default function AuthPage() {
         if (error) { setErr(t('errorCredentials')); return }
         if (inviteToken) {
           localStorage.removeItem('pendingInvitationToken')
+          // Esperar que la sesión se establezca antes de redirigir
+          await new Promise(r => setTimeout(r, 500))
           router.push(`/invitacion/${inviteToken}`)
         } else {
           const redirectTo = new URLSearchParams(window.location.search).get('redirect')
