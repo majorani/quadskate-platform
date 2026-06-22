@@ -313,12 +313,17 @@ export default function EventoDetailPage() {
         async () => { const { data } = await supabase.from('scorecards').select('*').eq('event_id', params.id); if (data) setScores(data) })
       .subscribe()
 
+    const votesChannel = supabase.channel(`event-btvotes-${params.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'best_trick_votes', filter: `event_id=eq.${params.id}` },
+        async () => { const { data } = await supabase.from('best_trick_votes').select('*').eq('event_id', params.id); if (data) setBtVotes(data) })
+      .subscribe()
+
     const evChannel = supabase.channel(`event-status-${params.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: `id=eq.${params.id}` },
         (payload) => { if (payload.new) setEv((prev: any) => ({ ...prev, ...payload.new })) })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel); supabase.removeChannel(evChannel) }
+    return () => { supabase.removeChannel(channel); supabase.removeChannel(votesChannel); supabase.removeChannel(evChannel) }
   }, [params?.id])
 
   if (loading) return (
@@ -670,7 +675,7 @@ export default function EventoDetailPage() {
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
                           {podioRanked.map((p: any, i: number) => {
-                            const isPodio = i < 3
+                            const isPodio = i < 3 && votingDone
                             const podioColors: Record<number, string> = { 0: GOLD, 1: '#94a3b8', 2: '#f97316' }
                             return (
                               <div key={p.id} style={{ background: isPodio ? '#0f0f0f' : '#0a0a0a', padding: '16px 20px', borderLeft: isPodio ? `3px solid ${podioColors[i] ?? '#333'}` : '3px solid transparent' }}>
