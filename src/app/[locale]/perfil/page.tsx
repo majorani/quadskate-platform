@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
-import { validateFileMagicBytes } from '@/lib/utils'
 
 const inp: React.CSSProperties = {
   width: '100%', background: '#111', border: '1px solid #2a2a2a',
@@ -19,7 +18,6 @@ export default function PerfilPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [toast, setToast] = useState('')
   const [email, setEmail] = useState('')
   const [f, setF] = useState({
@@ -70,35 +68,6 @@ export default function PerfilPage() {
     setSaving(false)
     if (error) { showToast(t('toastError')); return }
     showToast(t('toastSaved'))
-  }
-
-  async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 3 * 1024 * 1024) { showToast(t('toastSizeError')); return }
-    if (!file.type.startsWith('image/')) { showToast(t('toastTypeError')); return }
-    const validMime = await validateFileMagicBytes(file, 'image')
-    if (!validMime) { showToast(t('toastTypeError')); return }
-
-    setUploadingAvatar(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const ext = file.name.split('.').pop()
-    const path = `${user.id}/avatar.${ext}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, file, { upsert: true })
-
-    if (uploadError) { showToast(t('toastUploadError')); setUploadingAvatar(false); return }
-
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-
-    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id)
-    setF(prev => ({ ...prev, avatar_url: publicUrl }))
-    showToast(t('toastPhotoSaved'))
-    setUploadingAvatar(false)
   }
 
   if (loading) return (
@@ -156,11 +125,10 @@ export default function PerfilPage() {
           </div>
           <div>
             <div style={{ fontWeight: 900, fontSize: 18, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 4 }}>{f.full_name || t('noName')}</div>
-            <div style={{ fontSize: 12, color: '#444', marginBottom: 12 }}>{email}</div>
-            <label style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', display: 'inline-block' }}>
-              {uploadingAvatar ? t('uploading') : t('changePhoto')}
-              <input type="file" accept="image/*" onChange={uploadAvatar} style={{ display: 'none' }} disabled={uploadingAvatar} />
-            </label>
+            <div style={{ fontSize: 12, color: '#444', marginBottom: 8 }}>{email}</div>
+            <div style={{ fontSize: 10, color: '#333', letterSpacing: 1, textTransform: 'uppercase' }}>
+              {t('photoComingSoon')}
+            </div>
           </div>
         </div>
 
@@ -185,7 +153,7 @@ export default function PerfilPage() {
           />
           {f.username && (
             <div style={{ fontSize: 10, color: '#444', marginBottom: 10, letterSpacing: 1 }}>
-              {t('publicProfileUrl', { url: '' })}<span style={{ color: '#D4B45A' }}>quadskate-platform.vercel.app/u/{f.username}</span>
+              {t('publicProfileUrl', { url: '' })}<span style={{ color: '#D4B45A' }}>quadskateplatform.com.ar/u/{f.username}</span>
             </div>
           )}
 
