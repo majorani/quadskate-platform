@@ -375,7 +375,7 @@ export default function EventoDetailPage() {
               </div>
               {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{ev.description}</p>}
               {!isEncuentro && (() => {
-                const reglamentoBase = REGLAMENTO_FR_URL // hardcodeado para testear
+                const reglamentoBase = locale === 'en' ? REGLAMENTO_EN_URL : locale === 'fr' ? REGLAMENTO_FR_URL : REGLAMENTO_ES_URL
                 const url = ev.use_custom_reglamento && ev.reglamento_url ? ev.reglamento_url : reglamentoBase
                 const isCustom = ev.use_custom_reglamento && ev.reglamento_url
                 return (
