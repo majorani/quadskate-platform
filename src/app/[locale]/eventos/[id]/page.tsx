@@ -343,6 +343,7 @@ export default function EventoDetailPage() {
   )
 
   const locale = useLocale()
+  console.log('locale:', locale)
   const color = STATUS_COLOR[ev.status] ?? '#333'
   const label = STATUS_LABEL[ev.status] ?? ev.status
   const isLive = ev.status === 'active'
