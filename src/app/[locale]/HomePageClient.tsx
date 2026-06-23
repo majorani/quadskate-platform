@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import Nav from '@/components/Nav'
 import EventCard from '@/components/EventCard'
 import type { Event } from '@/lib/supabase'
-import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
+import { REGLAMENTO_ES_URL } from '@/lib/supabase'
 
 export default function HomePageClient({ events }: { events: Event[] }) {
   const t = useTranslations('HomePage')
@@ -159,7 +159,7 @@ export default function HomePageClient({ events }: { events: Event[] }) {
                 <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, maxWidth: 420, marginBottom: 24 }}>
                   {t('reglamento.desc')}
                 </p>
-                <a href={REGLAMENTO_ESTANDAR_URL}
+                <a href={REGLAMENTO_ES_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ background: 'transparent', border: '1px solid #D4B45A', padding: '12px 24px', color: '#D4B45A', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 3, textTransform: 'uppercase', display: 'inline-block' }}
