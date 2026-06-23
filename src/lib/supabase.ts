@@ -75,5 +75,6 @@ export type Notification = {
   created_at: string
 }
 
-export const REGLAMENTO_ESTANDAR_URL =
-  'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/ReglamentoQuadSkatePlatform-v1.6.4.pdf'
+export const REGLAMENTO_ES_URL = 'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/ReglamentoQuadSkatePlatform-v1.6.4.pdf'
+export const REGLAMENTO_EN_URL = 'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/Reglamento_Quad_Skate_v1_6_EN.pdf'
+export const REGLAMENTO_FR_URL = 'https://rselpwptmgytxlwjvxzu.supabase.co/storage/v1/object/public/documents/Reglamento_Quad_Skate_v1_6_FR.pdf'

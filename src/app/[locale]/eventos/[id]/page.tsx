@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import JudgeButton from '@/components/JudgeButton'
 import InscripcionButton from '@/components/InscripcionButton'
-import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
+import { REGLAMENTO_ES_URL, REGLAMENTO_EN_URL, REGLAMENTO_FR_URL } from '@/lib/supabase'
 
 const GOLD = '#D4B45A'
 
@@ -342,6 +342,7 @@ export default function EventoDetailPage() {
     </div>
   )
 
+  const locale = useLocale()
   const color = STATUS_COLOR[ev.status] ?? '#333'
   const label = STATUS_LABEL[ev.status] ?? ev.status
   const isLive = ev.status === 'active'
@@ -374,7 +375,8 @@ export default function EventoDetailPage() {
               </div>
               {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{ev.description}</p>}
               {!isEncuentro && (() => {
-                const url = ev.use_custom_reglamento && ev.reglamento_url ? ev.reglamento_url : REGLAMENTO_ESTANDAR_URL
+                const reglamentoBase = locale === 'en' ? REGLAMENTO_EN_URL : locale === 'fr' ? REGLAMENTO_FR_URL : REGLAMENTO_ES_URL
+                const url = ev.use_custom_reglamento && ev.reglamento_url ? ev.reglamento_url : reglamentoBase
                 const isCustom = ev.use_custom_reglamento && ev.reglamento_url
                 return (
                   <a href={url} target="_blank" rel="noopener noreferrer"
