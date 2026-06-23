@@ -372,7 +372,7 @@ export default function EventoDetailPage() {
                 {ev.event_date && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📅 {formatDate(ev.event_date)}{ev.event_time ? ' · ' + ev.event_time.slice(0, 5) : ''}</div>}
                 {ev.city && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📍 {ev.location_name ? ev.location_name + ' — ' : ''}{ev.city}</div>}
               </div>
-              {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7 }}>{ev.description}</p>}
+              {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{ev.description}</p>}
               {!isEncuentro && (() => {
                 const url = ev.use_custom_reglamento && ev.reglamento_url ? ev.reglamento_url : REGLAMENTO_ESTANDAR_URL
                 const isCustom = ev.use_custom_reglamento && ev.reglamento_url
