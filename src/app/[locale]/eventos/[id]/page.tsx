@@ -9,7 +9,7 @@ import JudgeButton from '@/components/JudgeButton'
 import InscripcionButton from '@/components/InscripcionButton'
 import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
 
-const GOLD = '#C9A84C'
+const GOLD = '#D4B45A'
 
 function formatDate(d: string | null) {
   if (!d) return null
@@ -389,7 +389,11 @@ export default function EventoDetailPage() {
                 )
               })()}
             </div>
-            {ev.flyer_url && <div style={{ width: 180, height: 240, flexShrink: 0, background: `url(${ev.flyer_url}) center/cover`, border: '1px solid #2a2a2a' }} />}
+            {ev.flyer_url && (
+              <div style={{ width: 160, flexShrink: 0, alignSelf: 'flex-start', border: '1px solid #2a2a2a', overflow: 'hidden' }}>
+                <img src={ev.flyer_url} alt="flyer" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: 280, objectFit: 'cover' }} />
+              </div>
+            )}
           </div>
           <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
             <JudgeButton eventId={params.id} ownerId={ev.owner_id} />
