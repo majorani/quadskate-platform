@@ -251,10 +251,11 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
     const { error: uploadError } = await supabase.storage.from('flyers').upload(path, file, { upsert: true })
     if (uploadError) { showToast(t('toastFlyerUploadError')); setUploadingFlyer(false); return }
     const { data: { publicUrl } } = supabase.storage.from('flyers').getPublicUrl(path)
-    const { error: updateError } = await supabase.from('events').update({ flyer_url: publicUrl }).eq('id', eventId)
+    const publicUrlWithCache = `${publicUrl}?t=${Date.now()}`
+    const { error: updateError } = await supabase.from('events').update({ flyer_url: publicUrlWithCache }).eq('id', eventId)
     if (updateError) { showToast(t('toastFlyerUpdateError')); setUploadingFlyer(false); return }
-    setFlyerUrl(publicUrl)
-    setEv((prev: any) => ({ ...prev, flyer_url: publicUrl }))
+    setFlyerUrl(publicUrlWithCache)
+    setEv((prev: any) => ({ ...prev, flyer_url: publicUrlWithCache }))
     showToast(t('toastFlyerUploaded'))
     setUploadingFlyer(false)
   }
