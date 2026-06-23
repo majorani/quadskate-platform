@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import type { User } from '@supabase/supabase-js'
 import type { Event, Category, Participant } from '@/lib/supabase'
-import { REGLAMENTO_ESTANDAR_URL } from '@/lib/supabase'
+import { REGLAMENTO_ES_URL } from '@/lib/supabase'
 import { validateFileMagicBytes } from '@/lib/utils'
 
 const GOLD = '#D4B45A'
