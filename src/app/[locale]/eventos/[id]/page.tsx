@@ -261,6 +261,7 @@ function JamQualRanking({ parts, scores, cat, t }: any) {
 export default function EventoDetailPage() {
   const params = useParams<{ id: string }>()
   const t = useTranslations('EventoDetailPage')
+  const locale = useLocale()
 
   const [ev, setEv]           = useState<any>(null)
   const [cats, setCats]       = useState<any[]>([])
@@ -342,8 +343,6 @@ export default function EventoDetailPage() {
     </div>
   )
 
-  const locale = useLocale()
-  console.log('locale:', locale)
   const color = STATUS_COLOR[ev.status] ?? '#333'
   const label = STATUS_LABEL[ev.status] ?? ev.status
   const isLive = ev.status === 'active'
