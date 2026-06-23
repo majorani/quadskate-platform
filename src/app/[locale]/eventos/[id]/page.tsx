@@ -262,6 +262,7 @@ export default function EventoDetailPage() {
   const params = useParams<{ id: string }>()
   const t = useTranslations('EventoDetailPage')
   const locale = useLocale()
+  console.log('locale:', locale)
 
   const [ev, setEv]           = useState<any>(null)
   const [cats, setCats]       = useState<any[]>([])
