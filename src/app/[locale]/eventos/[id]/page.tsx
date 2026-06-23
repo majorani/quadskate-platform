@@ -261,8 +261,8 @@ function JamQualRanking({ parts, scores, cat, t }: any) {
 export default function EventoDetailPage() {
   const params = useParams<{ id: string }>()
   const t = useTranslations('EventoDetailPage')
-  const locale = useLocale()
-  console.log('locale:', locale)
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+  const locale = pathname.startsWith('/fr') ? 'fr' : pathname.startsWith('/en') ? 'en' : 'es'
 
   const [ev, setEv]           = useState<any>(null)
   const [cats, setCats]       = useState<any[]>([])
