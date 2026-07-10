@@ -46,7 +46,6 @@ export default function AuthPage() {
         if (error) { setErr(t('errorCredentials')); return }
         if (inviteToken) {
           localStorage.removeItem('pendingInvitationToken')
-          // Esperar que la sesión se establezca antes de redirigir
           await new Promise(r => setTimeout(r, 500))
           router.push(`/invitacion/${inviteToken}`)
         } else {
@@ -169,7 +168,44 @@ export default function AuthPage() {
           {loading ? t('loading') : mode === 'login' ? t('submitLogin') : t('submitRegister')}
         </button>
 
+        {mode === 'login' && (
+          <ForgotPassword email={email} />
+        )}
+
       </div>
+    </div>
+  )
+}
+
+function ForgotPassword({ email }: { email: string }) {
+  const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+
+  async function handleReset() {
+    if (!email.trim()) return
+    setSending(true)
+    await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + '/auth/callback',
+    })
+    setSending(false)
+    setSent(true)
+  }
+
+  if (sent) return (
+    <div style={{ textAlign: 'center', marginTop: 16, fontSize: 11, color: '#4CAF50', letterSpacing: 1 }}>
+      ✓ Revisá tu mail para resetear la contraseña
+    </div>
+  )
+
+  return (
+    <div style={{ textAlign: 'center', marginTop: 14 }}>
+      <button
+        onClick={handleReset}
+        disabled={sending || !email.trim()}
+        style={{ background: 'none', border: 'none', color: '#555', fontSize: 11, cursor: email.trim() ? 'pointer' : 'default', letterSpacing: 1, textDecoration: 'underline', opacity: email.trim() ? 1 : 0.4 }}
+      >
+        {sending ? 'Enviando...' : '¿Olvidaste tu contraseña?'}
+      </button>
     </div>
   )
 }
