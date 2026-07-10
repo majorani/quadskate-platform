@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const type = searchParams.get('type')
 
   if (code) {
     const cookieStore = await cookies()
@@ -23,8 +24,11 @@ export async function GET(request: NextRequest) {
       }
     )
     await supabase.auth.exchangeCodeForSession(code)
+
+    if (type === 'recovery') {
+      return NextResponse.redirect(`${origin}/auth/reset-password`)
+    }
   }
 
-  // El token de invitación se maneja en el cliente via localStorage
   return NextResponse.redirect(`${origin}/dashboard`)
 }

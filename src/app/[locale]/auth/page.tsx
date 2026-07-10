@@ -185,7 +185,7 @@ function ForgotPassword({ email }: { email: string }) {
     if (!email.trim()) return
     setSending(true)
     await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin + '/auth/callback',
+      redirectTo: window.location.origin + '/auth/callback?type=recovery',
     })
     setSending(false)
     setSent(true)
