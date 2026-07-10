@@ -35,9 +35,6 @@ async function tryAutoActivate(ev: any): Promise<boolean> {
   } catch { return false }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Helpers de puntaje JAM por pasada
-// ─────────────────────────────────────────────────────────────
 function calcJamRunScore(participantId: string, scores: any[], run: number): number | null {
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === run).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
@@ -54,18 +51,13 @@ function calcJamRunScore(participantId: string, scores: any[], run: number): num
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
 }
 
-// ─────────────────────────────────────────────────────────────
-// Puntaje clasificación (run=1 para formal/best_trick; mejor de run=1 y run=2 para JAM)
-// ─────────────────────────────────────────────────────────────
 function calcQualScore(participantId: string, scores: any[], cat: any): number | null {
-  // JAM: mejor pasada entre run=1 y run=2
   if (cat.format === 'jam') {
     const run1 = calcJamRunScore(participantId, scores, 1)
     const run2 = calcJamRunScore(participantId, scores, 2)
     if (run1 === null && run2 === null) return null
     return Math.max(run1 ?? -Infinity, run2 ?? -Infinity)
   }
-
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === 1).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
     const runs = scores.filter((s: any) => s.judge_id === jId && s.participant_id === participantId && s.run === 1)
@@ -75,7 +67,6 @@ function calcQualScore(participantId: string, scores: any[], cat: any): number |
       const exitosos = allTricks.filter((t: any) => t.intencion === true)
       return exitosos.length ? Math.max(...exitosos.map((t: any) => t._score || 0)) : null
     }
-    // Formal
     const totals = runs.map((r: any) => {
       const tricks = r.tricks || []
       const exitosos = tricks.filter((t: any) => t.intencion === true)
@@ -89,7 +80,6 @@ function calcQualScore(participantId: string, scores: any[], cat: any): number |
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
 }
 
-// Puntaje pasada final formal (run=2)
 function calcFinalRunScore(participantId: string, scores: any[]): number | null {
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === 2).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
@@ -107,18 +97,15 @@ function calcFinalRunScore(participantId: string, scores: any[]): number | null 
   return jScores.reduce((a, b) => a + b, 0) / jScores.length
 }
 
-// Puntaje pasada final JAM (run=3 cuando no hay best trick)
 function calcJamFinalScore(participantId: string, scores: any[]): number | null {
   return calcJamRunScore(participantId, scores, 3)
 }
 
-// Puntaje best trick final (run=3)
 function calcBestTrickFinalScore(participantId: string, scores: any[]): {
   score: number, meetsRequirement: boolean, successfulTricks: number
 } {
   const judgeScores = scores.filter((s: any) => s.participant_id === participantId && s.run === 3)
   if (!judgeScores.length) return { score: 0, meetsRequirement: false, successfulTricks: 0 }
-
   const trickMap: Record<string, { scores: number[], validCount: number }> = {}
   for (const sc of judgeScores) {
     for (const trick of (sc.tricks || [])) {
@@ -132,7 +119,6 @@ function calcBestTrickFinalScore(participantId: string, scores: any[]): {
       }
     }
   }
-
   const judgeCount = new Set(judgeScores.map((s: any) => s.judge_id)).size
   const trickScores: Array<{ nombre: string, score: number, valid: boolean }> = []
   for (const [nombre, data] of Object.entries(trickMap)) {
@@ -140,7 +126,6 @@ function calcBestTrickFinalScore(participantId: string, scores: any[]): {
     const valid = data.validCount >= Math.ceil(judgeCount / 2)
     trickScores.push({ nombre, score: avg, valid })
   }
-
   const validTricks = trickScores.filter(t => t.valid)
   const meetsRequirement = validTricks.length >= 2
   const totalScore = validTricks.reduce((s, t) => s + t.score, 0)
@@ -163,10 +148,6 @@ function getBestTricksFinal(participantId: string, scores: any[]) {
     .sort((a, b) => b.score - a.score)
 }
 
-// ─────────────────────────────────────────────────────────────
-// Art. 19 — Desempate por criterio (Ejecución → Dificultad → Estilo)
-// Promedia el criterio entre jueces del mejor truco o pasada (run=1)
-// ─────────────────────────────────────────────────────────────
 function tiebreakScore(participantId: string, scores: any[], criterion: 'ejecucion' | 'dificultad' | 'estilo'): number {
   const judgeIds = [...new Set(scores.filter((s: any) => s.run === 1).map((s: any) => s.judge_id))] as string[]
   const jScores = judgeIds.map(jId => {
@@ -199,18 +180,13 @@ function getBestTricks(participantId: string, scores: any[]) {
     .slice(0, 5)
 }
 
-// ─────────────────────────────────────────────────────────────
-// Ranking clasificación JAM: muestra mejor pasada de cada uno
-// ─────────────────────────────────────────────────────────────
 function JamQualRanking({ parts, scores, cat, t }: any) {
   const ranked = parts
     .map((p: any) => {
       const run1 = calcJamRunScore(p.id, scores, 1)
       const run2 = calcJamRunScore(p.id, scores, 2)
       const bestRun = run1 !== null || run2 !== null ? Math.max(run1 ?? -Infinity, run2 ?? -Infinity) : null
-      const bestRunNum = bestRun !== null
-        ? ((run1 ?? -Infinity) >= (run2 ?? -Infinity) ? 1 : 2)
-        : null
+      const bestRunNum = bestRun !== null ? ((run1 ?? -Infinity) >= (run2 ?? -Infinity) ? 1 : 2) : null
       return { ...p, run1, run2, bestRun, bestRunNum }
     })
     .sort((a: any, b: any) => {
@@ -263,13 +239,14 @@ export default function EventoDetailPage() {
   const locale = params.locale ?? 'es'
   const t = useTranslations('EventoDetailPage')
 
-  const [ev, setEv]           = useState<any>(null)
-  const [cats, setCats]       = useState<any[]>([])
-  const [parts, setParts]     = useState<any[]>([])
-  const [judges, setJudges]   = useState<any[]>([])
-  const [scores, setScores]   = useState<any[]>([])
-  const [btVotes, setBtVotes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [ev, setEv]             = useState<any>(null)
+  const [cats, setCats]         = useState<any[]>([])
+  const [parts, setParts]       = useState<any[]>([])
+  const [attendees, setAttendees] = useState<any[]>([])
+  const [judges, setJudges]     = useState<any[]>([])
+  const [scores, setScores]     = useState<any[]>([])
+  const [btVotes, setBtVotes]   = useState<any[]>([])
+  const [loading, setLoading]   = useState(true)
 
   const STATUS_COLOR: Record<string, string> = { draft: '#333', published: GOLD, active: '#4CAF50', finished: '#666' }
   const STATUS_LABEL: Record<string, string> = {
@@ -286,13 +263,19 @@ export default function EventoDetailPage() {
     if (data) setParts(data)
   }
 
+  async function loadAttendees() {
+    const { data } = await supabase.from('attendees').select('*, profiles(full_name)').eq('event_id', params.id)
+    if (data) setAttendees(data)
+  }
+
   useEffect(() => {
     if (!params?.id) return
     async function load() {
-      const [evRes, catsRes, partsRes, judgesRes, scRes, btVotesRes] = await Promise.all([
+      const [evRes, catsRes, partsRes, attendeesRes, judgesRes, scRes, btVotesRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', params.id).single(),
         supabase.from('categories').select('*').eq('event_id', params.id),
         supabase.from('participants').select('*, profiles(full_name)').eq('event_id', params.id),
+        supabase.from('attendees').select('*, profiles(full_name)').eq('event_id', params.id),
         supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', params.id),
         supabase.from('scorecards').select('*').eq('event_id', params.id),
         supabase.from('best_trick_votes').select('*').eq('event_id', params.id),
@@ -302,8 +285,12 @@ export default function EventoDetailPage() {
         const activated = await tryAutoActivate(eventData)
         if (activated) eventData = { ...eventData, status: 'active' }
       }
-      setEv(eventData); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
-      setJudges(judgesRes.data ?? []); setScores(scRes.data ?? [])
+      setEv(eventData)
+      setCats(catsRes.data ?? [])
+      setParts(partsRes.data ?? [])
+      setAttendees(attendeesRes.data ?? [])
+      setJudges(judgesRes.data ?? [])
+      setScores(scRes.data ?? [])
       setBtVotes(btVotesRes.data ?? [])
       setLoading(false)
     }
@@ -397,10 +384,28 @@ export default function EventoDetailPage() {
               </div>
             )}
           </div>
+
+          {/* BOTONES */}
           <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
             <JudgeButton eventId={params.id} ownerId={ev.owner_id} />
-            {!isEncuentro && (
-              <InscripcionButton eventId={params.id} cats={cats} eventStatus={ev.status} onRegistered={loadParts} />
+            <InscripcionButton
+              eventId={params.id}
+              cats={cats}
+              eventStatus={ev.status}
+              isEncuentro={isEncuentro}
+              onRegistered={() => { loadParts(); loadAttendees() }}
+            />
+            {ev.external_form_enabled && ev.external_form_url && (
+              
+              <a  href={ev.external_form_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 24px', color: '#666', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}
+              >
+                <span>🔗</span>
+                <span>Formulario externo</span>
+                <span style={{ color: GOLD }}>→</span>
+              </a>
             )}
           </div>
         </div>
@@ -426,6 +431,29 @@ export default function EventoDetailPage() {
                     <div style={{ fontSize: 10, color: j.status === 'accepted' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>
                       {j.status === 'accepted' ? t('judgeConfirmed') : t('judgeInvited')}
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASISTENTES (visible cuando hay al menos uno) */}
+      {attendees.length > 0 && (
+        <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
+              Asistentes · {attendees.length}
+            </div>
+            <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', flexWrap: 'wrap' }}>
+              {attendees.map((a: any) => (
+                <div key={a.id} style={{ background: '#0a0a0a', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 28, height: 28, background: '#1a1a1a', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: GOLD, fontSize: 11, fontWeight: 900 }}>
+                    {(a.profiles?.full_name?.[0] ?? '?').toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {a.profiles?.full_name ?? 'Asistente'}
                   </div>
                 </div>
               ))}
@@ -494,45 +522,32 @@ export default function EventoDetailPage() {
                 const hasBTFinal = cat.has_best_trick_final
                 const allCatParts = parts.filter((p: any) => p.category_id === cat.id)
 
-                // ─── RAMA JAM ───────────────────────────────────────────────
                 if (isJam) {
-                  const finalistParts = isFinalPhase
-                    ? allCatParts.filter((p: any) => p.is_finalist)
-                    : []
-
-                  // Ranking final JAM con best trick
+                  const finalistParts = isFinalPhase ? allCatParts.filter((p: any) => p.is_finalist) : []
                   const jamFinalBTRanking = isFinalPhase && hasBTFinal
-                    ? finalistParts
-                        .map((p: any) => {
-                          const qualScore = calcQualScore(p.id, scores, cat) ?? 0
-                          const btResult = calcBestTrickFinalScore(p.id, scores)
-                          const totalScore = qualScore + btResult.score
-                          return { ...p, qualScore, btScore: btResult.score, meetsRequirement: btResult.meetsRequirement, successfulTricks: btResult.successfulTricks, totalScore }
-                        })
-                        .sort((a: any, b: any) => {
-                          if (a.meetsRequirement && !b.meetsRequirement) return -1
-                          if (!a.meetsRequirement && b.meetsRequirement) return 1
-                          return b.totalScore - a.totalScore
-                        })
+                    ? finalistParts.map((p: any) => {
+                        const qualScore = calcQualScore(p.id, scores, cat) ?? 0
+                        const btResult = calcBestTrickFinalScore(p.id, scores)
+                        const totalScore = qualScore + btResult.score
+                        return { ...p, qualScore, btScore: btResult.score, meetsRequirement: btResult.meetsRequirement, successfulTricks: btResult.successfulTricks, totalScore }
+                      }).sort((a: any, b: any) => {
+                        if (a.meetsRequirement && !b.meetsRequirement) return -1
+                        if (!a.meetsRequirement && b.meetsRequirement) return 1
+                        return b.totalScore - a.totalScore
+                      })
                     : []
-
-                  // Ranking final JAM con pasada única (run=3)
                   const jamFinalRunRanking = isFinalPhase && !hasBTFinal
-                    ? finalistParts
-                        .map((p: any) => ({ ...p, finalScore: calcJamFinalScore(p.id, scores) }))
+                    ? finalistParts.map((p: any) => ({ ...p, finalScore: calcJamFinalScore(p.id, scores) }))
                         .sort((a: any, b: any) => (b.finalScore ?? -1) - (a.finalScore ?? -1))
                     : []
 
                   return (
                     <div key={cat.id} style={{ marginBottom: 64 }}>
-                      {/* Header */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid #2a2a2a' }}>
                         <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                         {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                       </div>
-
-                      {/* Ranking clasificación JAM (siempre visible) */}
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
                         {isFinalPhase ? t('evQualification') : t('evRanking')}
                       </div>
@@ -540,16 +555,12 @@ export default function EventoDetailPage() {
                         ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 32 }}>{t('noParticipants')}</div>
                         : <JamQualRanking parts={allCatParts} scores={scores} cat={cat} t={t} />
                       }
-
-                      {/* Ranking final JAM */}
                       {isFinalPhase && (
                         <div style={{ marginTop: 40 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>
                             {hasBTFinal ? t('evFinalLabelBT') : t('evFinalLabelRun')}
                           </div>
-
                           {hasBTFinal ? (
-                            // Final JAM con best trick
                             jamFinalBTRanking.length === 0
                               ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
                               : (
@@ -567,9 +578,7 @@ export default function EventoDetailPage() {
                                             <span style={{ fontSize: 10, color: p.meetsRequirement ? '#4CAF50' : '#ef4444' }}>
                                               {t('evBTScoreLabel')}: {p.btScore.toFixed(2)} ({p.successfulTricks}/2{p.successfulTricks > 2 ? '+' : ''})
                                             </span>
-                                            {!p.meetsRequirement && (
-                                              <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>{t('evNoMeetsReq')}</span>
-                                            )}
+                                            {!p.meetsRequirement && <span style={{ fontSize: 9, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase' }}>{t('evNoMeetsReq')}</span>}
                                           </div>
                                           {p.meetsRequirement && (
                                             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -591,7 +600,6 @@ export default function EventoDetailPage() {
                                 </div>
                               )
                           ) : (
-                            // Final JAM con pasada única
                             jamFinalRunRanking.length === 0
                               ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
                               : (
@@ -621,12 +629,9 @@ export default function EventoDetailPage() {
                   )
                 }
 
-                // ─── RAMA BEST TRICK ─────────────────────────────────────────
                 if (cat.format === 'best_trick') {
                   const catVotes = btVotes.filter((v: any) => v.category_id === cat.id)
                   const judgeCount = judges.filter((j: any) => j.status === 'accepted').length || 1
-
-                  // Ranking por puntaje (mejor truco promediado entre jueces)
                   const btRanked = allCatParts.map((p: any) => {
                     const trickMap: Record<string, number[]> = {}
                     for (const sc of scores.filter((s: any) => s.participant_id === p.id)) {
@@ -643,28 +648,20 @@ export default function EventoDetailPage() {
                     return { ...p, bestTrick, bestScore: bestTrick?.score ?? 0 }
                   }).sort((a: any, b: any) => b.bestScore - a.bestScore)
 
-                  // Podio por votación (si hay votos suficientes)
                   const votingDone = catVotes.length > 0
                   let podioRanked = btRanked
-
                   if (votingDone) {
-                    // Sumar votos por posición: rank=1 → 3pts, rank=2 → 2pts, rank=3 → 1pt
                     const scoreMap: Record<string, number> = {}
-                    const voteCountMap: Record<number, Record<string, number>> = { 1: {}, 2: {}, 3: {} }
                     for (const v of catVotes) {
                       const pts = v.rank === 1 ? 3 : v.rank === 2 ? 2 : 1
                       scoreMap[v.participant_id] = (scoreMap[v.participant_id] ?? 0) + pts
-                      voteCountMap[v.rank][v.participant_id] = (voteCountMap[v.rank][v.participant_id] ?? 0) + 1
                     }
-                    // Top 3 por votos, empate desempata por bestScore
                     const top3Ids = btRanked.slice(0, 3).map((p: any) => p.id)
-                    const top3 = btRanked
-                      .filter((p: any) => top3Ids.includes(p.id))
+                    const top3 = btRanked.filter((p: any) => top3Ids.includes(p.id))
                       .sort((a: any, b: any) => {
                         const diff = (scoreMap[b.id] ?? 0) - (scoreMap[a.id] ?? 0)
                         return diff !== 0 ? diff : b.bestScore - a.bestScore
                       })
-                    // Resto sin cambio
                     const rest = btRanked.filter((p: any) => !top3Ids.includes(p.id))
                     podioRanked = [...top3, ...rest]
                   }
@@ -675,41 +672,33 @@ export default function EventoDetailPage() {
                         <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.5 }}>{cat.name}</div>
                         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                       </div>
-
-                      {podioRanked.length === 0 ? (
-                        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-                          {podioRanked.map((p: any, i: number) => {
-                            const isPodio = i < 3 && votingDone
-                            const podioColors: Record<number, string> = { 0: GOLD, 1: '#94a3b8', 2: '#f97316' }
-                            return (
-                              <div key={p.id} style={{ background: isPodio ? '#0f0f0f' : '#0a0a0a', padding: '16px 20px', borderLeft: isPodio ? `3px solid ${podioColors[i] ?? '#333'}` : '3px solid transparent' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                  <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: isPodio ? podioColors[i] : '#333', flexShrink: 0 }}>
-                                    {i + 1}
-                                  </div>
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>
-                                      {p.profiles?.full_name || p.display_name}
+                      {podioRanked.length === 0
+                        ? <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('noParticipants')}</div>
+                        : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+                            {podioRanked.map((p: any, i: number) => {
+                              const isPodio = i < 3 && votingDone
+                              const podioColors: Record<number, string> = { 0: GOLD, 1: '#94a3b8', 2: '#f97316' }
+                              return (
+                                <div key={p.id} style={{ background: isPodio ? '#0f0f0f' : '#0a0a0a', padding: '16px 20px', borderLeft: isPodio ? `3px solid ${podioColors[i] ?? '#333'}` : '3px solid transparent' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <div style={{ fontSize: 22, fontWeight: 900, width: 32, color: isPodio ? podioColors[i] : '#333', flexShrink: 0 }}>{i + 1}</div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: -0.3 }}>{p.profiles?.full_name || p.display_name}</div>
+                                      {isPodio && p.bestTrick && (
+                                        <div style={{ fontSize: 12, color: podioColors[i] ?? GOLD, marginTop: 4, fontWeight: 700 }}>{p.bestTrick.nombre}</div>
+                                      )}
                                     </div>
-                                    {isPodio && p.bestTrick && (
-                                      <div style={{ fontSize: 12, color: podioColors[i] ?? GOLD, marginTop: 4, fontWeight: 700 }}>
-                                        {p.bestTrick.nombre}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
+                              )
+                            })}
+                          </div>
+                        )}
                     </div>
                   )
                 }
 
-                // ─── RAMA FORMAL / BEST_TRICK ────────────────────────────────
                 const qualParts = allCatParts
                   .map((p: any) => ({ ...p, score: calcQualScore(p.id, scores, cat) }))
                   .sort((a: any, b: any) => {
@@ -719,8 +708,7 @@ export default function EventoDetailPage() {
                   })
 
                 const finalParts = isFinalPhase
-                  ? allCatParts
-                      .filter((p: any) => p.is_finalist)
+                  ? allCatParts.filter((p: any) => p.is_finalist)
                       .map((p: any) => {
                         const runScore = calcFinalRunScore(p.id, scores) ?? 0
                         const btResult = hasBTFinal ? calcBestTrickFinalScore(p.id, scores) : { score: 0, meetsRequirement: true, successfulTricks: 0 }
@@ -743,7 +731,6 @@ export default function EventoDetailPage() {
                       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase', border: '1px solid #C9A84C44', padding: '3px 10px' }}>{FORMAT_LABEL[cat.format] ?? cat.format}</span>
                       {isFinalPhase && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#4CAF50', textTransform: 'uppercase', border: '1px solid #4CAF5044', padding: '3px 10px' }}>{t('evFinal')}</span>}
                     </div>
-
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: isFinalPhase ? '#444' : GOLD, marginBottom: 12, textTransform: 'uppercase' }}>
                       {isFinalPhase ? t('evQualification') : t('evRanking')}
                     </div>
@@ -781,7 +768,6 @@ export default function EventoDetailPage() {
                           ))}
                         </div>
                       )}
-
                     {isFinalPhase && (
                       <>
                         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#4CAF50', marginBottom: 12, textTransform: 'uppercase' }}>Final</div>
