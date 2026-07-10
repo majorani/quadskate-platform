@@ -18,8 +18,11 @@ export default function PerfilPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingPass, setSavingPass] = useState(false)
   const [toast, setToast] = useState('')
   const [email, setEmail] = useState('')
+  const [newPass, setNewPass] = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
   const [f, setF] = useState({
     full_name: '',
     username: '',
@@ -68,6 +71,19 @@ export default function PerfilPage() {
     setSaving(false)
     if (error) { showToast(t('toastError')); return }
     showToast(t('toastSaved'))
+  }
+
+  async function savePassword() {
+    if (!newPass.trim()) return
+    if (newPass !== confirmPass) { showToast('❌ Las contraseñas no coinciden'); return }
+    if (newPass.length < 6) { showToast('❌ Mínimo 6 caracteres'); return }
+    setSavingPass(true)
+    const { error } = await supabase.auth.updateUser({ password: newPass })
+    setSavingPass(false)
+    if (error) { showToast('❌ Error al actualizar contraseña'); return }
+    setNewPass('')
+    setConfirmPass('')
+    showToast('✓ Contraseña actualizada')
   }
 
   if (loading) return (
@@ -132,7 +148,7 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Formulario */}
+        {/* Formulario perfil */}
         <div style={{ borderTop: '2px solid #D4B45A', paddingTop: 28 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>{t('sectionTitle')}</div>
 
@@ -177,6 +193,48 @@ export default function PerfilPage() {
             {saving ? t('saving') : t('saveButton')}
           </button>
         </div>
+
+        {/* Contraseña */}
+        <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 28, marginTop: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#D4B45A', marginBottom: 20, textTransform: 'uppercase' }}>
+            Contraseña
+          </div>
+
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+            Nueva contraseña
+          </div>
+          <input
+            value={newPass}
+            onChange={e => setNewPass(e.target.value)}
+            placeholder="Nueva contraseña"
+            type="password"
+            style={inp}
+          />
+
+          <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+            Confirmar contraseña
+          </div>
+          <input
+            value={confirmPass}
+            onChange={e => setConfirmPass(e.target.value)}
+            placeholder="Repetir contraseña"
+            type="password"
+            style={{ ...inp, marginBottom: 16 }}
+          />
+
+          <div style={{ fontSize: 11, color: '#333', marginBottom: 16, letterSpacing: 1 }}>
+            Si ingresaste con Google y nunca tuviste contraseña, esto te permite setear una.
+          </div>
+
+          <button
+            onClick={savePassword}
+            disabled={savingPass || !newPass.trim() || !confirmPass.trim()}
+            style={{ background: 'transparent', border: '1px solid #D4B45A', padding: '12px 28px', color: '#D4B45A', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: savingPass || !newPass.trim() ? 0.7 : 1 }}
+          >
+            {savingPass ? 'Guardando...' : 'Actualizar contraseña'}
+          </button>
+        </div>
+
       </div>
     </div>
   )
