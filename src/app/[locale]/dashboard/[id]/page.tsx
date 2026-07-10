@@ -60,6 +60,7 @@ export default function ManageEventPage() {
   const [ev, setEv] = useState<Event | null>(null)
   const [cats, setCats] = useState<Category[]>([])
   const [parts, setParts] = useState<Participant[]>([])
+  const [attendees, setAttendees] = useState<any[]>([])
   const [judges, setJudges] = useState<any[]>([])
   const [tab, setTab] = useState('info')
   const [toast, setToast] = useState('')
@@ -89,23 +90,36 @@ export default function ManageEventPage() {
         })
       .subscribe()
 
+    const attendeesChannel = supabase.channel(`dashboard-attendees-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendees', filter: `event_id=eq.${eventId}` },
+        async () => {
+          const { data } = await supabase.from('attendees').select('*, profiles(full_name)').eq('event_id', eventId)
+          if (data) setAttendees(data)
+        })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(partsChannel)
       supabase.removeChannel(judgesChannel)
+      supabase.removeChannel(attendeesChannel)
     }
   }, [])
 
   async function loadAll() {
     setLoading(true)
-    const [evRes, catsRes, partsRes, judgesRes, scRes] = await Promise.all([
+    const [evRes, catsRes, partsRes, attendeesRes, judgesRes, scRes] = await Promise.all([
       supabase.from('events').select('*').eq('id', eventId).single(),
       supabase.from('categories').select('*').eq('event_id', eventId),
       supabase.from('participants').select('*, profiles(full_name)').eq('event_id', eventId),
+      supabase.from('attendees').select('*, profiles(full_name)').eq('event_id', eventId),
       supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId),
       supabase.from('scorecards').select('judge_id, participant_id, category_id, run').eq('event_id', eventId),
     ])
-    setEv(evRes.data); setCats(catsRes.data ?? [])
-    setParts(partsRes.data ?? []); setJudges(judgesRes.data ?? [])
+    setEv(evRes.data)
+    setCats(catsRes.data ?? [])
+    setParts(partsRes.data ?? [])
+    setAttendees(attendeesRes.data ?? [])
+    setJudges(judgesRes.data ?? [])
     setScores(scRes.data ?? [])
     setLoading(false)
   }
@@ -138,19 +152,21 @@ export default function ManageEventPage() {
   const isEncuentro = (ev as any).event_type === 'encuentro'
 
   const tabs = isEncuentro
-  ? [
-      { id: 'info',          label: t('tabInfo') },
-      { id: 'parts',         label: t('tabParts') },
-      { id: 'organizadores', label: t('tabOrganizers') },
-      { id: 'minijam',       label: t('tabMiniJam') },
-    ]
-  : [
-      { id: 'info',   label: t('tabInfo') },
-      { id: 'cats',   label: t('tabCats') },
-      { id: 'parts',  label: t('tabParts') },
-      { id: 'judges', label: t('tabJudges') },
-      { id: 'rounds', label: t('roundsTitle') },
-    ]
+    ? [
+        { id: 'info',          label: t('tabInfo') },
+        { id: 'asistentes',    label: `Asistentes (${attendees.length})` },
+        { id: 'parts',         label: t('tabParts') },
+        { id: 'organizadores', label: t('tabOrganizers') },
+        { id: 'minijam',       label: t('tabMiniJam') },
+      ]
+    : [
+        { id: 'info',       label: t('tabInfo') },
+        { id: 'asistentes', label: `Asistentes (${attendees.length})` },
+        { id: 'cats',       label: t('tabCats') },
+        { id: 'parts',      label: t('tabParts') },
+        { id: 'judges',     label: t('tabJudges') },
+        { id: 'rounds',     label: t('roundsTitle') },
+      ]
 
   const statusOptions = [
     { value: 'draft',     label: t('statusDraft'),    color: '#444' },
@@ -207,6 +223,7 @@ export default function ManageEventPage() {
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px' }}>
         {tab === 'info' && <InfoTab ev={ev} setEv={setEv} eventId={eventId} showToast={showToast} t={t} />}
+        {tab === 'asistentes' && <AsistentesTab attendees={attendees} setAttendees={setAttendees} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} setCats={setCats} judges={judges} scores={scores} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
@@ -219,6 +236,55 @@ export default function ManageEventPage() {
   )
 }
 
+// ─── ASISTENTES TAB ───────────────────────────────────────────
+function AsistentesTab({ attendees, setAttendees, eventId, showToast, t }: any) {
+  const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
+
+  async function removeAttendee(id: string) {
+    await supabase.from('attendees').delete().eq('id', id)
+    setAttendees((prev: any) => prev.filter((a: any) => a.id !== id))
+    showToast('Asistente eliminado')
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase' }}>
+          Asistentes confirmados
+        </div>
+        <div style={{ fontSize: 11, color: '#555', letterSpacing: 1 }}>
+          {attendees.length} {attendees.length !== 1 ? 'personas' : 'persona'}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
+        {attendees.length === 0 && (
+          <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
+            Nadie confirmó asistencia todavía
+          </div>
+        )}
+        {attendees.map((a: any, i: number) => (
+          <div key={a.id} style={{ background: '#0a0a0a', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 11, color: '#333', fontWeight: 700, width: 24, flexShrink: 0 }}>{i + 1}</div>
+            <div style={{ width: 32, height: 32, background: '#1a1a1a', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: GOLD, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+              {(a.profiles?.full_name?.[0] ?? '?').toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {a.profiles?.full_name ?? 'Usuario'}
+              </div>
+              <div style={{ fontSize: 10, color: '#555', letterSpacing: 1, marginTop: 2 }}>
+                {new Date(a.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </div>
+            </div>
+            <button onClick={() => removeAttendee(a.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── INFO TAB ─────────────────────────────────────────────────
 function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
   const [f, setF] = useState({
     name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR',
@@ -228,6 +294,9 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
   const [saving, setSaving] = useState(false)
   const [uploadingFlyer, setUploadingFlyer] = useState(false)
   const [flyerUrl, setFlyerUrl] = useState(ev.flyer_url ?? null)
+  const [externalFormEnabled, setExternalFormEnabled] = useState(ev.external_form_enabled ?? false)
+  const [externalFormUrl, setExternalFormUrl] = useState(ev.external_form_url ?? '')
+  const [savingForm, setSavingForm] = useState(false)
 
   async function save() {
     setSaving(true)
@@ -236,6 +305,18 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
     if (error) { showToast(t('toastInfoError')); return }
     setEv((prev: any) => ({ ...prev, ...f }))
     showToast(t('toastInfoSaved'))
+  }
+
+  async function saveExternalForm() {
+    setSavingForm(true)
+    const { error } = await supabase.from('events').update({
+      external_form_enabled: externalFormEnabled,
+      external_form_url: externalFormEnabled ? externalFormUrl : null,
+    }).eq('id', eventId)
+    setSavingForm(false)
+    if (error) { showToast('❌ Error al guardar'); return }
+    setEv((prev: any) => ({ ...prev, external_form_enabled: externalFormEnabled, external_form_url: externalFormUrl }))
+    showToast('✓ Formulario externo guardado')
   }
 
   async function uploadFlyer(e: React.ChangeEvent<HTMLInputElement>) {
@@ -285,6 +366,8 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
       </div>
       <div style={{ marginBottom: 10 }} />
       <textarea placeholder={t('infoPlaceholderDescription')} value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))} style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
+
+      {/* FLYER */}
       <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 20, marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('flyerTitle')}</div>
         {flyerUrl ? (
@@ -311,7 +394,52 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
           </label>
         )}
       </div>
+
       <ReglamentoSection eventId={eventId} ev={ev} setEv={setEv} showToast={showToast} t={t} />
+
+      {/* FORMULARIO EXTERNO */}
+      <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 24, marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>
+          Formulario externo
+        </div>
+        <div style={{ background: '#111', borderLeft: `3px solid ${externalFormEnabled ? GOLD : '#2a2a2a'}`, padding: '14px 16px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>
+                Habilitar formulario externo
+              </div>
+              <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>
+                Muestra un botón en el evento que redirige a un link externo
+              </div>
+            </div>
+            <button onClick={() => setExternalFormEnabled(!externalFormEnabled)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <div style={{ width: 44, height: 24, background: externalFormEnabled ? '#1e3a5f' : '#2a2a2a', position: 'relative', transition: 'background .2s' }}>
+                <div style={{ position: 'absolute', top: 3, left: externalFormEnabled ? 22 : 3, width: 18, height: 18, background: externalFormEnabled ? GOLD : '#444', transition: 'left .2s' }} />
+              </div>
+            </button>
+          </div>
+          {externalFormEnabled && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+                Link del formulario
+              </div>
+              <input
+                placeholder="https://forms.gle/..."
+                value={externalFormUrl}
+                onChange={e => setExternalFormUrl(e.target.value)}
+                style={{ ...inp, marginBottom: 0 }}
+              />
+            </div>
+          )}
+        </div>
+        <button
+          onClick={saveExternalForm}
+          disabled={savingForm}
+          style={{ background: GOLD, border: 'none', padding: '10px 20px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: savingForm ? 0.7 : 1 }}
+        >
+          {savingForm ? 'Guardando...' : 'Guardar formulario'}
+        </button>
+      </div>
 
       <button onClick={save} disabled={saving} style={{ background: GOLD, border: 'none', padding: '12px 28px', color: '#000', fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase', opacity: saving ? 0.7 : 1 }}>
         {saving ? t('infoSaving') : t('infoSave')}
@@ -320,6 +448,7 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
   )
 }
 
+// ─── CATS TAB ─────────────────────────────────────────────────
 function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
   const [name, setName] = useState('')
   const [format, setFormat] = useState('formal')
@@ -353,8 +482,7 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
     setEditSaving(true)
     const weights = { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
     const { error } = await supabase.from('categories').update({
-      format: editFormat,
-      max_runs: editMaxRuns,
+      format: editFormat, max_runs: editMaxRuns,
       has_final: (editFormat === 'formal' || editFormat === 'jam') ? editHasFinal : false,
       finalists_count: (editFormat === 'formal' || editFormat === 'jam') ? editFinalistsCount : null,
       has_best_trick_final: (editFormat === 'formal' || editFormat === 'jam') ? editHasBestTrickFinal : false,
@@ -364,8 +492,7 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
     if (error) { showToast(t('toastCatError', { msg: error.message })); return }
     setCats((prev: any) => prev.map((c: any) => c.id === editingCat.id
       ? { ...c, format: editFormat, max_runs: editMaxRuns, has_final: editHasFinal, finalists_count: editFinalistsCount, has_best_trick_final: editHasBestTrickFinal }
-      : c
-    ))
+      : c))
     setEditingCat(null)
     showToast(t('toastCatUpdated'))
   }
@@ -375,12 +502,9 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
     setSaving(true)
     const weights = { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
     const { data, error } = await supabase.from('categories').insert({
-      event_id: eventId,
-      name,
-      format,
+      event_id: eventId, name, format,
       max_runs: format === 'jam' ? 1 : maxRuns,
-      consolidation: 'best_run',
-      weights,
+      consolidation: 'best_run', weights,
       has_final: format === 'formal' || format === 'jam' ? hasFinal : false,
       finalists_count: (format === 'formal' || format === 'jam') ? finalistsCount : null,
       has_best_trick_final: (format === 'formal' || format === 'jam') ? hasBestTrickFinal : false,
@@ -389,10 +513,7 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
     setSaving(false)
     if (error) { showToast(t('toastCatError', { msg: error.message })); return }
     setCats((prev: any) => [...prev, data])
-    setName('')
-    setHasFinal(false)
-    setFinalistsCount(8)
-    setHasBestTrickFinal(false)
+    setName(''); setHasFinal(false); setFinalistsCount(8); setHasBestTrickFinal(false)
     showToast(t('toastCatCreated'))
   }
 
@@ -416,7 +537,6 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
             </div>
           </button>
         </div>
-
         {hasFinal && (
           <>
             <div style={{ marginBottom: 14 }}>
@@ -424,13 +544,10 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
               <div style={{ display: 'flex', gap: 1, background: '#2a2a2a' }}>
                 {[4, 6, 8, 10, 12].map(n => (
                   <button key={n} onClick={() => setFinalistsCount(n)}
-                    style={{ ...btnBase, flex: 1, background: finalistsCount === n ? GOLD : '#0a0a0a', color: finalistsCount === n ? '#000' : '#444' }}>
-                    {n}
-                  </button>
+                    style={{ ...btnBase, flex: 1, background: finalistsCount === n ? GOLD : '#0a0a0a', color: finalistsCount === n ? '#000' : '#444' }}>{n}</button>
                 ))}
               </div>
             </div>
-
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#e8e8e8' }}>{t('catsBestTrickFinalLabel')}</div>
@@ -462,9 +579,7 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
               <div className="format-btns" style={{ marginBottom: 16 }}>
                 {(['formal', 'jam', 'best_trick'] as const).map(f => (
                   <button key={f} onClick={() => setEditFormat(f)} className="format-btn"
-                    style={{ background: editFormat === f ? GOLD : '#0a0a0a', color: editFormat === f ? '#000' : '#444' }}>
-                    {fmtL[f]}
-                  </button>
+                    style={{ background: editFormat === f ? GOLD : '#0a0a0a', color: editFormat === f ? '#000' : '#444' }}>{fmtL[f]}</button>
                 ))}
               </div>
               {editFormat === 'formal' && (
@@ -473,24 +588,14 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
                   <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
                     {[1, 2].map(n => (
                       <button key={n} onClick={() => setEditMaxRuns(n)}
-                        style={{ ...btnBase, flex: 1, background: editMaxRuns === n ? GOLD : '#0a0a0a', color: editMaxRuns === n ? '#000' : '#444' }}>
-                        {n}
-                      </button>
+                        style={{ ...btnBase, flex: 1, background: editMaxRuns === n ? GOLD : '#0a0a0a', color: editMaxRuns === n ? '#000' : '#444' }}>{n}</button>
                     ))}
                   </div>
-                  <FinalConfig
-                    hasFinal={editHasFinal} setHasFinal={setEditHasFinal}
-                    finalistsCount={editFinalistsCount} setFinalistsCount={setEditFinalistsCount}
-                    hasBestTrickFinal={editHasBestTrickFinal} setHasBestTrickFinal={setEditHasBestTrickFinal}
-                  />
+                  <FinalConfig hasFinal={editHasFinal} setHasFinal={setEditHasFinal} finalistsCount={editFinalistsCount} setFinalistsCount={setEditFinalistsCount} hasBestTrickFinal={editHasBestTrickFinal} setHasBestTrickFinal={setEditHasBestTrickFinal} />
                 </>
               )}
               {editFormat === 'jam' && (
-                <FinalConfig
-                  hasFinal={editHasFinal} setHasFinal={setEditHasFinal}
-                  finalistsCount={editFinalistsCount} setFinalistsCount={setEditFinalistsCount}
-                  hasBestTrickFinal={editHasBestTrickFinal} setHasBestTrickFinal={setEditHasBestTrickFinal}
-                />
+                <FinalConfig hasFinal={editHasFinal} setHasFinal={setEditHasFinal} finalistsCount={editFinalistsCount} setFinalistsCount={setEditFinalistsCount} hasBestTrickFinal={editHasBestTrickFinal} setHasBestTrickFinal={setEditHasBestTrickFinal} />
               )}
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
                 <button onClick={saveEdit} disabled={editSaving}
@@ -522,12 +627,8 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
                 {cat.phase === 'final' && <span style={{ color: '#4CAF50' }}>{t('roundInFinal')}</span>}
               </div>
             </div>
-            <button onClick={() => startEdit(cat)}
-              style={{ ...btnBase, background: 'transparent', border: `1px solid ${GOLD}`, color: GOLD, flexShrink: 0 }}>
-              {t('catEditBtn')}
-            </button>
-            <button onClick={() => delCat(cat.id)}
-              style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
+            <button onClick={() => startEdit(cat)} style={{ ...btnBase, background: 'transparent', border: `1px solid ${GOLD}`, color: GOLD, flexShrink: 0 }}>{t('catEditBtn')}</button>
+            <button onClick={() => delCat(cat.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
           </div>
         ))}
       </div>
@@ -551,19 +652,11 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
                   style={{ ...btnBase, flex: 1, background: maxRuns === n ? GOLD : '#0a0a0a', color: maxRuns === n ? '#000' : '#444' }}>{n}</button>
               ))}
             </div>
-            <FinalConfig
-              hasFinal={hasFinal} setHasFinal={setHasFinal}
-              finalistsCount={finalistsCount} setFinalistsCount={setFinalistsCount}
-              hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal}
-            />
+            <FinalConfig hasFinal={hasFinal} setHasFinal={setHasFinal} finalistsCount={finalistsCount} setFinalistsCount={setFinalistsCount} hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal} />
           </>
         )}
         {format === 'jam' && (
-          <FinalConfig
-            hasFinal={hasFinal} setHasFinal={setHasFinal}
-            finalistsCount={finalistsCount} setFinalistsCount={setFinalistsCount}
-            hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal}
-          />
+          <FinalConfig hasFinal={hasFinal} setHasFinal={setHasFinal} finalistsCount={finalistsCount} setFinalistsCount={setFinalistsCount} hasBestTrickFinal={hasBestTrickFinal} setHasBestTrickFinal={setHasBestTrickFinal} />
         )}
         <button onClick={addCat} disabled={saving}
           style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
@@ -574,6 +667,7 @@ function CatsTab({ cats, setCats, eventId, showToast, t }: any) {
   )
 }
 
+// ─── PARTS TAB ────────────────────────────────────────────────
 function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, showToast, t }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -675,17 +769,12 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
       })))
       setCats((prev: any) => prev.map((c: any) => c.id === cat.id ? { ...c, phase: 'final' } : c))
       showToast(t('toastFinalActivated'))
-    } catch {
-      showToast(t('toastFinalError'))
-    }
+    } catch { showToast(t('toastFinalError')) }
     setActivatingFinal(false)
     setShowFinalConfirm(null)
   }
 
-  const allParts = parts.map((p: any) => ({
-    ...p,
-    catName: cats.find((c: any) => c.id === p.category_id)?.name ?? '—'
-  }))
+  const allParts = parts.map((p: any) => ({ ...p, catName: cats.find((c: any) => c.id === p.category_id)?.name ?? '—' }))
 
   return (
     <div>
@@ -694,16 +783,10 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
           <div style={{ background: '#0a0a0a', border: `2px solid ${GOLD}`, maxWidth: 400, width: '100%', padding: 32, textAlign: 'center' }}>
             <div style={{ fontSize: 28, marginBottom: 16 }}>🏆</div>
             <div style={{ fontSize: 14, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -0.3, marginBottom: 12 }}>{t('finalizeQualificationConfirm')}</div>
-            {(() => {
-              const cat = cats.find((c: any) => c.id === showFinalConfirm)
-              return cat ? <div style={{ fontSize: 11, color: '#555', marginBottom: 24 }}>{t('finalizeQualificationHint', { count: cat.finalists_count })}</div> : null
-            })()}
+            {(() => { const cat = cats.find((c: any) => c.id === showFinalConfirm); return cat ? <div style={{ fontSize: 11, color: '#555', marginBottom: 24 }}>{t('finalizeQualificationHint', { count: cat.finalists_count })}</div> : null })()}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button
-                onClick={() => { const cat = cats.find((c: any) => c.id === showFinalConfirm); if (cat) activateFinal(cat) }}
-                disabled={activatingFinal}
-                style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 24px', opacity: activatingFinal ? 0.7 : 1 }}
-              >
+              <button onClick={() => { const cat = cats.find((c: any) => c.id === showFinalConfirm); if (cat) activateFinal(cat) }} disabled={activatingFinal}
+                style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 24px', opacity: activatingFinal ? 0.7 : 1 }}>
                 {activatingFinal ? '...' : t('finalizeQualificationBtn')}
               </button>
               <button onClick={() => setShowFinalConfirm(null)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', padding: '12px 24px' }}>
@@ -725,33 +808,33 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
               </div>
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              {allParts.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#333', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>{t('partsListEmpty')}</div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #2a2a2a' }}>
-                      {[t('partsListName'), t('partsListEmail'), t('partsListCategory'), t('partsListStatus')].map(h => (
-                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allParts.map((p: any, i: number) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #1a1a1a', background: i % 2 === 0 ? '#0a0a0a' : '#0d0d0d' }}>
-                        <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>{p.profiles?.full_name || p.display_name}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 12, color: '#666' }}>{p.email}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>{p.catName}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: p.status === 'confirmed' ? '#4CAF50' : GOLD }}>
-                            {p.status === 'confirmed' ? t('partsStatusConfirmed') : t('partsStatusPending')}
-                          </span>
-                        </td>
+              {allParts.length === 0
+                ? <div style={{ padding: 40, textAlign: 'center', color: '#333', fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>{t('partsListEmpty')}</div>
+                : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #2a2a2a' }}>
+                        {[t('partsListName'), t('partsListEmail'), t('partsListCategory'), t('partsListStatus')].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 9, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: 'uppercase' }}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    </thead>
+                    <tbody>
+                      {allParts.map((p: any, i: number) => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid #1a1a1a', background: i % 2 === 0 ? '#0a0a0a' : '#0d0d0d' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>{p.profiles?.full_name || p.display_name}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 12, color: '#666' }}>{p.email}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>{p.catName}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: p.status === 'confirmed' ? '#4CAF50' : GOLD }}>
+                              {p.status === 'confirmed' ? t('partsStatusConfirmed') : t('partsStatusPending')}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
             </div>
             <div style={{ padding: '12px 24px', borderTop: '1px solid #2a2a2a', fontSize: 10, color: '#444', letterSpacing: 2, textTransform: 'uppercase' }}>
               {allParts.length} participante{allParts.length !== 1 ? 's' : ''}
@@ -770,8 +853,7 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
       </div>
 
       {cats.map((cat: any) => {
-        const catParts = [...parts.filter((p: any) => p.category_id === cat.id)]
-          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        const catParts = [...parts.filter((p: any) => p.category_id === cat.id)].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
         const isJam = cat.format === 'jam'
         const isFormal = cat.format === 'formal'
         const maxBattery = isJam ? Math.max(1, ...catParts.map((p: any) => p.battery || 1)) : 1
@@ -786,11 +868,8 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
                 {cat.phase === 'qualification' && cat.has_final && <span style={{ color: '#555', marginLeft: 8 }}>· {t('phaseQualification')}</span>}
               </div>
               {(isFormal || isJam) && cat.has_final && cat.phase === 'qualification' && (
-                <button
-                  onClick={() => canActivateFinal ? setShowFinalConfirm(cat.id) : null}
-                  disabled={!canActivateFinal}
-                  style={{ ...btnBase, background: canActivateFinal ? GOLD : '#111', color: canActivateFinal ? '#000' : '#333', border: `1px solid ${canActivateFinal ? GOLD : '#2a2a2a'}`, padding: '6px 12px', fontSize: 10, opacity: canActivateFinal ? 1 : 0.6 }}
-                >
+                <button onClick={() => canActivateFinal ? setShowFinalConfirm(cat.id) : null} disabled={!canActivateFinal}
+                  style={{ ...btnBase, background: canActivateFinal ? GOLD : '#111', color: canActivateFinal ? '#000' : '#333', border: `1px solid ${canActivateFinal ? GOLD : '#2a2a2a'}`, padding: '6px 12px', fontSize: 10, opacity: canActivateFinal ? 1 : 0.6 }}>
                   {canActivateFinal ? t('finalizeQualification') : t('pendingScores')}
                 </button>
               )}
@@ -877,6 +956,7 @@ function PartsTab({ parts, setParts, cats, setCats, judges, scores, eventId, sho
   )
 }
 
+// ─── ENCUENTRO PARTS TAB ──────────────────────────────────────
 function EncuentroPartsTab({ parts, setParts, eventId, showToast, t }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -935,6 +1015,7 @@ function EncuentroPartsTab({ parts, setParts, eventId, showToast, t }: any) {
   )
 }
 
+// ─── PEOPLE TAB ───────────────────────────────────────────────
 function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addLabel, emptyLabel }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -995,6 +1076,7 @@ function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addL
   )
 }
 
+// ─── MINI JAM TAB ─────────────────────────────────────────────
 function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: any) {
   const miniJam = cats.find((c: any) => c.format === 'jam')
   const [jamName, setJamName] = useState('Mini Jam')
@@ -1141,6 +1223,7 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
   )
 }
 
+// ─── ROUNDS TAB ───────────────────────────────────────────────
 function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
   const [confirmations, setConfirmations] = useState<any[]>([])
   const [btVotes, setBtVotes] = useState<any[]>([])
@@ -1150,17 +1233,11 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
     load()
     const channel = supabase.channel(`rounds-admin-${eventId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'round_confirmations', filter: `event_id=eq.${eventId}` },
-        async () => {
-          const { data } = await supabase.from('round_confirmations').select('*').eq('event_id', eventId)
-          if (data) setConfirmations(data)
-        })
+        async () => { const { data } = await supabase.from('round_confirmations').select('*').eq('event_id', eventId); if (data) setConfirmations(data) })
       .subscribe()
     const voteChannel = supabase.channel(`rounds-votes-${eventId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'best_trick_votes', filter: `event_id=eq.${eventId}` },
-        async () => {
-          const { data } = await supabase.from('best_trick_votes').select('*').eq('event_id', eventId)
-          if (data) setBtVotes(data)
-        })
+        async () => { const { data } = await supabase.from('best_trick_votes').select('*').eq('event_id', eventId); if (data) setBtVotes(data) })
       .subscribe()
     return () => { supabase.removeChannel(channel); supabase.removeChannel(voteChannel) }
   }, [])
@@ -1189,16 +1266,11 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
-        {t('roundsTitle')}
-      </div>
-      {activeCats.length === 0 && (
-        <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('roundsNone')}</div>
-      )}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('roundsTitle')}</div>
+      {activeCats.length === 0 && <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('roundsNone')}</div>}
       {activeCats.map((cat: any) => {
         const catConfirms = confirmations.filter(c => c.category_id === cat.id)
         const catVotes = btVotes.filter(v => v.category_id === cat.id)
-
         const runs = cat.format === 'best_trick'
           ? [1, ...(cat.max_runs >= 2 ? [2] : [])]
           : cat.format === 'jam'
@@ -1211,47 +1283,30 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
               {cat.name}
               {cat.phase === 'final' && <span style={{ color: '#4CAF50', marginLeft: 8 }}>{t('roundInFinal')}</span>}
             </div>
-
-            {/* Pasadas */}
             {runs.map(run => {
               const runConfirms = catConfirms.filter(c => c.run === run)
-              const allConfirmed = acceptedJudges.length > 0 && acceptedJudges.every((j: any) =>
-                runConfirms.some(c => c.judge_id === j.profile_id)
-              )
+              const allConfirmed = acceptedJudges.length > 0 && acceptedJudges.every((j: any) => runConfirms.some(c => c.judge_id === j.profile_id))
               const runLabel = cat.format === 'jam'
                 ? (run === 3 ? t('roundLabelFinal') : t('roundLabelRun', { n: run }))
                 : (run === 2 && cat.has_final ? t('roundLabelFinal') : t('roundLabelRun', { n: run }))
-
               return (
                 <div key={run} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>{runLabel}</div>
-                    {allConfirmed && (
-                      <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>
-                        {t('roundsAllConfirmed')}
-                      </span>
-                    )}
+                    {allConfirmed && <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>{t('roundsAllConfirmed')}</span>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-                    {acceptedJudges.length === 0 && (
-                      <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>{t('roundsNoJudges')}</div>
-                    )}
+                    {acceptedJudges.length === 0 && <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>{t('roundsNoJudges')}</div>}
                     {acceptedJudges.map((j: any) => {
                       const confirm = runConfirms.find(c => c.judge_id === j.profile_id)
                       return (
                         <div key={j.id} style={{ background: '#0a0a0a', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: confirm ? '#4CAF50' : '#333', flexShrink: 0 }} />
-                          <div style={{ flex: 1, fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>
-                            {j.profiles?.full_name ?? j.display_name ?? 'Juez'}
-                          </div>
+                          <div style={{ flex: 1, fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.display_name ?? 'Juez'}</div>
                           {confirm ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: 10, color: '#4CAF50', letterSpacing: 1 }}>{t('roundsConfirmed')}</span>
-                              <button
-                                onClick={() => revokeConfirmation(confirm.id)}
-                                style={{ background: 'transparent', border: '1px solid #333', padding: '4px 10px', color: '#ef4444', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
-                                {t('roundsRevoke')}
-                              </button>
+                              <button onClick={() => revokeConfirmation(confirm.id)} style={{ background: 'transparent', border: '1px solid #333', padding: '4px 10px', color: '#ef4444', fontWeight: 700, fontSize: 10, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>{t('roundsRevoke')}</button>
                             </div>
                           ) : (
                             <span style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>{t('roundsPending')}</span>
@@ -1263,37 +1318,23 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
                 </div>
               )
             })}
-
-            {/* Estado de votos para Best Trick */}
             {cat.format === 'best_trick' && (
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>
-                    {t('btVoteTitle')}
-                  </div>
-                  {acceptedJudges.length > 0 && acceptedJudges.every((j: any) =>
-                    catVotes.some(v => v.judge_id === j.profile_id)
-                  ) && (
-                    <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>
-                      {t('roundsAllConfirmed')}
-                    </span>
+                  <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase' }}>{t('btVoteTitle')}</div>
+                  {acceptedJudges.length > 0 && acceptedJudges.every((j: any) => catVotes.some(v => v.judge_id === j.profile_id)) && (
+                    <span style={{ fontSize: 9, color: '#4CAF50', letterSpacing: 2, textTransform: 'uppercase', border: '1px solid #166534', padding: '1px 6px' }}>{t('roundsAllConfirmed')}</span>
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
-                  {acceptedJudges.length === 0 && (
-                    <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>{t('roundsNoJudges')}</div>
-                  )}
+                  {acceptedJudges.length === 0 && <div style={{ background: '#0a0a0a', padding: '12px 16px', fontSize: 11, color: '#333', letterSpacing: 1 }}>{t('roundsNoJudges')}</div>}
                   {acceptedJudges.map((j: any) => {
                     const voted = catVotes.some(v => v.judge_id === j.profile_id)
                     return (
                       <div key={j.id} style={{ background: '#0a0a0a', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: voted ? '#4CAF50' : '#333', flexShrink: 0 }} />
-                        <div style={{ flex: 1, fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>
-                          {j.profiles?.full_name ?? j.display_name ?? 'Juez'}
-                        </div>
-                        <span style={{ fontSize: 10, color: voted ? '#4CAF50' : '#333', letterSpacing: 1 }}>
-                          {voted ? t('roundsConfirmed') : t('roundsPending')}
-                        </span>
+                        <div style={{ flex: 1, fontSize: 13, fontWeight: 700, textTransform: 'uppercase' }}>{j.profiles?.full_name ?? j.display_name ?? 'Juez'}</div>
+                        <span style={{ fontSize: 10, color: voted ? '#4CAF50' : '#333', letterSpacing: 1 }}>{voted ? t('roundsConfirmed') : t('roundsPending')}</span>
                       </div>
                     )
                   })}
@@ -1307,6 +1348,7 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
   )
 }
 
+// ─── REGLAMENTO SECTION ───────────────────────────────────────
 function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
   const [useCustom, setUseCustom] = useState<boolean>(ev.use_custom_reglamento ?? false)
   const [reglamentoUrl, setReglamentoUrl] = useState<string | null>(ev.reglamento_url ?? null)
@@ -1348,27 +1390,15 @@ function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
 
   return (
     <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 24, marginBottom: 24 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>
-        {t('reglamentoTitle')}
-      </div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{t('reglamentoTitle')}</div>
       <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 16 }}>
-        <button onClick={() => toggleCustom(false)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: !useCustom ? GOLD : '#0a0a0a', color: !useCustom ? '#000' : '#444' }}>
-          {t('reglamentoUseStandard')}
-        </button>
-        <button onClick={() => toggleCustom(true)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: useCustom ? GOLD : '#0a0a0a', color: useCustom ? '#000' : '#444' }}>
-          {t('reglamentoUseCustom')}
-        </button>
+        <button onClick={() => toggleCustom(false)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: !useCustom ? GOLD : '#0a0a0a', color: !useCustom ? '#000' : '#444' }}>{t('reglamentoUseStandard')}</button>
+        <button onClick={() => toggleCustom(true)} style={{ flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', background: useCustom ? GOLD : '#0a0a0a', color: useCustom ? '#000' : '#444' }}>{t('reglamentoUseCustom')}</button>
       </div>
-      {!useCustom && (
-        <div style={{ background: '#111', borderLeft: '3px solid #2a2a2a', padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5 }}>
-          {t('reglamentoHintStandard')}
-        </div>
-      )}
+      {!useCustom && <div style={{ background: '#111', borderLeft: '3px solid #2a2a2a', padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5 }}>{t('reglamentoHintStandard')}</div>}
       {useCustom && (
         <div>
-          <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5, marginBottom: 16 }}>
-            {t('reglamentoHintCustom')}
-          </div>
+          <div style={{ background: '#111', borderLeft: `3px solid ${GOLD}`, padding: '10px 14px', fontSize: 11, color: '#555', letterSpacing: 0.5, marginBottom: 16 }}>{t('reglamentoHintCustom')}</div>
           {reglamentoUrl ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111', border: '1px solid #2a2a2a', padding: '14px 16px', flexWrap: 'wrap' }}>
               <div style={{ fontSize: 24, flexShrink: 0 }}>📄</div>
@@ -1381,17 +1411,13 @@ function ReglamentoSection({ eventId, ev, setEv, showToast, t }: any) {
                   {uploading ? t('reglamentoUploading') : t('reglamentoChange')}
                   <input type="file" accept="application/pdf" onChange={uploadReglamento} style={{ display: 'none' }} disabled={uploading} />
                 </label>
-                <button onClick={removeReglamento} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 14px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>
-                  {t('reglamentoRemove')}
-                </button>
+                <button onClick={removeReglamento} style={{ background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 14px', color: '#666', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 2, textTransform: 'uppercase' }}>{t('reglamentoRemove')}</button>
               </div>
             </div>
           ) : (
             <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #2a2a2a', padding: '28px 24px', cursor: 'pointer', gap: 8 }}>
               <div style={{ fontSize: 28 }}>📄</div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploading ? GOLD : '#444' }}>
-                {uploading ? t('reglamentoUploading') : t('reglamentoUpload')}
-              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: uploading ? GOLD : '#444' }}>{uploading ? t('reglamentoUploading') : t('reglamentoUpload')}</div>
               <div style={{ fontSize: 10, color: '#333', letterSpacing: 1 }}>{t('reglamentoHintFile')}</div>
               <input type="file" accept="application/pdf" onChange={uploadReglamento} style={{ display: 'none' }} disabled={uploading} />
             </label>
