@@ -18,6 +18,20 @@ function formatDate(d: string | null) {
   return `${date.getUTCDate().toString().padStart(2,'0')} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`
 }
 
+function formatDateRange(start: string | null, end: string | null): string | null {
+  if (!start) return null
+  const s = formatDate(start)
+  if (!end || end === start) return s
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  // mismo mes y año → "14 al 16 ago 2025"
+  if (startDate.getUTCMonth() === endDate.getUTCMonth() && startDate.getUTCFullYear() === endDate.getUTCFullYear()) {
+    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+    return `${startDate.getUTCDate()} al ${endDate.getUTCDate()} ${months[endDate.getUTCMonth()]} ${endDate.getUTCFullYear()}`
+  }
+  return `${s} al ${formatDate(end)}`
+}
+
 async function tryAutoActivate(ev: any): Promise<boolean> {
   if (ev.status !== 'published' || !ev.event_date) return false
   const timeStr = ev.event_time ? ev.event_time.slice(0, 5) : '00:00'
@@ -357,7 +371,7 @@ export default function EventoDetailPage() {
               </div>
               <h1 style={{ fontSize: 'clamp(28px,5vw,52px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: -1, lineHeight: 1, marginBottom: 20 }}>{ev.name}</h1>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {ev.event_date && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📅 {formatDate(ev.event_date)}{ev.event_time ? ' · ' + ev.event_time.slice(0, 5) : ''}</div>}
+                {ev.event_date && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📅 {formatDateRange(ev.event_date, ev.event_date_end)}{ev.event_time ? ' · ' + ev.event_time.slice(0, 5) : ''}</div>}
                 {ev.city && <div style={{ color: '#666', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>📍 {ev.location_name ? ev.location_name + ' — ' : ''}{ev.city}</div>}
               </div>
               {ev.description && <p style={{ color: '#444', fontSize: 14, marginTop: 20, maxWidth: 520, lineHeight: 1.7, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{ev.description}</p>}
@@ -395,18 +409,18 @@ export default function EventoDetailPage() {
               isEncuentro={isEncuentro}
               onRegistered={() => { loadParts(); loadAttendees() }}
             />
-            {ev.external_form_enabled && ev.external_form_url && (
-              
-              <a  href={ev.external_form_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '12px 24px', color: '#666', fontWeight: 700, fontSize: 11, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}
-              >
-                <span>🔗</span>
-                <span>Formulario externo</span>
-                <span style={{ color: GOLD }}>→</span>
-              </a>
-            )}
+          {ev.external_form_enabled && ev.external_form_url && (
+
+            <a  href={ev.external_form_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: '1px solid #2a2a2a', padding: '8px 16px', color: '#666', fontWeight: 700, fontSize: 10, textDecoration: 'none', letterSpacing: 2, textTransform: 'uppercase' }}
+            >
+              <span>📋</span>
+              <span>Acreditación y Seguros</span>
+              <span style={{ color: GOLD }}>→</span>
+            </a>
+          )}
           </div>
         </div>
       </div>
@@ -444,7 +458,7 @@ export default function EventoDetailPage() {
         <div style={{ borderBottom: '1px solid #2a2a2a', padding: '40px 24px' }}>
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>
-              Asistentes · {attendees.length}
+              Asistencias al evento · {attendees.length}
             </div>
             <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', flexWrap: 'wrap' }}>
               {attendees.map((a: any) => (

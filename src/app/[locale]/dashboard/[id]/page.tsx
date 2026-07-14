@@ -154,14 +154,14 @@ export default function ManageEventPage() {
   const tabs = isEncuentro
     ? [
         { id: 'info',          label: t('tabInfo') },
-        { id: 'asistentes',    label: `Asistentes (${attendees.length})` },
+        { id: 'asistentes',    label: `Asistencias al evento (${attendees.length})` },
         { id: 'parts',         label: t('tabParts') },
         { id: 'organizadores', label: t('tabOrganizers') },
         { id: 'minijam',       label: t('tabMiniJam') },
       ]
     : [
         { id: 'info',       label: t('tabInfo') },
-        { id: 'asistentes', label: `Asistentes (${attendees.length})` },
+        { id: 'asistentes',    label: `Asistencias al evento (${attendees.length})` },
         { id: 'cats',       label: t('tabCats') },
         { id: 'parts',      label: t('tabParts') },
         { id: 'judges',     label: t('tabJudges') },
@@ -243,17 +243,17 @@ function AsistentesTab({ attendees, setAttendees, eventId, showToast, t }: any) 
   async function removeAttendee(id: string) {
     await supabase.from('attendees').delete().eq('id', id)
     setAttendees((prev: any) => prev.filter((a: any) => a.id !== id))
-    showToast('Asistente eliminado')
+    showToast('Asistencia eliminada')
   }
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: 'uppercase' }}>
-          Asistentes confirmados
+          Asistencias al evento
         </div>
         <div style={{ fontSize: 11, color: '#555', letterSpacing: 1 }}>
-          {attendees.length} {attendees.length !== 1 ? 'personas' : 'persona'}
+          {attendees.length} {attendees.length !== 1 ? 'asistencias' : 'asistencia'}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a' }}>
@@ -289,6 +289,7 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
   const [f, setF] = useState({
     name: ev.name, city: ev.city ?? '', country: ev.country ?? 'AR',
     event_date: ev.event_date ?? '', event_time: ev.event_time?.slice(0, 5) ?? '',
+    event_date_end: ev.event_date_end ?? '',  // ← agregar esto
     location_name: ev.location_name ?? '', address: ev.address ?? '', description: ev.description ?? ''
   })
   const [saving, setSaving] = useState(false)
@@ -361,9 +362,11 @@ function InfoTab({ ev, setEv, eventId, showToast, t }: any) {
       <input placeholder={t('infoPlaceholderLocation')} value={f.location_name} onChange={e => setF(x => ({ ...x, location_name: e.target.value }))} style={inp} />
       <input placeholder={t('infoPlaceholderAddress')} value={f.address} onChange={e => setF(x => ({ ...x, address: e.target.value }))} style={inp} />
       <div className="form-grid-2">
-        <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
-        <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp, marginBottom: 0 }} />
+        <input type="date" value={f.event_date} onChange={e => setF(x => ({ ...x, event_date: e.target.value }))} style={{ ...inp, marginBottom: 0 }} placeholder="Fecha inicio" />
+        <input type="date" value={f.event_date_end} onChange={e => setF(x => ({ ...x, event_date_end: e.target.value }))} style={{ ...inp, marginBottom: 0 }} placeholder="Fecha fin (opcional)" />
       </div>
+      <div style={{ marginBottom: 10 }} />
+      <input type="time" value={f.event_time} onChange={e => setF(x => ({ ...x, event_time: e.target.value }))} style={{ ...inp }} placeholder="Hora de inicio" />
       <div style={{ marginBottom: 10 }} />
       <textarea placeholder={t('infoPlaceholderDescription')} value={f.description} onChange={e => setF(x => ({ ...x, description: e.target.value }))} style={{ ...inp, minHeight: 80, resize: 'vertical' }} />
 
