@@ -132,7 +132,8 @@
     "evFinalRunLabel": "Passage final",
     "evBestRunLabel": "Meilleur passage",
     "evRunScoreLabel": "Passage",
-    "evBTScoreLabel": "BT"
+    "evBTScoreLabel": "BT",
+    "sectionAttendees": "Présences à l'événement"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Comment ça marche",
@@ -446,7 +447,20 @@
     "roundsToastRevokeError": "❌ Erreur lors de l'annulation",
     "roundInFinal": "· EN FINALE",
     "roundLabelRun": "Passage {n}",
-    "roundLabelFinal": "Finale"
+    "roundLabelFinal": "Finale",
+    "tabAttendees": "Présences à l'événement",
+    "attendeesTitle": "Présences à l'événement",
+    "attendeesEmpty": "Personne n'a encore confirmé sa présence",
+    "attendeesRemoved": "Présence supprimée",
+    "externalFormTitle": "Formulaire externe",
+    "externalFormToggleLabel": "Activer le formulaire externe",
+    "externalFormToggleHint": "Affiche un bouton sur la page de l'événement qui redirige vers un lien externe",
+    "externalFormLinkLabel": "Lien du formulaire",
+    "externalFormSaving": "Enregistrement...",
+    "externalFormSave": "Enregistrer le formulaire",
+    "externalFormSaved": "✓ Formulaire externe enregistré",
+    "externalFormError": "❌ Erreur lors de l'enregistrement",
+    "acreditacionBtn": "Accréditation et Assurances"
   },
   "JuecesPage": {
     "loading": "CHARGEMENT",
@@ -577,6 +591,10 @@
     "confirmBtn": "Confirmer l'inscription",
     "cancelBtn": "Annuler",
     "toastSuccess": "✅ Inscription confirmée !",
-    "toastError": "❌ Erreur lors de l'inscription"
+    "toastError": "❌ Erreur lors de l'inscription",
+    "attendanceBtn": "Confirmer la présence",
+    "attendanceConfirming": "Confirmation...",
+    "attendanceConfirmed": "Présence confirmée",
+    "toastAttendanceSuccess": "✓ Présence confirmée"
   }
 }

@@ -132,7 +132,8 @@
     "evFinalRunLabel": "Pasada final",
     "evBestRunLabel": "Mejor pasada",
     "evRunScoreLabel": "Pasada",
-    "evBTScoreLabel": "BT"
+    "evBTScoreLabel": "BT",
+    "sectionAttendees": "Asistencias al evento"
   },
   "ComoFuncionaPage": {
     "eyebrow": "Cómo funciona",
@@ -446,7 +447,20 @@
     "roundsToastRevokeError": "❌ Error al revertir",
     "roundInFinal": "· EN FINAL",
     "roundLabelRun": "Pasada {n}",
-    "roundLabelFinal": "Final"
+    "roundLabelFinal": "Final",
+    "tabAttendees": "Asistencias al evento",
+    "attendeesTitle": "Asistencias al evento",
+    "attendeesEmpty": "Nadie confirmó asistencia todavía",
+    "attendeesRemoved": "Asistencia eliminada",
+    "externalFormTitle": "Formulario externo",
+    "externalFormToggleLabel": "Habilitar formulario externo",
+    "externalFormToggleHint": "Muestra un botón en el evento que redirige a un link externo",
+    "externalFormLinkLabel": "Link del formulario",
+    "externalFormSaving": "Guardando...",
+    "externalFormSave": "Guardar formulario",
+    "externalFormSaved": "✓ Formulario externo guardado",
+    "externalFormError": "❌ Error al guardar",
+    "acreditacionBtn": "Acreditación y Seguros"
   },
   "JuecesPage": {
     "loading": "CARGANDO",
@@ -577,6 +591,10 @@
     "confirmBtn": "Confirmar inscripción",
     "cancelBtn": "Cancelar",
     "toastSuccess": "✅ ¡Inscripción confirmada!",
-    "toastError": "❌ Error al inscribirse"
+    "toastError": "❌ Error al inscribirse",
+    "attendanceBtn": "Confirmar asistencia",
+    "attendanceConfirming": "Confirmando...",
+    "attendanceConfirmed": "Asistencia confirmada",
+    "toastAttendanceSuccess": "✓ Asistencia confirmada"
   }
 }

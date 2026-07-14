@@ -132,7 +132,8 @@
     "evFinalRunLabel": "Final run",
     "evBestRunLabel": "Best run",
     "evRunScoreLabel": "Run",
-    "evBTScoreLabel": "BT"
+    "evBTScoreLabel": "BT",
+    "sectionAttendees": "Event attendance"
   },
   "ComoFuncionaPage": {
     "eyebrow": "How it works",
@@ -446,7 +447,20 @@
     "roundsToastRevokeError": "❌ Error reverting",
     "roundInFinal": "· IN FINAL",
     "roundLabelRun": "Run {n}",
-    "roundLabelFinal": "Final"
+    "roundLabelFinal": "Final",
+    "tabAttendees": "Event attendance",
+    "attendeesTitle": "Event attendance",
+    "attendeesEmpty": "Nobody confirmed attendance yet",
+    "attendeesRemoved": "Attendance removed",
+    "externalFormTitle": "External form",
+    "externalFormToggleLabel": "Enable external form",
+    "externalFormToggleHint": "Shows a button on the event page that redirects to an external link",
+    "externalFormLinkLabel": "Form link",
+    "externalFormSaving": "Saving...",
+    "externalFormSave": "Save form",
+    "externalFormSaved": "✓ External form saved",
+    "externalFormError": "❌ Error saving",
+    "acreditacionBtn": "Accreditation & Insurance"
   },
   "JuecesPage": {
     "loading": "LOADING",
@@ -577,6 +591,10 @@
     "confirmBtn": "Confirm registration",
     "cancelBtn": "Cancel",
     "toastSuccess": "✅ Registration confirmed!",
-    "toastError": "❌ Error registering"
+    "toastError": "❌ Error registering",
+    "attendanceBtn": "Confirm attendance",
+    "attendanceConfirming": "Confirming...",
+    "attendanceConfirmed": "Attendance confirmed",
+    "toastAttendanceSuccess": "✓ Attendance confirmed"
   }
 }
