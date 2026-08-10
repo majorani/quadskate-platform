@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
   if (authError || !user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { email, displayName, eventId, role, categoryId } = await req.json()
+  const { email, displayName, eventId, role, categoryId, categoryIds } = await req.json()
 
   if (!email || !displayName || !eventId || !role) {
     return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 })
@@ -96,12 +96,14 @@ export async function POST(req: NextRequest) {
     }
   } else {
     // Jueces: siempre status 'invited', necesitan aceptar
+    // category_ids: null = puede puntuar todas las categorías. Array = solo esas.
     await supabaseAdmin.from('judges').insert({
       event_id: eventId,
       display_name: displayName,
       email: email,
       profile_id: authUser?.id ?? null,
       status: 'invited',
+      category_ids: Array.isArray(categoryIds) && categoryIds.length > 0 ? categoryIds : null,
     })
 
     if (authUser) {

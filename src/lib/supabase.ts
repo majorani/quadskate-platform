@@ -61,6 +61,7 @@ export type Judge = {
   event_id: string
   profile_id: string
   status: 'invited' | 'accepted' | 'declined'
+  category_ids: string[] | null
   profiles?: Profile
 }
 

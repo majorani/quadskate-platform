@@ -645,7 +645,8 @@ export default function EventoDetailPage() {
 
                 if (cat.format === 'best_trick') {
                   const catVotes = btVotes.filter((v: any) => v.category_id === cat.id)
-                  const judgeCount = judges.filter((j: any) => j.status === 'accepted').length || 1
+                  // Solo cuentan los jueces asignados a esta categoría (category_ids null/vacío = todas)
+                  const judgeCount = judges.filter((j: any) => j.status === 'accepted' && (!j.category_ids || j.category_ids.length === 0 || j.category_ids.includes(cat.id))).length || 1
                   const btRanked = allCatParts.map((p: any) => {
                     const trickMap: Record<string, number[]> = {}
                     for (const sc of scores.filter((s: any) => s.participant_id === p.id)) {

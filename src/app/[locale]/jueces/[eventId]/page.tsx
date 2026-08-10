@@ -17,6 +17,12 @@ const JAM_NIVELES = [
 const DEFAULT_W = { intencion: 15, dificultad: 30, ejecucion: 30, estilo: 10, secuencia: 15 }
 const BT_W      = { intencion: 15, dificultad: 35, ejecucion: 35, estilo: 15 }
 
+// category_ids null o vacío = el juez puede puntuar todas las categorías (retrocompatible)
+function judgeSeesCategory(judge: any, catId: string): boolean {
+  if (!judge?.category_ids || judge.category_ids.length === 0) return true
+  return judge.category_ids.includes(catId)
+}
+
 function jamScore(t: any) { return t.nivel || 0 }
 function parseJamData(raw: any): { tricks: any[], fluidez: number, creatividad: number } {
   if (!raw) return { tricks: [], fluidez: 5, creatividad: 5 }
@@ -1320,7 +1326,11 @@ export default function JuecesPage() {
       return
     }
 
-    setEvent(evRes.data); setCats(catsRes.data ?? []); setParts(partsRes.data ?? [])
+    // Un juez solo ve las categorías que le fueron asignadas.
+    // category_ids null/vacío = puede puntuar todas (retrocompatible).
+    const myCats = (catsRes.data ?? []).filter((c: any) => judgeSeesCategory(myJudgeRecord, c.id))
+
+    setEvent(evRes.data); setCats(myCats); setParts(partsRes.data ?? [])
     setJudges(judgesRes.data ?? []); setConfirmations(confirmsRes.data ?? [])
     const scMap: any = {}
     for (const sc of scsRes.data ?? []) {
@@ -1349,12 +1359,16 @@ export default function JuecesPage() {
   const jId = user?.id || ''
   const maxRuns = cat?.max_runs || 2
 
+  // Jueces relevantes para la categoría activa: solo ellos deben confirmar
+  // una ronda para que se considere completa, y solo ellos cuentan en los promedios.
+  const catJudges = cat ? judges.filter((j: any) => judgeSeesCategory(j, cat.id)) : judges
+
   function judgeConfirmed(run: number): boolean {
     return confirmations.some(c => c.judge_id === jId && c.category_id === cat?.id && c.run === run)
   }
   function allJudgesConfirmed(run: number): boolean {
-    if (!judges.length) return false
-    return judges.every((j: any) =>
+    if (!catJudges.length) return false
+    return catJudges.every((j: any) =>
       confirmations.some(c => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
     )
   }
@@ -1470,8 +1484,8 @@ export default function JuecesPage() {
             const maxRuns = cat?.max_runs ?? 1
             const lastRun = maxRuns >= 2 ? 2 : 1
             function allJudgesConfirmedRun(run: number): boolean {
-              if (!judges.length) return false
-              return judges.every((j: any) =>
+              if (!catJudges.length) return false
+              return catJudges.every((j: any) =>
                 confirmations.some((c: any) => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === run)
               )
             }
@@ -1483,7 +1497,7 @@ export default function JuecesPage() {
                 cat={cat}
                 eventId={eventId}
                 scorecards={state.scorecards}
-                judges={judges}
+                judges={catJudges}
                 toast={toast}
                 event={event}
                 t={t}
@@ -1499,7 +1513,7 @@ export default function JuecesPage() {
                 toast={toast}
                 event={event}
                 confirmations={confirmations}
-                judges={judges}
+                judges={catJudges}
                 setConfirmations={setConfirmations}
                 t={t}
               />
@@ -1521,7 +1535,7 @@ export default function JuecesPage() {
                 toast={toast}
                 event={event}
                 confirmations={confirmations}
-                judges={judges}
+                judges={catJudges}
                 setConfirmations={setConfirmations}
                 t={t}
               />
@@ -1537,7 +1551,7 @@ export default function JuecesPage() {
                 toast={toast}
                 event={event}
                 confirmations={confirmations}
-                judges={judges}
+                judges={catJudges}
                 setConfirmations={setConfirmations}
                 t={t}
               />
@@ -1554,7 +1568,7 @@ export default function JuecesPage() {
               toast={toast}
               event={event}
               confirmations={confirmations}
-              judges={judges}
+              judges={catJudges}
               setConfirmations={setConfirmations}
               t={t}
             />
@@ -1598,7 +1612,7 @@ export default function JuecesPage() {
                     : t('jamWaitingConfirm')}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  {judges.map((j: any) => {
+                  {catJudges.map((j: any) => {
                     const confirmed = confirmations.some(c => c.judge_id === j.profile_id && c.category_id === cat?.id && c.run === (isFinalPhase ? 2 : enabledRun))
                     return (
                       <div key={j.id} style={{ width: 32, height: 32, background: confirmed ? '#14532d' : '#1a1a1a', border: `1px solid ${confirmed ? '#166534' : '#2a2a2a'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: confirmed ? '#4CAF50' : '#333' }}>

@@ -226,10 +226,10 @@ export default function ManageEventPage() {
         {tab === 'asistentes' && <AsistentesTab attendees={attendees} setAttendees={setAttendees} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} setCats={setCats} judges={judges} scores={scores} eventId={eventId} showToast={showToast} t={t} />}
-        {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
+        {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} cats={cats} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
         {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
-        {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
+        {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} cats={cats} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
         {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
       </div>
     </div>
@@ -1019,23 +1019,95 @@ function EncuentroPartsTab({ parts, setParts, eventId, showToast, t }: any) {
 }
 
 // ─── PEOPLE TAB ───────────────────────────────────────────────
-function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addLabel, emptyLabel }: any) {
+function CategoryTagPicker({ cats, selected, onChange }: { cats: any[], selected: string[], onChange: (ids: string[]) => void }) {
+  const allSelected = selected.length === 0
+  function toggleCat(id: string) {
+    if (allSelected) { onChange([id]); return }
+    if (selected.includes(id)) onChange(selected.filter(x => x !== id))
+    else onChange([...selected, id])
+  }
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 1, background: '#2a2a2a', marginBottom: 8 }}>
+        <button type="button" onClick={() => onChange([])}
+          style={{ flex: 1, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 12px', background: allSelected ? GOLD : '#0a0a0a', color: allSelected ? '#000' : '#444' }}>
+          Todas las categorías
+        </button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {cats.map((c: any) => {
+          const active = !allSelected && selected.includes(c.id)
+          return (
+            <button key={c.id} type="button" onClick={() => toggleCat(c.id)}
+              style={{ border: `1px solid ${active ? GOLD : '#2a2a2a'}`, background: active ? GOLD : 'transparent', color: active ? '#000' : '#666', cursor: 'pointer', fontWeight: 700, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '6px 12px' }}>
+              {c.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function JudgeCategoriesEditor({ judge, cats, onSaved, showToast }: any) {
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<string[]>(judge.category_ids ?? [])
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    const category_ids = selected.length > 0 ? selected : null
+    const { error } = await supabase.from('judges').update({ category_ids }).eq('id', judge.id)
+    setSaving(false)
+    if (error) { showToast('❌ Error al guardar categorías'); return }
+    onSaved(judge.id, category_ids)
+    setOpen(false)
+    showToast('✓ Categorías actualizadas')
+  }
+
+  const label = !judge.category_ids || judge.category_ids.length === 0
+    ? 'Todas las categorías'
+    : cats.filter((c: any) => judge.category_ids.includes(c.id)).map((c: any) => c.name).join(', ') || 'Sin categorías'
+
+  return (
+    <div style={{ width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 10, color: '#555', letterSpacing: 1 }}>{label}</span>
+        <button onClick={() => { setSelected(judge.category_ids ?? []); setOpen(v => !v) }} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: GOLD, fontWeight: 700, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 8px', cursor: 'pointer' }}>
+          {open ? 'Cerrar' : 'Editar'}
+        </button>
+      </div>
+      {open && (
+        <div style={{ marginTop: 10, background: '#111', border: '1px solid #2a2a2a', padding: 12 }}>
+          <CategoryTagPicker cats={cats} selected={selected} onChange={setSelected} />
+          <button onClick={save} disabled={saving} style={{ marginTop: 10, background: GOLD, border: 'none', color: '#000', fontWeight: 900, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+            {saving ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PeopleTab({ people, setPeople, cats, eventId, showToast, t, role, title, addLabel, emptyLabel }: any) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [inviteCats, setInviteCats] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const btnBase: React.CSSProperties = { border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', padding: '9px 16px' }
+  const showCatPicker = role === 'judge' && Array.isArray(cats) && cats.length > 0
 
   async function invite() {
     if (!email.trim() || !displayName.trim()) return
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { showToast(t('toastNoSession')); setSaving(false); return }
-    const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role }) })
+    const res = await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ email: email.trim(), displayName: displayName.trim(), eventId, role, categoryIds: inviteCats.length > 0 ? inviteCats : null }) })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { showToast('❌ ' + (data.error || 'Error')); return }
     showToast(data.hadAccount ? t('toastPeopleAdded', { singular: title.slice(0, -1) }) : t('toastPeopleInvited'))
-    setEmail(''); setDisplayName('')
+    setEmail(''); setDisplayName(''); setInviteCats([])
     const { data: fresh } = await supabase.from('judges').select('*, profiles(full_name, avatar_url)').eq('event_id', eventId)
     if (fresh) setPeople(fresh)
   }
@@ -1046,23 +1118,32 @@ function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addL
     showToast(t('toastPeopleDeleted'))
   }
 
+  function onCategoriesSaved(judgeId: string, category_ids: string[] | null) {
+    setPeople((prev: any) => prev.map((j: any) => j.id === judgeId ? { ...j, category_ids } : j))
+  }
+
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{title}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#2a2a2a', marginBottom: 32 }}>
         {people.length === 0 && <div style={{ background: '#0a0a0a', padding: 24, color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{emptyLabel}</div>}
         {people.map((j: any) => (
-          <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div key={j.id} style={{ background: '#0a0a0a', padding: '16px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ width: 32, height: 32, background: GOLD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
               {(j.profiles?.full_name ?? j.display_name ?? '?')[0]}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
               <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.profiles?.full_name ?? j.display_name ?? title}</div>
               <div style={{ fontSize: 10, color: j.status === 'confirmed' ? '#4CAF50' : GOLD, letterSpacing: 2, textTransform: 'uppercase', marginTop: 3 }}>
                 {j.status === 'confirmed' ? t('peopleStatusConfirmed') : t('peopleStatusPending')}
               </div>
             </div>
             <button onClick={() => remove(j.id)} style={{ ...btnBase, background: 'transparent', border: '1px solid #2a2a2a', color: '#666', flexShrink: 0 }}>✕</button>
+            {showCatPicker && (
+              <div style={{ width: '100%', borderTop: '1px solid #1a1a1a', paddingTop: 10, marginTop: 2 }}>
+                <JudgeCategoriesEditor judge={j} cats={cats} onSaved={onCategoriesSaved} showToast={showToast} />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -1070,6 +1151,12 @@ function PeopleTab({ people, setPeople, eventId, showToast, t, role, title, addL
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 16, textTransform: 'uppercase' }}>{addLabel}</div>
         <input placeholder={t('partsPlaceholderName')} value={displayName} onChange={e => setDisplayName(e.target.value)} style={inp} />
         <input placeholder={t('partsPlaceholderEmail')} value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} />
+        {showCatPicker && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Categorías que puede puntuar</div>
+            <CategoryTagPicker cats={cats} selected={inviteCats} onChange={setInviteCats} />
+          </div>
+        )}
         <div style={{ fontSize: 11, color: '#444', marginBottom: 16, letterSpacing: 1 }}>{t('peopleInviteHint')}</div>
         <button onClick={invite} disabled={saving} style={{ ...btnBase, background: GOLD, color: '#000', padding: '12px 28px', opacity: saving ? 0.7 : 1 }}>
           {saving ? t('peopleAdding') : addLabel}
@@ -1226,6 +1313,12 @@ function MiniJamTab({ cats, setCats, parts, setParts, eventId, showToast, t }: a
   )
 }
 
+// category_ids null o vacío = el juez puede puntuar todas las categorías (retrocompatible)
+function judgeSeesCategory(judge: any, catId: string): boolean {
+  if (!judge?.category_ids || judge.category_ids.length === 0) return true
+  return judge.category_ids.includes(catId)
+}
+
 // ─── ROUNDS TAB ───────────────────────────────────────────────
 function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
   const [confirmations, setConfirmations] = useState<any[]>([])
@@ -1265,13 +1358,15 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
   if (loading) return <div style={{ color: '#444', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('loading')}</div>
 
   const activeCats = cats.filter((c: any) => c.format === 'formal' || c.format === 'jam' || c.format === 'best_trick')
-  const acceptedJudges = judges.filter((j: any) => j.status === 'accepted')
+  const allAcceptedJudges = judges.filter((j: any) => j.status === 'accepted')
 
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, marginBottom: 20, textTransform: 'uppercase' }}>{t('roundsTitle')}</div>
       {activeCats.length === 0 && <div style={{ color: '#333', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>{t('roundsNone')}</div>}
       {activeCats.map((cat: any) => {
+        // Solo los jueces asignados a esta categoría deben confirmar sus rondas
+        const acceptedJudges = allAcceptedJudges.filter((j: any) => judgeSeesCategory(j, cat.id))
         const catConfirms = confirmations.filter(c => c.category_id === cat.id)
         const catVotes = btVotes.filter(v => v.category_id === cat.id)
         const runs = cat.format === 'best_trick'
