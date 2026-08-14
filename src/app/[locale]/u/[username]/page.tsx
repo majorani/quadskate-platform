@@ -60,8 +60,10 @@ export default function PublicProfilePage() {
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     : '?'
 
-  const finishedEvents = events.filter(e => e.events?.status === 'finished').length
-  const totalEvents    = events.filter(e => e.events).length
+  // Un participante puede tener hasta 2 filas (2 categorías) por evento;
+  // estas métricas cuentan eventos únicos, no inscripciones.
+  const finishedEvents = new Set(events.filter(e => e.events?.status === 'finished').map(e => e.events.id)).size
+  const totalEvents    = new Set(events.filter(e => e.events).map(e => e.events.id)).size
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>

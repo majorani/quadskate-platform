@@ -33,14 +33,21 @@ export async function POST(req: NextRequest) {
   if (!event) return NextResponse.json({ error: 'Evento no encontrado' }, { status: 404 })
 
   // Verificar si ya existe en participants/judges con ese email
+  // Un participante puede inscribirse en hasta 2 categorías del mismo evento.
   if (role === 'participant') {
-    const { data: existing } = await supabaseAdmin
+    const MAX_CATEGORIES_PER_PARTICIPANT = 2
+    const { data: existingRows } = await supabaseAdmin
       .from('participants')
-      .select('id')
+      .select('id, category_id')
       .eq('event_id', eventId)
       .eq('email', email)
-      .maybeSingle()
-    if (existing) return NextResponse.json({ error: 'Ya existe un participante con ese email' }, { status: 400 })
+    const existing = existingRows ?? []
+    if (existing.some(p => p.category_id === categoryId)) {
+      return NextResponse.json({ error: 'Ese participante ya está inscripto en esa categoría' }, { status: 400 })
+    }
+    if (existing.length >= MAX_CATEGORIES_PER_PARTICIPANT) {
+      return NextResponse.json({ error: `Ese participante ya alcanzó el máximo de ${MAX_CATEGORIES_PER_PARTICIPANT} categorías para este evento` }, { status: 400 })
+    }
   } else {
     const { data: existing } = await supabaseAdmin
       .from('judges')

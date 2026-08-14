@@ -61,12 +61,15 @@ export async function POST(
       })
     }
   } else {
-    // Participantes: buscar si ya existe y actualizar
+    // Participantes: buscar si ya existe la fila de ESA categoría y actualizarla.
+    // Un mismo email puede tener hasta 2 filas (una por categoría) en el evento,
+    // por eso filtramos también por category_id y no usamos maybeSingle a nivel email.
     const { data: existing } = await supabaseAdmin
       .from('participants')
       .select('id')
       .eq('event_id', invitation.event_id)
       .eq('email', invitation.email)
+      .eq('category_id', invitation.category_id)
       .maybeSingle()
 
     if (existing) {

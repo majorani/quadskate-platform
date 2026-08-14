@@ -582,6 +582,7 @@
     "loginPrompt": "Connectez-vous pour vous inscrire →",
     "alreadyRegistered": "Vous êtes inscrit",
     "registerBtn": "S'inscrire →",
+    "registerAnotherBtn": "S'inscrire dans une autre catégorie →",
     "formTitle": "Inscription",
     "labelName": "Votre nom",
     "placeholderName": "Nom complet",

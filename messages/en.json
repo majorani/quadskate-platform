@@ -582,6 +582,7 @@
     "loginPrompt": "Log in to register →",
     "alreadyRegistered": "You are registered",
     "registerBtn": "Register →",
+    "registerAnotherBtn": "Register for another category →",
     "formTitle": "Registration",
     "labelName": "Your name",
     "placeholderName": "Full name",

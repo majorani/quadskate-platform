@@ -25,15 +25,17 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
   const t = useTranslations('InscripcionButton')
   const router = useRouter()
 
+  const MAX_CATEGORIES = 2
+
   const [user, setUser]               = useState<any>(null)
   const [loading, setLoading]         = useState(true)
   const [attending, setAttending]     = useState<any>(null)
-  const [myPart, setMyPart]           = useState<any>(null)
+  const [myParts, setMyParts]         = useState<any[]>([])
   const [showCatForm, setShowCatForm] = useState(false)
   const [saving, setSaving]           = useState(false)
   const [toast, setToast]             = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [catId, setCatId]             = useState(cats[0]?.id ?? '')
+  const [catId, setCatId]             = useState('')
 
   if (eventStatus !== 'published') return null
 
@@ -43,18 +45,25 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
       const u = data.session.user
       setUser(u)
 
-      const [profileRes, attendRes, partRes] = await Promise.all([
+      const [profileRes, attendRes, partsRes] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', u.id).single(),
         supabase.from('attendees').select('*').eq('event_id', eventId).eq('profile_id', u.id).maybeSingle(),
-        supabase.from('participants').select('*, categories(name)').eq('event_id', eventId).eq('profile_id', u.id).maybeSingle(),
+        supabase.from('participants').select('*, categories(name)').eq('event_id', eventId).eq('profile_id', u.id),
       ])
 
       if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
       setAttending(attendRes.data)
-      setMyPart(partRes.data)
+      setMyParts(partsRes.data ?? [])
       setLoading(false)
     })
   }, [eventId])
+
+  const registeredCatIds = myParts.map((p: any) => p.category_id)
+  const availableCats = cats.filter((c: any) => !registeredCatIds.includes(c.id))
+
+  useEffect(() => {
+    if (!catId && availableCats.length > 0) setCatId(availableCats[0].id)
+  }, [availableCats.length])
 
   async function confirmAttendance() {
     if (!user) return
@@ -73,6 +82,7 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
 
   async function registerCategory() {
     if (!user || !catId || !displayName.trim()) return
+    if (myParts.length >= MAX_CATEGORIES) return
     setSaving(true)
     const { data: currentUser } = await supabase.auth.getUser()
     const { data, error } = await supabase.from('participants').insert({
@@ -85,7 +95,9 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
     }).select('*, categories(name)').single()
     setSaving(false)
     if (error) { showToastMsg(t('toastError')); return }
-    setMyPart(data)
+    const updated = [...myParts, data]
+    setMyParts(updated)
+    setCatId(cats.find((c: any) => !updated.some((p: any) => p.category_id === c.id))?.id ?? '')
     setShowCatForm(false)
     showToastMsg(t('toastSuccess'))
     onRegistered?.()
@@ -137,25 +149,31 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
             </div>
           )}
 
-          {/* PASO 2: CATEGORÍA (solo competencias, solo si confirmó asistencia) */}
+          {/* PASO 2: CATEGORÍA (solo competencias, solo si confirmó asistencia, hasta 2 categorías) */}
           {attending && !isEncuentro && cats.length > 0 && (
             <>
-              {myPart ? (
-                <div style={{ background: '#111', borderLeft: `3px solid #4CAF50`, padding: '14px 20px', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 18, color: '#4CAF50' }}>✓</span>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#4CAF50', textTransform: 'uppercase', marginBottom: 2 }}>{t('alreadyRegistered')}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>{myPart.categories?.name ?? ''}</div>
-                  </div>
+              {myParts.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  {myParts.map((p: any) => (
+                    <div key={p.id} style={{ background: '#111', borderLeft: `3px solid #4CAF50`, padding: '14px 20px', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 18, color: '#4CAF50' }}>✓</span>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#4CAF50', textTransform: 'uppercase', marginBottom: 2 }}>{t('alreadyRegistered')}</div>
+                        <div style={{ fontSize: 12, color: '#888' }}>{p.categories?.name ?? ''}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
+              )}
+
+              {myParts.length < MAX_CATEGORIES && availableCats.length > 0 && (
                 <div>
                   {!showCatForm ? (
                     <button
                       onClick={() => setShowCatForm(true)}
                       style={{ background: 'transparent', border: `1px solid ${GOLD}`, padding: '12px 28px', color: GOLD, fontWeight: 900, fontSize: 11, cursor: 'pointer', letterSpacing: 3, textTransform: 'uppercase' }}
                     >
-                      {t('registerBtn')}
+                      {myParts.length > 0 ? t('registerAnotherBtn') : t('registerBtn')}
                     </button>
                   ) : (
                     <div style={{ background: '#111', borderTop: `2px solid ${GOLD}`, padding: '24px', marginTop: 4, maxWidth: 420 }}>
@@ -175,7 +193,7 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
                         onChange={e => setCatId(e.target.value)}
                         style={{ ...inp, marginBottom: 16 }}
                       >
-                        {cats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {availableCats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
 
                       <div style={{ fontSize: 11, color: '#555', marginBottom: 20, lineHeight: 1.6, fontStyle: 'italic', borderLeft: '2px solid #2a2a2a', paddingLeft: 12 }}>
