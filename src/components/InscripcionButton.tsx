@@ -60,10 +60,18 @@ export default function InscripcionButton({ eventId, cats, eventStatus, isEncuen
 
   const registeredCatIds = myParts.map((p: any) => p.category_id)
   const availableCats = cats.filter((c: any) => !registeredCatIds.includes(c.id))
+  const availableCatIds = availableCats.map((c: any) => c.id).join(',')
 
+  // Mantiene catId sincronizado con lo que realmente está disponible: si todavía
+  // no cargaron las inscripciones existentes, o si la categoría seleccionada ya
+  // no está disponible (porque el participante ya se inscribió en ella), la
+  // reemplaza por la primera categoría libre. Antes solo corría cuando catId
+  // estaba vacío, así que si el mount inicial (antes de cargar myParts) elegía
+  // una categoría que resultaba estar ya inscripta, quedaba pegado ahí.
   useEffect(() => {
-    if (!catId && availableCats.length > 0) setCatId(availableCats[0].id)
-  }, [availableCats.length])
+    if (availableCats.length === 0) { if (catId) setCatId(''); return }
+    if (!availableCats.some((c: any) => c.id === catId)) setCatId(availableCats[0].id)
+  }, [availableCatIds])
 
   async function confirmAttendance() {
     if (!user) return
