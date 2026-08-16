@@ -1319,15 +1319,10 @@ function judgeSeesCategory(judge: any, catId: string): boolean {
   return judge.category_ids.includes(catId)
 }
 
-// Construye el campo "tricks" de un scorecard para que el promedio del formato
-// de la categoría dé exactamente el valor cargado manualmente por el organizador
-// (sin trucos reales: un solo registro para ese participante/pasada).
-function buildManualTricks(format: string, value: number) {
-  if (format === 'jam') return { tricks: [], fluidez: 5 + value, creatividad: 5 }
-  return [{ intencion: true, dificultad: 0, ejecucion: 0, estilo: 0, secuencia: false, _score: value }]
-}
-
 // ─── CARGA MANUAL DE PUNTAJE (para cuando los jueces ya no están disponibles) ──
+// El insert/update real se hace en /api/scorecards/manual (service role),
+// porque las políticas de "scorecards" están pensadas para que escriban jueces
+// reales y bloquean el insert directo desde la cuenta del organizador.
 function ManualScoreEntry({ eventId, cat, run, catParts, scoredIds, showToast }: any) {
   const [participantId, setParticipantId] = useState('')
   const [value, setValue] = useState('')
@@ -1343,15 +1338,17 @@ function ManualScoreEntry({ eventId, cat, run, catParts, scoredIds, showToast }:
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
-    const adminId = session.user.id
-    const tricks = buildManualTricks(cat.format, num)
-    const existing = await supabase.from('scorecards').select('id')
-      .eq('judge_id', adminId).eq('participant_id', participantId).eq('run', run).maybeSingle()
-    const { error } = existing.data
-      ? await supabase.from('scorecards').update({ tricks, updated_at: new Date().toISOString() }).eq('id', existing.data.id)
-      : await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: adminId, participant_id: participantId, run, tricks })
+    // Se hace vía API (con service role del lado del servidor) porque las
+    // políticas de "scorecards" están pensadas para que escriban jueces
+    // reales, no la cuenta del organizador.
+    const res = await fetch('/api/scorecards/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ eventId, categoryId: cat.id, participantId, run, value: num }),
+    })
+    const data = await res.json()
     setSaving(false)
-    if (error) { showToast('❌ Error al cargar el puntaje'); return }
+    if (!res.ok) { showToast('❌ ' + (data.error || 'Error al cargar el puntaje')); return }
     showToast('✓ Puntaje cargado')
     setValue('')
   }
