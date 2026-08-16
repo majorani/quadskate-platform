@@ -227,7 +227,7 @@ export default function ManageEventPage() {
         {!isEncuentro && tab === 'cats'   && <CatsTab cats={cats} setCats={setCats} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'parts'  && <PartsTab parts={parts} setParts={setParts} cats={cats} setCats={setCats} judges={judges} scores={scores} eventId={eventId} showToast={showToast} t={t} />}
         {!isEncuentro && tab === 'judges' && <PeopleTab people={judges} setPeople={setJudges} cats={cats} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('judgesTitle')} addLabel={t('judgesAddLabel')} emptyLabel={t('judgesEmpty')} />}
-        {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} showToast={showToast} t={t} />}
+        {!isEncuentro && tab === 'rounds' && <RoundsTab eventId={eventId} cats={cats} judges={judges} parts={parts} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'parts'         && <EncuentroPartsTab parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
         {isEncuentro && tab === 'organizadores' && <PeopleTab people={judges} setPeople={setJudges} cats={cats} eventId={eventId} showToast={showToast} t={t} role="judge" title={t('organizersTitle')} addLabel={t('organizersAddLabel')} emptyLabel={t('organizersEmpty')} />}
         {isEncuentro && tab === 'minijam'       && <MiniJamTab cats={cats} setCats={setCats} parts={parts} setParts={setParts} eventId={eventId} showToast={showToast} t={t} />}
@@ -1319,10 +1319,70 @@ function judgeSeesCategory(judge: any, catId: string): boolean {
   return judge.category_ids.includes(catId)
 }
 
+// Construye el campo "tricks" de un scorecard para que el promedio del formato
+// de la categoría dé exactamente el valor cargado manualmente por el organizador
+// (sin trucos reales: un solo registro para ese participante/pasada).
+function buildManualTricks(format: string, value: number) {
+  if (format === 'jam') return { tricks: [], fluidez: 5 + value, creatividad: 5 }
+  return [{ intencion: true, dificultad: 0, ejecucion: 0, estilo: 0, secuencia: false, _score: value }]
+}
+
+// ─── CARGA MANUAL DE PUNTAJE (para cuando los jueces ya no están disponibles) ──
+function ManualScoreEntry({ eventId, cat, run, catParts, scoredIds, showToast }: any) {
+  const [participantId, setParticipantId] = useState('')
+  const [value, setValue] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!participantId && catParts.length > 0) setParticipantId(catParts[0].id)
+  }, [catParts.map((p: any) => p.id).join(',')])
+
+  async function save() {
+    const num = parseFloat(value.replace(',', '.'))
+    if (!participantId || isNaN(num)) return
+    setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { showToast('❌ No hay sesión activa'); setSaving(false); return }
+    const adminId = session.user.id
+    const tricks = buildManualTricks(cat.format, num)
+    const existing = await supabase.from('scorecards').select('id')
+      .eq('judge_id', adminId).eq('participant_id', participantId).eq('run', run).maybeSingle()
+    const { error } = existing.data
+      ? await supabase.from('scorecards').update({ tricks, updated_at: new Date().toISOString() }).eq('id', existing.data.id)
+      : await supabase.from('scorecards').insert({ event_id: eventId, category_id: cat.id, judge_id: adminId, participant_id: participantId, run, tricks })
+    setSaving(false)
+    if (error) { showToast('❌ Error al cargar el puntaje'); return }
+    showToast('✓ Puntaje cargado')
+    setValue('')
+  }
+
+  if (!catParts.length) return null
+
+  return (
+    <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center', background: '#0d0d0d', border: '1px dashed #2a2a2a', padding: 10 }}>
+      <span style={{ fontSize: 9, color: '#555', letterSpacing: 2, textTransform: 'uppercase', flexShrink: 0 }}>Carga manual</span>
+      <select value={participantId} onChange={e => setParticipantId(e.target.value)} style={{ background: '#111', border: '1px solid #2a2a2a', color: '#e8e8e8', fontSize: 12, padding: '6px 8px', flex: 1, minWidth: 140 }}>
+        {catParts.map((p: any) => (
+          <option key={p.id} value={p.id}>{p.display_name}{scoredIds.includes(p.id) ? ' · ya tiene puntaje' : ' · sin puntaje'}</option>
+        ))}
+      </select>
+      <input
+        type="text" inputMode="decimal" placeholder="Puntaje"
+        value={value} onChange={e => setValue(e.target.value)}
+        style={{ width: 80, background: '#111', border: '1px solid #2a2a2a', color: '#e8e8e8', fontSize: 12, padding: '6px 8px' }}
+      />
+      <button onClick={save} disabled={saving || !value.trim()} style={{ background: GOLD, border: 'none', color: '#000', fontWeight: 900, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '7px 14px', cursor: 'pointer', opacity: saving || !value.trim() ? 0.7 : 1 }}>
+        {saving ? '...' : 'Cargar'}
+      </button>
+    </div>
+  )
+}
+
 // ─── ROUNDS TAB ───────────────────────────────────────────────
-function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
+function RoundsTab({ eventId, cats, judges, parts, showToast, t }: any) {
   const [confirmations, setConfirmations] = useState<any[]>([])
   const [btVotes, setBtVotes] = useState<any[]>([])
+  const [scores, setScores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -1335,16 +1395,22 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'best_trick_votes', filter: `event_id=eq.${eventId}` },
         async () => { const { data } = await supabase.from('best_trick_votes').select('*').eq('event_id', eventId); if (data) setBtVotes(data) })
       .subscribe()
-    return () => { supabase.removeChannel(channel); supabase.removeChannel(voteChannel) }
+    const scoresChannel = supabase.channel(`rounds-scores-${eventId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scorecards', filter: `event_id=eq.${eventId}` },
+        async () => { const { data } = await supabase.from('scorecards').select('participant_id, category_id, run').eq('event_id', eventId); if (data) setScores(data) })
+      .subscribe()
+    return () => { supabase.removeChannel(channel); supabase.removeChannel(voteChannel); supabase.removeChannel(scoresChannel) }
   }, [])
 
   async function load() {
-    const [confRes, votesRes] = await Promise.all([
+    const [confRes, votesRes, scoresRes] = await Promise.all([
       supabase.from('round_confirmations').select('*').eq('event_id', eventId),
       supabase.from('best_trick_votes').select('*').eq('event_id', eventId),
+      supabase.from('scorecards').select('participant_id, category_id, run').eq('event_id', eventId),
     ])
     setConfirmations(confRes.data ?? [])
     setBtVotes(votesRes.data ?? [])
+    setScores(scoresRes.data ?? [])
     setLoading(false)
   }
 
@@ -1368,6 +1434,7 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
         // Solo los jueces asignados a esta categoría deben confirmar sus rondas
         const acceptedJudges = allAcceptedJudges.filter((j: any) => judgeSeesCategory(j, cat.id))
         const catConfirms = confirmations.filter(c => c.category_id === cat.id)
+        const catParts = (parts ?? []).filter((p: any) => p.category_id === cat.id)
         const catVotes = btVotes.filter(v => v.category_id === cat.id)
         const runs = cat.format === 'best_trick'
           ? [1, ...(cat.max_runs >= 2 ? [2] : [])]
@@ -1413,6 +1480,14 @@ function RoundsTab({ eventId, cats, judges, showToast, t }: any) {
                       )
                     })}
                   </div>
+                  <ManualScoreEntry
+                    eventId={eventId}
+                    cat={cat}
+                    run={run}
+                    catParts={catParts}
+                    scoredIds={scores.filter((s: any) => s.category_id === cat.id && s.run === run).map((s: any) => s.participant_id)}
+                    showToast={showToast}
+                  />
                 </div>
               )
             })}
